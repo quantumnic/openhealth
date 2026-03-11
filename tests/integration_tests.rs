@@ -185,3 +185,46 @@ fn test_cli_diff_not_found() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("not found"));
 }
+
+#[test]
+fn test_cli_history_empty() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_hist.db", "history"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("No diagnosis history") || stdout.contains("History"));
+}
+
+#[test]
+fn test_cli_history_json_empty() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_hist_j.db", "--json", "history"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("[]"));
+}
+
+#[test]
+fn test_cli_export() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_export.db", "export"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("disease_count") && stdout.contains("Malaria"));
+}
+
+#[test]
+fn test_cli_export_file() {
+    let _ = std::fs::remove_file("/tmp/openhealth_test_export_out.json");
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_export2.db", "export", "--output", "/tmp/openhealth_test_export_out.json"])
+        .output()
+        .expect("failed to execute");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("Exported"));
+    let contents = std::fs::read_to_string("/tmp/openhealth_test_export_out.json").unwrap();
+    assert!(contents.contains("Malaria"));
+}

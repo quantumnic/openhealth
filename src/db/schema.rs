@@ -53,6 +53,15 @@ pub fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            symptoms TEXT NOT NULL,
+            top_disease TEXT,
+            top_probability REAL,
+            result_json TEXT NOT NULL
+        );
         ",
     )?;
     Ok(())

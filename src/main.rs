@@ -66,6 +66,21 @@ pub enum Commands {
         /// Second disease name
         disease_b: String,
     },
+    /// View diagnosis history
+    History {
+        /// Show specific entry by ID
+        #[arg(long)]
+        id: Option<i64>,
+        /// Max entries to show (default: 20)
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+    },
+    /// Export full database as JSON
+    Export {
+        /// Output file path (prints to stdout if omitted)
+        #[arg(long, short)]
+        output: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -105,6 +120,13 @@ fn main() {
         Commands::Search { query } => commands::search::run(&conn, &query, cli.json),
         Commands::Diff { disease_a, disease_b } => {
             commands::diff::run(&conn, &disease_a, &disease_b, cli.json);
+        }
+        Commands::History { id, limit } => match id {
+            Some(entry_id) => commands::history::show_detail(&conn, entry_id, cli.json),
+            None => commands::history::run(&conn, limit, cli.json),
+        },
+        Commands::Export { output } => {
+            commands::export::run(&conn, output.as_deref());
         }
     }
 }

@@ -2,6 +2,8 @@ pub mod check;
 pub mod diff;
 pub mod disease;
 pub mod emergency;
+pub mod export;
+pub mod history;
 pub mod list;
 pub mod search;
 pub mod stats;

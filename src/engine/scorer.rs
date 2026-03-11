@@ -167,7 +167,7 @@ fn get_symptom_disease_counts(
 }
 
 /// Fuzzy matching: checks if input contains or is contained in symptom name,
-/// or if individual words overlap significantly.
+/// if individual words overlap significantly, or if edit distance is small (typo tolerance).
 fn fuzzy_match(input: &str, symptom: &str) -> bool {
     if input == symptom || symptom.contains(input) || input.contains(symptom) {
         return true;
@@ -187,10 +187,38 @@ fn fuzzy_match(input: &str, symptom: &str) -> bool {
             if iw == sw || sw.contains(iw) || iw.contains(sw) {
                 return true;
             }
+            // Typo tolerance: allow edit distance ≤ 1 for words ≥ 5 chars
+            if iw.len() >= 5 && sw.len() >= 5 && edit_distance(iw, sw) <= 1 {
+                return true;
+            }
         }
     }
 
     false
+}
+
+/// Simple Levenshtein edit distance for typo tolerance.
+fn edit_distance(a: &str, b: &str) -> usize {
+    let a_bytes = a.as_bytes();
+    let b_bytes = b.as_bytes();
+    let m = a_bytes.len();
+    let n = b_bytes.len();
+
+    if m == 0 { return n; }
+    if n == 0 { return m; }
+
+    let mut prev: Vec<usize> = (0..=n).collect();
+    let mut curr = vec![0usize; n + 1];
+
+    for i in 1..=m {
+        curr[0] = i;
+        for j in 1..=n {
+            let cost = if a_bytes[i - 1] == b_bytes[j - 1] { 0 } else { 1 };
+            curr[j] = (prev[j] + 1).min(curr[j - 1] + 1).min(prev[j - 1] + cost);
+        }
+        std::mem::swap(&mut prev, &mut curr);
+    }
+    prev[n]
 }
 
 #[cfg(test)]

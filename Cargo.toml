@@ -1,6 +1,6 @@
 [package]
 name = "openhealth"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["Nicola Spieser <quantumnic@users.noreply.github.com>"]
 description = "Offline AI medical diagnostics — symptom analysis, WHO protocols, 100+ languages, runs on any device. Free forever."
@@ -17,6 +17,7 @@ colored = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dirs = "5"
+chrono = "0.4"
 
 [dev-dependencies]
 tempfile = "3"
