@@ -104,6 +104,12 @@ pub enum Commands {
         #[arg(long, default_value_t = 5)]
         limit: usize,
     },
+    /// Explore diseases grouped by body system
+    #[command(name = "body-system")]
+    BodySystem {
+        /// Filter by body system, e.g. "respiratory" or "cardiovascular"
+        system: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -156,6 +162,9 @@ fn main() {
         }
         Commands::Similar { name, limit } => {
             commands::similar::run(&conn, &name, limit, cli.json);
+        }
+        Commands::BodySystem { system } => {
+            commands::body_system::run(&conn, system.as_deref(), cli.json);
         }
     }
 }

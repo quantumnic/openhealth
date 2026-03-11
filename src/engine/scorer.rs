@@ -1,5 +1,6 @@
 use rusqlite::Connection;
 use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DiagnosisResult {
@@ -35,14 +36,26 @@ pub fn score_symptoms_with_context(
     input_symptoms: &[&str],
     context: &PatientContext,
 ) -> Vec<DiagnosisResult> {
-    let normalized: Vec<String> = input_symptoms
+    let raw_normalized: Vec<String> = input_symptoms
         .iter()
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty())
         .collect();
 
-    if normalized.is_empty() {
+    if raw_normalized.is_empty() {
         return vec![];
+    }
+
+    // Expand input symptoms with synonym mappings
+    let synonym_map = build_synonym_map();
+    let mut normalized: Vec<String> = raw_normalized.clone();
+    for sym in &raw_normalized {
+        if let Some(canonical) = synonym_map.get(sym.as_str()) {
+            let canon = canonical.to_string();
+            if !normalized.contains(&canon) {
+                normalized.push(canon);
+            }
+        }
     }
 
     // Pre-compute symptom specificity: how many diseases share each symptom
@@ -283,6 +296,11 @@ fn fuzzy_match(input: &str, symptom: &str) -> bool {
     false
 }
 
+/// Build a lookup map from synonym → canonical symptom name.
+fn build_synonym_map() -> HashMap<&'static str, &'static str> {
+    crate::db::seed::get_symptom_synonyms().into_iter().collect()
+}
+
 /// Simple Levenshtein edit distance for typo tolerance.
 fn edit_distance(a: &str, b: &str) -> usize {
     let a_bytes = a.as_bytes();
@@ -422,6 +440,33 @@ mod tests {
         for r in &results {
             assert!(!r.matched_symptoms.is_empty());
         }
+    }
+
+    #[test]
+    fn test_synonym_expansion_stomach_ache() {
+        let conn = db::init_memory_database().unwrap();
+        // "stomach ache" should expand to "abdominal pain" via synonyms
+        let results = score_symptoms(&conn, &["stomach ache", "fever"]);
+        assert!(!results.is_empty(), "Synonym expansion should find matches");
+        // Should match diseases with abdominal pain
+        let has_abdominal = results
+            .iter()
+            .any(|r| r.matched_symptoms.iter().any(|s| s.to_lowercase().contains("abdominal")));
+        assert!(has_abdominal, "Should match abdominal pain via synonym");
+    }
+
+    #[test]
+    fn test_synonym_expansion_breathlessness() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["breathlessness", "chest pain"]);
+        assert!(!results.is_empty(), "breathlessness should match via synonym");
+    }
+
+    #[test]
+    fn test_synonym_expansion_tired() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["tired", "headache"]);
+        assert!(!results.is_empty(), "tired should expand to fatigue");
     }
 
     #[test]

@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '5.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '6.0')",
         [],
     )?;
     tx.commit()?;
@@ -1378,6 +1378,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "No proven prevention. Vitamin D sufficiency may reduce risk.",
             risk_factors: vec![("female sex", "high"), ("age 20-40", "high"), ("northern latitude", "moderate"), ("family history", "moderate"), ("vitamin D deficiency", "moderate"), ("smoking", "moderate")],
         },
+        // ──────── NEW DISEASES v6.0 ────────
+        DiseaseEntry {
+            name: "Diphtheria",
+            description: "Bacterial infection (Corynebacterium diphtheriae) causing thick membrane in throat. Vaccine-preventable.",
+            severity: "high", contagious: true, icd11_code: "1C10",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("sore throat",0.8,true), s("fever",0.6,false), s("swollen neck glands",0.8,true), s("difficulty breathing",0.7,false), s("gray membrane in throat",0.9,true), s("hoarse voice",0.5,false), s("malaise",0.4,false)],
+            treatment: "Diphtheria antitoxin immediately. Antibiotics: erythromycin or penicillin for 14 days. Supportive airway management. Cardiac monitoring.",
+            first_aid: "Maintain airway, keep patient calm, seek emergency medical care immediately.",
+            prevention: "DPT/DTP vaccination series, booster doses. Contact tracing and prophylaxis.",
+            risk_factors: vec![("unvaccinated", "high"), ("overcrowded living conditions", "high"), ("poor hygiene", "moderate"), ("travel to endemic areas", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Mumps",
+            description: "Viral infection causing painful swelling of salivary glands. Can cause orchitis, meningitis, and deafness.",
+            severity: "medium", contagious: true, icd11_code: "1F04",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("swollen salivary glands",0.95,true), s("fever",0.6,false), s("headache",0.5,false), s("muscle pain",0.4,false), s("fatigue",0.5,false), s("loss of appetite",0.5,false), s("pain when chewing",0.7,true)],
+            treatment: "Supportive: rest, fluids, analgesics (paracetamol/ibuprofen). Soft foods. Monitor for complications (orchitis, meningitis).",
+            first_aid: "Rest, cold compresses on swollen glands, soft foods, adequate fluids.",
+            prevention: "MMR vaccination (2 doses). Isolate infected persons for 5 days after gland swelling onset.",
+            risk_factors: vec![("unvaccinated", "high"), ("close contact settings", "moderate"), ("age 5-15 years", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Poliomyelitis",
+            description: "Viral infection that can invade the nervous system causing irreversible paralysis. Nearly eradicated globally.",
+            severity: "high", contagious: true, icd11_code: "1C80",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("fever",0.7,true), s("fatigue",0.6,false), s("headache",0.6,false), s("vomiting",0.5,false), s("stiff neck",0.7,true), s("muscle weakness",0.8,true), s("paralysis",0.7,false), s("limb pain",0.6,false)],
+            treatment: "No cure. Supportive: physical therapy, respiratory support, pain management. Long-term rehabilitation for paralysis.",
+            first_aid: "Rest, supportive care, seek medical attention urgently for any signs of paralysis.",
+            prevention: "Polio vaccination (OPV/IPV). Global eradication campaigns. Maintain high coverage.",
+            risk_factors: vec![("unvaccinated", "high"), ("travel to endemic areas", "high"), ("poor sanitation", "moderate"), ("immunodeficiency", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hepatitis E",
+            description: "Viral liver infection spread by contaminated water. Usually self-limiting but dangerous in pregnancy.",
+            severity: "medium", contagious: true, icd11_code: "1E50.4",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("jaundice",0.8,true), s("fatigue",0.7,true), s("nausea",0.7,false), s("abdominal pain",0.6,false), s("loss of appetite",0.6,false), s("fever",0.5,false), s("dark urine",0.6,false), s("vomiting",0.4,false)],
+            treatment: "Supportive: rest, fluids, avoid alcohol. No specific antiviral for acute cases. Ribavirin for chronic cases in immunosuppressed.",
+            first_aid: "Rest, adequate fluids, avoid alcohol and hepatotoxic drugs.",
+            prevention: "Safe drinking water, sanitation, HEV vaccine (available in some countries). Pregnant women avoid endemic areas.",
+            risk_factors: vec![("contaminated water", "high"), ("pregnancy (high mortality)", "high"), ("travel to endemic areas", "high"), ("immunosuppression", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Visceral Leishmaniasis",
+            description: "Parasitic disease (kala-azar) transmitted by sandfly bites. Fatal if untreated. Affects internal organs.",
+            severity: "high", contagious: false, icd11_code: "1F50",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("fever",0.8,true), s("weight loss",0.8,true), s("enlarged spleen",0.9,true), s("enlarged liver",0.7,false), s("anemia",0.7,true), s("fatigue",0.6,false), s("skin darkening",0.5,false), s("night sweats",0.4,false)],
+            treatment: "Liposomal amphotericin B (first-line). Miltefosine oral. Sodium stibogluconate. Combination therapy in endemic areas.",
+            first_aid: "Seek medical care urgently. Supportive nutrition and hydration.",
+            prevention: "Sandfly control, insecticide-treated nets, indoor spraying, early case detection and treatment.",
+            risk_factors: vec![("poverty", "high"), ("malnutrition", "high"), ("HIV co-infection", "high"), ("living in endemic areas", "high")],
+        },
+        DiseaseEntry {
+            name: "African Trypanosomiasis",
+            description: "Sleeping sickness caused by Trypanosoma parasites transmitted by tsetse flies. Fatal without treatment.",
+            severity: "high", contagious: false, icd11_code: "1F51",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("fever",0.7,true), s("headache",0.7,false), s("joint pain",0.5,false), s("itching",0.4,false), s("sleep disturbance",0.9,true), s("confusion",0.8,true), s("swollen lymph nodes",0.7,true), s("personality changes",0.6,false)],
+            treatment: "Stage 1: pentamidine or suramin. Stage 2 (CNS): fexinidazole (oral, first-line) or NECT (nifurtimox-eflornithine combination).",
+            first_aid: "Seek medical care urgently. Record onset of neurological symptoms for staging.",
+            prevention: "Tsetse fly avoidance, wear neutral-colored clothing, vector control, active screening in endemic areas.",
+            risk_factors: vec![("rural sub-Saharan Africa residence", "high"), ("agricultural work", "high"), ("tsetse fly exposure", "high")],
+        },
+        DiseaseEntry {
+            name: "Lymphatic Filariasis",
+            description: "Parasitic disease (elephantiasis) transmitted by mosquitoes. Causes severe limb swelling and disability.",
+            severity: "medium", contagious: false, icd11_code: "1F66",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("limb swelling",0.9,true), s("fever",0.5,false), s("skin thickening",0.7,true), s("genital swelling",0.6,false), s("recurrent infections",0.5,false), s("lymphedema",0.8,true)],
+            treatment: "Mass drug administration: DEC + albendazole (or ivermectin + albendazole in Africa). Limb care: hygiene, exercise, elevation.",
+            first_aid: "Keep affected limbs clean and elevated. Gentle exercise. Seek medical care for acute attacks.",
+            prevention: "Mass drug administration programs, mosquito control, bed nets.",
+            risk_factors: vec![("tropical/subtropical residence", "high"), ("mosquito exposure", "high"), ("poverty", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Plague",
+            description: "Bacterial infection (Yersinia pestis) transmitted by flea bites. Three forms: bubonic, septicemic, pneumonic.",
+            severity: "high", contagious: true, icd11_code: "1C30",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("fever",0.8,true), s("chills",0.7,false), s("swollen painful lymph nodes",0.9,true), s("headache",0.6,false), s("muscle pain",0.5,false), s("weakness",0.5,false), s("cough",0.6,false), s("bloody sputum",0.5,false)],
+            treatment: "Antibiotics immediately: streptomycin or gentamicin (first-line). Alternatives: doxycycline, ciprofloxacin. Treat within 24h of symptom onset.",
+            first_aid: "Isolate if pneumonic plague suspected. Seek emergency medical care immediately.",
+            prevention: "Flea control, avoid contact with wild rodents, prophylactic antibiotics for contacts.",
+            risk_factors: vec![("flea/rodent exposure", "high"), ("living in endemic areas", "high"), ("outdoor activities in endemic areas", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Anthrax",
+            description: "Bacterial infection (Bacillus anthracis). Three forms: cutaneous, inhalational, gastrointestinal. Bioterrorism concern.",
+            severity: "high", contagious: false, icd11_code: "1C15",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("skin ulcer",0.8,true), s("fever",0.7,false), s("chest discomfort",0.6,false), s("shortness of breath",0.7,false), s("confusion",0.5,false), s("nausea",0.5,false), s("abdominal pain",0.5,false), s("black eschar",0.8,true)],
+            treatment: "Antibiotics: ciprofloxacin or doxycycline. Inhalational: multi-drug IV regimen + antitoxin. Cutaneous: 7-10 days oral antibiotics.",
+            first_aid: "Avoid touching suspect lesions. Seek medical care immediately. Report to health authorities.",
+            prevention: "Anthrax vaccine for high-risk groups, avoid contact with infected animals/products, proper animal carcass disposal.",
+            risk_factors: vec![("livestock worker", "high"), ("veterinarian", "moderate"), ("military/lab personnel", "moderate"), ("endemic area residence", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Brucellosis",
+            description: "Bacterial zoonosis from unpasteurized dairy or infected animals. Causes undulating fever and chronic illness.",
+            severity: "medium", contagious: false, icd11_code: "1C15",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("undulating fever",0.9,true), s("sweating",0.7,true), s("joint pain",0.7,false), s("muscle pain",0.6,false), s("fatigue",0.7,true), s("headache",0.5,false), s("loss of appetite",0.5,false), s("back pain",0.5,false)],
+            treatment: "Doxycycline + streptomycin (6 weeks) or doxycycline + rifampicin. Prolonged treatment to prevent relapse.",
+            first_aid: "Rest, hydration, seek medical diagnosis (blood cultures).",
+            prevention: "Pasteurize dairy products, protective equipment for animal handlers, animal vaccination programs.",
+            risk_factors: vec![("unpasteurized dairy consumption", "high"), ("livestock contact", "high"), ("veterinary/slaughterhouse work", "high"), ("endemic area travel", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Leptospirosis",
+            description: "Bacterial infection from contaminated water/soil (Leptospira). Can cause liver/kidney failure (Weil's disease).",
+            severity: "high", contagious: false, icd11_code: "1C18",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("high fever",0.8,true), s("headache",0.7,false), s("muscle pain",0.8,true), s("red eyes",0.6,true), s("jaundice",0.6,false), s("vomiting",0.5,false), s("abdominal pain",0.5,false), s("rash",0.3,false)],
+            treatment: "Mild: doxycycline or amoxicillin. Severe (Weil's): IV penicillin or ceftriaxone. Dialysis for renal failure. ICU for multi-organ involvement.",
+            first_aid: "Seek medical care. Hydration. Avoid further water exposure.",
+            prevention: "Avoid wading in floodwater, protective clothing, rodent control, prophylactic doxycycline for high-risk exposure.",
+            risk_factors: vec![("floodwater exposure", "high"), ("agricultural work", "high"), ("contact with animal urine", "high"), ("water sports in endemic areas", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Myocarditis",
+            description: "Inflammation of the heart muscle, usually from viral infection. Can cause heart failure and sudden cardiac death.",
+            severity: "high", contagious: false, icd11_code: "BC43",
+            age_group: "all", category: "cardiovascular",
+            symptoms: vec![s("chest pain",0.8,true), s("shortness of breath",0.8,true), s("rapid heartbeat",0.7,true), s("fatigue",0.7,false), s("swelling in legs",0.5,false), s("fever",0.5,false), s("dizziness",0.5,false), s("irregular heartbeat",0.6,false)],
+            treatment: "Supportive: rest (avoid exercise), heart failure medications (ACE inhibitors, beta-blockers, diuretics). Immunosuppression for autoimmune cases. LVAD or transplant if severe.",
+            first_aid: "Rest, avoid physical exertion. Seek medical care for any chest pain after viral illness.",
+            prevention: "Vaccination against common viral causes, avoid intense exercise during viral infections.",
+            risk_factors: vec![("recent viral infection", "high"), ("autoimmune disease", "moderate"), ("young athletes", "moderate"), ("certain medications/toxins", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Diabetic Ketoacidosis",
+            description: "Life-threatening complication of diabetes with high blood sugar, ketones, and acidosis. Medical emergency.",
+            severity: "high", contagious: false, icd11_code: "5A10",
+            age_group: "all", category: "endocrine",
+            symptoms: vec![s("excessive thirst",0.8,true), s("frequent urination",0.7,true), s("nausea",0.7,false), s("vomiting",0.7,true), s("abdominal pain",0.6,false), s("fruity breath odor",0.8,true), s("rapid breathing",0.7,false), s("confusion",0.6,false), s("fatigue",0.5,false)],
+            treatment: "EMERGENCY: IV fluids aggressively. IV insulin infusion. Potassium replacement. Monitor glucose, electrolytes, pH hourly. ICU.",
+            first_aid: "Check blood sugar if possible. Give water if conscious. Call emergency services immediately.",
+            prevention: "Never skip insulin, sick day management plan, blood glucose monitoring, ketone testing when ill.",
+            risk_factors: vec![("type 1 diabetes", "high"), ("insulin omission", "high"), ("infection/illness", "high"), ("new diabetes diagnosis", "high")],
+        },
+        DiseaseEntry {
+            name: "Status Epilepticus",
+            description: "Prolonged seizure (>5 minutes) or repeated seizures without recovery. Neurological emergency.",
+            severity: "high", contagious: false, icd11_code: "8A60.0",
+            age_group: "all", category: "neurological",
+            symptoms: vec![s("prolonged seizure",0.95,true), s("loss of consciousness",0.8,true), s("muscle jerking",0.8,false), s("confusion",0.7,false), s("cyanosis",0.5,false), s("high fever",0.4,false), s("rapid breathing",0.4,false)],
+            treatment: "EMERGENCY: IV benzodiazepines (lorazepam 4mg or diazepam 10mg). If refractory: fosphenytoin, valproate, or levetiracetam IV. Intubation if needed.",
+            first_aid: "Protect from injury, turn on side, note time. Call emergency if seizure >5 minutes. Do NOT restrain or put anything in mouth.",
+            prevention: "Medication adherence for epilepsy, avoid seizure triggers, emergency action plan.",
+            risk_factors: vec![("epilepsy with medication non-compliance", "high"), ("CNS infection", "high"), ("stroke", "moderate"), ("metabolic derangement", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Toxic Shock Syndrome",
+            description: "Rare, life-threatening condition caused by bacterial toxins (Staph/Strep). Rapid onset multi-organ failure.",
+            severity: "high", contagious: false, icd11_code: "MG40.1",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("high fever",0.9,true), s("low blood pressure",0.8,true), s("rash",0.8,true), s("vomiting",0.6,false), s("diarrhea",0.5,false), s("confusion",0.6,false), s("muscle pain",0.5,false), s("red eyes",0.4,false), s("skin peeling",0.6,false)],
+            treatment: "EMERGENCY: IV fluids, vasopressors. Remove source (tampon, wound packing). IV antibiotics: clindamycin + vancomycin. IVIG for refractory cases. ICU.",
+            first_aid: "Remove tampon if applicable. Lie down, elevate legs. Call emergency immediately.",
+            prevention: "Change tampons frequently, use lowest absorbency, wound hygiene, early treatment of skin infections.",
+            risk_factors: vec![("tampon use", "high"), ("skin wounds/surgery", "high"), ("recent childbirth", "moderate"), ("nasal packing", "moderate")],
+        },
     ]
 }
 
@@ -1390,7 +1556,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 80, "Expected at least 80 diseases, got {count}");
+        assert!(count >= 95, "Expected at least 95 diseases, got {count}");
     }
 
     #[test]
@@ -1404,14 +1570,14 @@ mod tests {
     fn test_seed_creates_treatments() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM treatments", [], |r| r.get(0)).unwrap();
-        assert!(count >= 80, "Expected at least 80 treatments, got {count}");
+        assert!(count >= 95, "Expected at least 95 treatments, got {count}");
     }
 
     #[test]
     fn test_seed_creates_risk_factors() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM risk_factors", [], |r| r.get(0)).unwrap();
-        assert!(count >= 80, "Expected at least 80 risk factors, got {count}");
+        assert!(count >= 95, "Expected at least 95 risk factors, got {count}");
     }
 
     #[test]
@@ -1440,7 +1606,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "5.0");
+        assert_eq!(ver, "6.0");
     }
 
     #[test]
@@ -1462,4 +1628,122 @@ mod tests {
         ).unwrap();
         assert!(count >= 3, "Heart Attack should have at least 3 risk factors");
     }
+}
+/// Synonym map for symptom fuzzy matching — maps common alternatives to canonical names.
+pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
+    vec![
+        // Pain synonyms
+        ("stomach ache", "abdominal pain"),
+        ("tummy ache", "abdominal pain"),
+        ("belly pain", "abdominal pain"),
+        ("stomach pain", "abdominal pain"),
+        ("body pain", "muscle pain"),
+        ("body aches", "muscle pain"),
+        ("sore muscles", "muscle pain"),
+        ("aching", "muscle pain"),
+        ("migraine", "severe headache"),
+        ("head pain", "headache"),
+
+        // Breathing
+        ("breathlessness", "shortness of breath"),
+        ("can't breathe", "difficulty breathing"),
+        ("hard to breathe", "difficulty breathing"),
+        ("breathing difficulty", "difficulty breathing"),
+        ("breathing problems", "difficulty breathing"),
+        ("labored breathing", "rapid breathing"),
+        ("fast breathing", "rapid breathing"),
+
+        // GI
+        ("throwing up", "vomiting"),
+        ("puking", "vomiting"),
+        ("feeling sick", "nausea"),
+        ("upset stomach", "nausea"),
+        ("loose stools", "diarrhea"),
+        ("watery stools", "watery diarrhea"),
+        ("runs", "diarrhea"),
+        ("stomach cramps", "abdominal cramps"),
+        ("gassy", "bloating"),
+        ("gas", "bloating"),
+
+        // Fever
+        ("high temperature", "fever"),
+        ("temperature", "fever"),
+        ("burning up", "high fever"),
+        ("feverish", "fever"),
+
+        // Skin
+        ("hives", "rash"),
+        ("skin eruption", "rash"),
+        ("spots", "rash"),
+        ("itching", "itchy skin"),
+        ("itch", "intense itching"),
+
+        // General
+        ("tired", "fatigue"),
+        ("exhaustion", "fatigue"),
+        ("exhausted", "fatigue"),
+        ("weak", "weakness"),
+        ("dizzy", "dizziness"),
+        ("light-headed", "dizziness"),
+        ("lightheaded", "dizziness"),
+        ("fainting", "loss of consciousness"),
+        ("passed out", "loss of consciousness"),
+        ("blackout", "loss of consciousness"),
+
+        // Eye
+        ("pink eye", "red eyes"),
+        ("eye redness", "red eyes"),
+        ("blurry vision", "blurred vision"),
+        ("seeing double", "vision problems"),
+
+        // Heart
+        ("heart racing", "rapid heartbeat"),
+        ("palpitations", "rapid heartbeat"),
+        ("irregular pulse", "irregular heartbeat"),
+        ("tachycardia", "rapid heart rate"),
+
+        // Urinary
+        ("burning urination", "painful urination"),
+        ("peeing a lot", "frequent urination"),
+        ("blood in pee", "blood in urine"),
+        ("dark pee", "dark urine"),
+
+        // Musculoskeletal
+        ("stiff joints", "joint stiffness"),
+        ("joint ache", "joint pain"),
+        ("back ache", "back pain"),
+        ("sore throat", "sore throat"),
+
+        // Neurological
+        ("fits", "seizures"),
+        ("convulsions", "seizures"),
+        ("shaking", "tremor"),
+        ("trembling", "tremor"),
+        ("pins and needles", "tingling"),
+        ("numb", "numbness"),
+
+        // Cough variants
+        ("dry cough", "cough"),
+        ("wet cough", "cough"),
+        ("productive cough", "cough"),
+        ("persistent cough", "chronic cough"),
+
+        // Weight
+        ("losing weight", "weight loss"),
+        ("gaining weight", "weight gain"),
+        ("putting on weight", "weight gain"),
+
+        // Sleep
+        ("can't sleep", "insomnia"),
+        ("trouble sleeping", "sleep disturbance"),
+        ("not sleeping well", "sleep disturbance"),
+
+        // Mental health
+        ("feeling down", "persistent sadness"),
+        ("feeling sad", "persistent sadness"),
+        ("anxious", "anxiety"),
+        ("nervous", "anxiety"),
+        ("worried", "excessive worry"),
+        ("panic", "anxiety"),
+    ]
 }

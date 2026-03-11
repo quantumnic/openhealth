@@ -288,3 +288,33 @@ fn test_cli_similar_not_found() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("not found"));
 }
+
+#[test]
+fn test_cli_body_system_overview() {
+    let output = cargo_bin()
+        .args(["body-system"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Body Systems") || stdout.contains("body systems"));
+}
+
+#[test]
+fn test_cli_body_system_filter() {
+    let output = cargo_bin()
+        .args(["body-system", "respiratory"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Respiratory"));
+}
+
+#[test]
+fn test_cli_body_system_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_bs.db", "--json", "body-system"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("disease_count") || stdout.contains("system"));
+}
