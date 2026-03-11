@@ -15,6 +15,10 @@ pub struct Cli {
     #[arg(long, global = true)]
     db_path: Option<PathBuf>,
 
+    /// Output results as JSON
+    #[arg(long, global = true, default_value_t = false)]
+    json: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -25,7 +29,7 @@ pub enum Commands {
     Check,
     /// Quick symptom analysis
     Symptoms {
-        /// Space-separated symptoms, e.g. "fever headache nausea"
+        /// Comma or space-separated symptoms, e.g. "fever headache nausea"
         symptoms: String,
     },
     /// Disease information lookup
@@ -40,6 +44,14 @@ pub enum Commands {
     },
     /// Emergency checklist
     Emergency,
+    /// List all diseases in the database
+    List {
+        /// Filter by category (infectious, respiratory, cardiovascular, etc.)
+        #[arg(long)]
+        category: Option<String>,
+    },
+    /// Database statistics
+    Stats,
     /// Update the local database
     Update,
 }
@@ -69,10 +81,14 @@ fn main() {
 
     match cli.command {
         Commands::Check => commands::check::run(&conn),
-        Commands::Symptoms { symptoms } => commands::symptoms::run(&conn, &symptoms),
-        Commands::Disease { name } => commands::disease::run(&conn, &name),
-        Commands::Treatment { name } => commands::treatment::run(&conn, &name),
+        Commands::Symptoms { symptoms } => commands::symptoms::run(&conn, &symptoms, cli.json),
+        Commands::Disease { name } => commands::disease::run(&conn, &name, cli.json),
+        Commands::Treatment { name } => commands::treatment::run(&conn, &name, cli.json),
         Commands::Emergency => commands::emergency::run(),
+        Commands::List { category } => {
+            commands::list::run(&conn, category.as_deref(), cli.json);
+        }
+        Commands::Stats => commands::stats::run(&conn),
         Commands::Update => commands::update::run(&conn),
     }
 }

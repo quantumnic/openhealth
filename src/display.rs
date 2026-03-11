@@ -3,23 +3,49 @@ use crate::engine::severity::SeverityLevel;
 use colored::*;
 
 pub fn print_banner() {
-    println!("{}", "╔══════════════════════════════════════════════════════════╗".bright_cyan());
-    println!("{}", "║           🏥  OpenHealth — Medical Diagnostics          ║".bright_cyan());
-    println!("{}", "║        Healthcare for the 3.5 billion without access     ║".bright_cyan());
-    println!("{}", "╚══════════════════════════════════════════════════════════╝".bright_cyan());
+    println!(
+        "{}",
+        "╔══════════════════════════════════════════════════════════╗".bright_cyan()
+    );
+    println!(
+        "{}",
+        "║           🏥  OpenHealth — Medical Diagnostics          ║".bright_cyan()
+    );
+    println!(
+        "{}",
+        "║        Healthcare for the 3.5 billion without access     ║".bright_cyan()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════════════╝".bright_cyan()
+    );
     println!();
 }
 
 pub fn print_disclaimer() {
-    println!("{}", "⚠️  DISCLAIMER: This tool provides general health information only.".yellow().bold());
-    println!("{}", "   It is NOT a substitute for professional medical advice.".yellow());
-    println!("{}", "   Always consult a healthcare provider for diagnosis and treatment.".yellow());
+    println!(
+        "{}",
+        "⚠️  DISCLAIMER: This tool provides general health information only."
+            .yellow()
+            .bold()
+    );
+    println!(
+        "{}",
+        "   It is NOT a substitute for professional medical advice.".yellow()
+    );
+    println!(
+        "{}",
+        "   Always consult a healthcare provider for diagnosis and treatment.".yellow()
+    );
     println!();
 }
 
 pub fn print_diagnosis_results(results: &[DiagnosisResult], max_results: usize) {
     if results.is_empty() {
-        println!("{}", "No matching conditions found for the given symptoms.".yellow());
+        println!(
+            "{}",
+            "No matching conditions found for the given symptoms.".yellow()
+        );
         println!("Try describing your symptoms differently or add more details.");
         return;
     }
@@ -75,27 +101,52 @@ fn probability_bar(prob: f64) -> String {
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn print_disease_info(
     name: &str,
     description: &str,
     severity: &str,
     contagious: bool,
     icd11_code: &str,
+    age_group: &str,
+    category: &str,
     symptoms: &[(String, f64, bool)],
+    risk_factors: &[(String, String)],
 ) {
     let sev = SeverityLevel::from_str(severity);
     println!("{}", "━━━ Disease Information ━━━".bold());
     println!("  Name:        {}", name.bold());
     println!("  Description: {}", description);
     println!("  Severity:    {} {}", sev.emoji(), sev.label());
-    println!("  Contagious:  {}", if contagious { "Yes ⚠️" } else { "No" });
+    println!(
+        "  Contagious:  {}",
+        if contagious { "Yes ⚠️" } else { "No" }
+    );
     println!("  ICD-11:      {}", icd11_code);
+    println!("  Age group:   {}", age_group);
+    println!("  Category:    {}", category.bright_cyan());
     println!();
     println!("  {}", "Symptoms:".underline());
     for (sym, weight, primary) in symptoms {
-        let marker = if *primary { "★".yellow().to_string() } else { "•".to_string() };
+        let marker = if *primary {
+            "★".yellow().to_string()
+        } else {
+            "•".to_string()
+        };
         let w_pct = (weight * 100.0) as u32;
         println!("    {marker} {sym} (weight: {w_pct}%)");
+    }
+    if !risk_factors.is_empty() {
+        println!();
+        println!("  {}", "Risk Factors:".underline());
+        for (factor, impact) in risk_factors {
+            let impact_color = match impact.as_str() {
+                "high" => format!("[{impact}]").red().to_string(),
+                "moderate" => format!("[{impact}]").yellow().to_string(),
+                _ => format!("[{impact}]").green().to_string(),
+            };
+            println!("    ⚡ {factor} {impact_color}");
+        }
     }
     println!();
 }

@@ -10,7 +10,9 @@ pub fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
             severity TEXT NOT NULL CHECK(severity IN ('low','medium','high')),
             contagious INTEGER NOT NULL DEFAULT 0,
             prevalence TEXT,
-            icd11_code TEXT
+            icd11_code TEXT,
+            age_group TEXT DEFAULT 'all',
+            category TEXT DEFAULT 'general'
         );
 
         CREATE TABLE IF NOT EXISTS symptoms (
@@ -36,6 +38,14 @@ pub fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
             source TEXT DEFAULT 'WHO',
             first_aid TEXT,
             prevention TEXT,
+            FOREIGN KEY (disease_id) REFERENCES diseases(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS risk_factors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            disease_id INTEGER NOT NULL,
+            factor TEXT NOT NULL,
+            impact TEXT DEFAULT 'moderate',
             FOREIGN KEY (disease_id) REFERENCES diseases(id)
         );
 

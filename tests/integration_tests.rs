@@ -17,6 +17,16 @@ fn test_cli_symptoms_runs() {
 }
 
 #[test]
+fn test_cli_symptoms_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_integration_json.db", "--json", "symptoms", "fever headache"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("disease_name") || stdout.contains("probability"));
+}
+
+#[test]
 fn test_cli_disease_malaria() {
     let output = cargo_bin()
         .args(["disease", "malaria"])
@@ -24,6 +34,16 @@ fn test_cli_disease_malaria() {
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Malaria"));
+}
+
+#[test]
+fn test_cli_disease_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_integration_djson.db", "--json", "disease", "malaria"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"name\"") && stdout.contains("Malaria"));
 }
 
 #[test]
@@ -54,6 +74,36 @@ fn test_cli_emergency() {
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("EMERGENCY") || stdout.contains("CPR"));
+}
+
+#[test]
+fn test_cli_list() {
+    let output = cargo_bin()
+        .args(["list"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Malaria") || stdout.contains("Disease Database"));
+}
+
+#[test]
+fn test_cli_list_category() {
+    let output = cargo_bin()
+        .args(["list", "--category", "infectious"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Malaria"));
+}
+
+#[test]
+fn test_cli_stats() {
+    let output = cargo_bin()
+        .args(["stats"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Statistics") && stdout.contains("Diseases"));
 }
 
 #[test]

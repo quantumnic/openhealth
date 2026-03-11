@@ -11,11 +11,12 @@ pub struct DiagnosisResult {
     pub description: String,
 }
 
-/// Bayesian-inspired symptom scorer.
+/// Bayesian-inspired symptom scorer with specificity weighting.
 /// For each disease, calculates a score based on:
 /// - Weight of matched symptoms
 /// - Whether primary symptoms are present
 /// - Ratio of matched vs total disease symptoms
+/// - Symptom specificity (rare symptoms count more)
 pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<DiagnosisResult> {
     let normalized: Vec<String> = input_symptoms
         .iter()
@@ -27,9 +28,11 @@ pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<Diagnos
         return vec![];
     }
 
+    // Pre-compute symptom specificity: how many diseases share each symptom
+    let symptom_disease_counts = get_symptom_disease_counts(conn);
+
     let mut results = Vec::new();
 
-    // Get all diseases
     let mut stmt = conn
         .prepare("SELECT id, name, description, severity FROM diseases")
         .unwrap();
@@ -41,6 +44,8 @@ pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<Diagnos
         .unwrap()
         .filter_map(|r| r.ok())
         .collect();
+
+    let total_diseases = diseases.len().max(1) as f64;
 
     for (disease_id, disease_name, description, severity) in &diseases {
         let mut symptom_stmt = conn
@@ -70,6 +75,7 @@ pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<Diagnos
         let mut primary_matched = 0;
         let mut primary_total = 0;
         let mut missing_primary = Vec::new();
+        let mut specificity_bonus = 0.0;
 
         for (sym_name, weight, is_primary) in &disease_symptoms {
             total_weight_sum += weight;
@@ -78,9 +84,7 @@ pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<Diagnos
             }
 
             let sym_lower = sym_name.to_lowercase();
-            let is_match = normalized.iter().any(|input| {
-                fuzzy_match(input, &sym_lower)
-            });
+            let is_match = normalized.iter().any(|input| fuzzy_match(input, &sym_lower));
 
             if is_match {
                 matched.push(sym_name.clone());
@@ -88,6 +92,12 @@ pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<Diagnos
                 if *is_primary {
                     primary_matched += 1;
                 }
+                // Specificity: symptoms shared by fewer diseases are more informative
+                let disease_count = symptom_disease_counts
+                    .get(&sym_lower)
+                    .copied()
+                    .unwrap_or(1) as f64;
+                specificity_bonus += (total_diseases / disease_count).ln().max(0.0) * 0.05;
             } else if *is_primary {
                 missing_primary.push(sym_name.clone());
             }
@@ -106,8 +116,9 @@ pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<Diagnos
         };
         let coverage = matched.len() as f64 / disease_symptoms.len() as f64;
 
-        // Combined score: weight ratio (40%) + primary bonus (30%) + coverage (30%)
-        let raw_score = weight_ratio * 0.4 + primary_bonus + coverage * 0.3;
+        // Combined: weight ratio (35%) + primary bonus (30%) + coverage (25%) + specificity (10%)
+        let raw_score =
+            weight_ratio * 0.35 + primary_bonus + coverage * 0.25 + specificity_bonus.min(0.1);
         let probability = (raw_score * 100.0).clamp(1.0, 95.0);
 
         results.push(DiagnosisResult {
@@ -124,6 +135,30 @@ pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<Diagnos
     results
 }
 
+/// Count how many diseases each symptom appears in (for specificity calculation).
+fn get_symptom_disease_counts(
+    conn: &Connection,
+) -> std::collections::HashMap<String, usize> {
+    let mut map = std::collections::HashMap::new();
+    let mut stmt = conn
+        .prepare(
+            "SELECT LOWER(s.name), COUNT(DISTINCT ds.disease_id) 
+             FROM disease_symptoms ds 
+             JOIN symptoms s ON s.id = ds.symptom_id 
+             GROUP BY LOWER(s.name)",
+        )
+        .unwrap();
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, usize>(1)?))
+        })
+        .unwrap();
+    for row in rows.flatten() {
+        map.insert(row.0, row.1);
+    }
+    map
+}
+
 /// Fuzzy matching: checks if input contains or is contained in symptom name,
 /// or if individual words overlap significantly.
 fn fuzzy_match(input: &str, symptom: &str) -> bool {
@@ -134,7 +169,6 @@ fn fuzzy_match(input: &str, symptom: &str) -> bool {
     let input_words: Vec<&str> = input.split_whitespace().collect();
     let symptom_words: Vec<&str> = symptom.split_whitespace().collect();
 
-    // Check if any significant word matches
     for iw in &input_words {
         if iw.len() < 3 {
             continue;
@@ -162,7 +196,6 @@ mod tests {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["fever", "chills", "sweating", "headache"]);
         assert!(!results.is_empty());
-        // Malaria should be near the top
         let malaria = results.iter().find(|r| r.disease_name == "Malaria");
         assert!(malaria.is_some(), "Malaria should appear in results");
         assert!(malaria.unwrap().probability > 30.0);
@@ -200,6 +233,23 @@ mod tests {
     }
 
     #[test]
+    fn test_score_covid19() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fever", "cough", "loss of taste", "loss of smell"]);
+        let covid = results.iter().find(|r| r.disease_name == "COVID-19");
+        assert!(covid.is_some(), "COVID-19 should appear in results");
+        assert!(covid.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_lyme_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["erythema migrans rash", "fatigue", "joint pain"]);
+        let lyme = results.iter().find(|r| r.disease_name == "Lyme Disease");
+        assert!(lyme.is_some(), "Lyme Disease should appear in results");
+    }
+
+    #[test]
     fn test_fuzzy_match_partial() {
         assert!(fuzzy_match("fever", "high fever"));
         assert!(fuzzy_match("headache", "severe headache"));
@@ -218,7 +268,19 @@ mod tests {
     #[test]
     fn test_probability_max_95() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fever", "chills", "sweating", "headache", "nausea", "vomiting", "muscle pain", "fatigue"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "fever",
+                "chills",
+                "sweating",
+                "headache",
+                "nausea",
+                "vomiting",
+                "muscle pain",
+                "fatigue",
+            ],
+        );
         for r in &results {
             assert!(r.probability <= 95.0, "Probability should cap at 95%");
         }
@@ -230,6 +292,19 @@ mod tests {
         let results = score_symptoms(&conn, &["fever", "cough"]);
         for r in &results {
             assert!(!r.matched_symptoms.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_specificity_boosts_unique_symptoms() {
+        let conn = db::init_memory_database().unwrap();
+        // "hydrophobia" is very specific to rabies
+        let results = score_symptoms(&conn, &["hydrophobia", "fever"]);
+        if let Some(rabies) = results.iter().find(|r| r.disease_name == "Rabies") {
+            assert!(
+                rabies.probability > 20.0,
+                "Specific symptom should boost probability"
+            );
         }
     }
 }

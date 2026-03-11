@@ -1,10 +1,7 @@
 use crate::display;
 use rusqlite::Connection;
 
-pub fn run(conn: &Connection, name: &str) {
-    display::print_banner();
-    display::print_disclaimer();
-
+pub fn run(conn: &Connection, name: &str, json: bool) {
     let result = conn.query_row(
         "SELECT d.name, t.protocol, t.source, t.first_aid, t.prevention 
          FROM treatments t 
@@ -24,11 +21,28 @@ pub fn run(conn: &Connection, name: &str) {
 
     match result {
         Ok((dname, protocol, source, first_aid, prevention)) => {
+            if json {
+                let obj = serde_json::json!({
+                    "disease": dname,
+                    "protocol": protocol,
+                    "source": source,
+                    "first_aid": first_aid,
+                    "prevention": prevention,
+                });
+                println!("{}", serde_json::to_string_pretty(&obj).unwrap());
+                return;
+            }
+            display::print_banner();
+            display::print_disclaimer();
             display::print_treatment(&dname, &protocol, &source, &first_aid, &prevention);
         }
         Err(_) => {
-            println!("Treatment for '{}' not found in database.", name);
-            println!("Try: openhealth treatment \"malaria\"");
+            if json {
+                println!("null");
+            } else {
+                println!("Treatment for '{}' not found in database.", name);
+                println!("Try: openhealth treatment \"malaria\"");
+            }
         }
     }
 }
