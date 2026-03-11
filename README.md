@@ -30,7 +30,7 @@ OpenHealth is a **fully offline** medical diagnostic tool that:
 - 📊 **Ranks possible conditions** with confidence percentages
 - 🚦 **Triages severity**: 🟢 Home care / 🟡 See doctor / 🔴 Emergency
 - 💊 **Provides WHO treatment protocols** with first aid instructions
-- 🛡️ **Covers 50+ diseases** including the major killers in developing countries
+- 🛡️ **Covers 80+ diseases** including the major killers in developing countries
 - 📴 **Works completely offline** — no internet, no API keys, no cloud
 
 ## 🚀 Installation
@@ -89,29 +89,36 @@ Check database version and statistics.
 
 ## 🗃️ Diseases Covered
 
-OpenHealth includes detailed data for **50+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
+OpenHealth includes detailed data for **80+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
 
 | Category | Diseases |
 |----------|----------|
-| **Vector-borne** | Malaria, Dengue, Yellow Fever, Typhus |
+| **Vector-borne** | Malaria, Dengue, Yellow Fever, Typhus, Chikungunya, Zika, Lyme Disease |
 | **Waterborne** | Cholera, Typhoid, Giardiasis, Schistosomiasis |
-| **Respiratory** | Pneumonia, TB, Influenza, Pertussis, Asthma |
-| **Emergencies** | Heart Attack, Stroke, Appendicitis, Snakebite |
-| **Childhood** | Measles, Chickenpox, Neonatal Sepsis, Malnutrition |
-| **Chronic** | Diabetes, Hypertension, Epilepsy, Anemia |
-| **Skin/Wound** | Burns, Wound Infection, Scabies, Cellulitis |
-| **Other** | HIV, Hepatitis B, Rabies, Tetanus, Meningitis |
+| **Respiratory** | Pneumonia, TB, Influenza, Pertussis, Asthma, COPD, COVID-19, Croup |
+| **Emergencies** | Heart Attack, Stroke, Appendicitis, Snakebite, Anaphylaxis, Aortic Dissection |
+| **Childhood** | Measles, Chickenpox, Neonatal Sepsis, Malnutrition, Kawasaki Disease, Pyloric Stenosis |
+| **Chronic** | Diabetes, Hypertension, Epilepsy, Anemia, CKD, Osteoporosis |
+| **Mental Health** | Depression, Anxiety, PTSD, Bipolar, Schizophrenia, OCD |
+| **Autoimmune** | Lupus, Rheumatoid Arthritis, Celiac Disease, MS |
+| **Cardiovascular** | DVT, Atrial Fibrillation, PAD, Aortic Dissection |
+| **Skin/Wound** | Burns, Wound Infection, Scabies, Cellulitis, Psoriasis, Eczema |
+| **Other** | HIV, Hepatitis B/C, Rabies, Tetanus, Meningitis, Mpox |
 
 ## 🧠 How It Works
 
 ### Bayesian Symptom Scoring
 
-OpenHealth uses a weighted scoring algorithm:
+OpenHealth uses a multi-factor scoring algorithm:
 
-1. **Each symptom has a weight** (0.0–1.0) indicating how strongly it's associated with a disease
-2. **Primary symptoms** (★) get a bonus — these are the defining features of a condition
+1. **Symptom weights** (0.0–1.0) — how strongly each symptom is associated with a disease
+2. **Primary symptoms** (★) — defining features of a condition, with bonus scoring
 3. **Coverage ratio** — how many of a disease's symptoms you have
-4. **Final score** = weighted match (40%) + primary symptom bonus (30%) + coverage (30%)
+4. **Specificity weighting** — rare symptoms (appearing in fewer diseases) are weighted higher
+5. **Co-occurrence bonus** — matching multiple primary symptoms together is stronger evidence
+6. **Precision penalty** — unmatched user symptoms reduce a disease's score
+7. **Demographic context** — optional age/sex profile adjusts scores (e.g., pediatric diseases rank higher for children)
+8. **Typo tolerance** — edit distance ≤ 1 for words ≥ 5 chars allows minor typos
 
 This produces a probability-like score capped at 95% (because no algorithm replaces a doctor).
 
@@ -128,17 +135,23 @@ src/
 ├── main.rs              # CLI entry point (clap)
 ├── commands/
 │   ├── check.rs         # Interactive symptom checker
-│   ├── symptoms.rs      # Quick analysis
+│   ├── symptoms.rs      # Quick analysis (profile-aware)
 │   ├── disease.rs       # Disease lookup
 │   ├── treatment.rs     # WHO protocols
 │   ├── emergency.rs     # Emergency checklist
+│   ├── profile.rs       # User age/sex profile
+│   ├── similar.rs       # Find similar diseases (Jaccard)
+│   ├── diff.rs          # Differential diagnosis
+│   ├── search.rs        # Full-text search
+│   ├── history.rs       # Diagnosis history
+│   ├── export.rs        # JSON export
 │   └── update.rs        # Database management
 ├── db/
 │   ├── mod.rs           # SQLite initialization
 │   ├── schema.rs        # Table definitions
-│   └── seed.rs          # 50+ disease seed data
+│   └── seed.rs          # 80+ disease seed data
 ├── engine/
-│   ├── scorer.rs        # Bayesian symptom scoring
+│   ├── scorer.rs        # Multi-factor symptom scoring
 │   └── severity.rs      # Severity classification
 └── display.rs           # Terminal output formatting
 ```
@@ -166,8 +179,8 @@ We welcome contributions, especially:
 - [ ] Offline-first mobile app (Android/iOS)
 - [ ] Community health worker mode
 - [ ] Voice input for low-literacy users
-- [ ] Regional disease prevalence weighting
-- [ ] Pregnancy & pediatric specialized modules
+- [x] ~~Regional disease prevalence weighting~~ → Symptom specificity weighting (v0.5.0)
+- [x] ~~Pregnancy & pediatric specialized modules~~ → Age/sex-aware scoring via profiles (v0.5.0)
 
 ## 📄 License
 

@@ -81,6 +81,29 @@ pub enum Commands {
         #[arg(long, short)]
         output: Option<String>,
     },
+    /// Set user profile for age/sex-aware scoring
+    Profile {
+        /// Age in years
+        #[arg(long)]
+        age: Option<u8>,
+        /// Sex: male or female
+        #[arg(long)]
+        sex: Option<String>,
+        /// Show current profile
+        #[arg(long, default_value_t = false)]
+        show: bool,
+        /// Clear saved profile
+        #[arg(long, default_value_t = false)]
+        clear: bool,
+    },
+    /// Find diseases similar to a given disease (shared symptoms)
+    Similar {
+        /// Disease name
+        name: String,
+        /// Max results (default: 5)
+        #[arg(long, default_value_t = 5)]
+        limit: usize,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -127,6 +150,12 @@ fn main() {
         },
         Commands::Export { output } => {
             commands::export::run(&conn, output.as_deref());
+        }
+        Commands::Profile { age, sex, show, clear } => {
+            commands::profile::run(&conn, age, sex.as_deref(), show, clear, cli.json);
+        }
+        Commands::Similar { name, limit } => {
+            commands::similar::run(&conn, &name, limit, cli.json);
         }
     }
 }

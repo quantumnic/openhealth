@@ -228,3 +228,63 @@ fn test_cli_export_file() {
     let contents = std::fs::read_to_string("/tmp/openhealth_test_export_out.json").unwrap();
     assert!(contents.contains("Malaria"));
 }
+
+#[test]
+fn test_cli_profile_show() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_profile.db", "profile", "--show"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Profile") || stdout.contains("not set"));
+}
+
+#[test]
+fn test_cli_profile_set() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_profile_set.db", "profile", "--age", "30", "--sex", "male"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("updated") || stdout.contains("Updated") || stdout.contains("✅"));
+}
+
+#[test]
+fn test_cli_profile_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_profile_j.db", "--json", "profile", "--show"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("age") && stdout.contains("sex"));
+}
+
+#[test]
+fn test_cli_similar() {
+    let output = cargo_bin()
+        .args(["similar", "malaria"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Similar") || stdout.contains("similar"));
+}
+
+#[test]
+fn test_cli_similar_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_similar.db", "--json", "similar", "malaria"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("target") && stdout.contains("similar_diseases"));
+}
+
+#[test]
+fn test_cli_similar_not_found() {
+    let output = cargo_bin()
+        .args(["similar", "xyznothing"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("not found"));
+}

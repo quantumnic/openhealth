@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '4.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '5.0')",
         [],
     )?;
     tx.commit()?;
@@ -1212,6 +1212,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "DTaP/Tdap vaccination, booster doses, cocooning strategy (vaccinate caregivers of infants).",
             risk_factors: vec![("unvaccinated", "high"), ("age < 1 year", "high"), ("waning immunity", "moderate"), ("close contact with infected", "high")],
         },
+        // ──────── NEW DISEASES v5.0 ────────
+        DiseaseEntry {
+            name: "Mpox",
+            description: "Viral zoonotic disease (formerly monkeypox) causing skin lesions. Transmitted through close contact.",
+            severity: "medium", contagious: true, icd11_code: "1E71",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("skin lesions",0.9,true), s("fever",0.7,true), s("swollen lymph nodes",0.8,true), s("headache",0.5,false), s("muscle pain",0.5,false), s("fatigue",0.5,false), s("rash",0.7,false)],
+            treatment: "Supportive: pain management, wound care. Tecovirimat (TPOXX) for severe cases. Cidofovir as alternative.",
+            first_aid: "Isolate, keep lesions clean and dry, pain relief. Seek medical care.",
+            prevention: "Smallpox/mpox vaccination (JYNNEOS), avoid close contact with infected individuals, hand hygiene.",
+            risk_factors: vec![("close physical contact with infected", "high"), ("immunosuppression", "high"), ("healthcare workers without PPE", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Rickets",
+            description: "Bone disorder in children from vitamin D, calcium, or phosphate deficiency. Causes soft, weak bones.",
+            severity: "medium", contagious: false, icd11_code: "5B57",
+            age_group: "children", category: "nutritional",
+            symptoms: vec![s("bone pain",0.8,true), s("delayed growth",0.7,true), s("bowed legs",0.9,true), s("muscle weakness",0.6,false), s("dental problems",0.5,false), s("skeletal deformity",0.7,false)],
+            treatment: "Vitamin D supplementation (ergocalciferol or cholecalciferol). Calcium supplements. Correct underlying cause. Orthopedic surgery for severe deformity.",
+            first_aid: "Ensure adequate sun exposure, vitamin D-rich diet.",
+            prevention: "Vitamin D supplementation in infants, adequate sun exposure, fortified foods.",
+            risk_factors: vec![("vitamin D deficiency", "high"), ("exclusive breastfeeding without supplementation", "high"), ("dark skin pigmentation", "moderate"), ("limited sun exposure", "high")],
+        },
+        DiseaseEntry {
+            name: "Cholangitis",
+            description: "Bacterial infection of the bile duct system. Usually from bile duct obstruction (gallstones). Medical emergency.",
+            severity: "high", contagious: false, icd11_code: "DC15",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("fever",0.8,true), s("jaundice",0.8,true), s("right upper abdominal pain",0.8,true), s("confusion",0.5,false), s("low blood pressure",0.5,false), s("chills",0.7,false)],
+            treatment: "IV antibiotics immediately. Biliary decompression (ERCP) within 24h. ICU for septic cholangitis.",
+            first_aid: "NPO, seek emergency medical care. This is a medical emergency.",
+            prevention: "Treat gallstones, manage biliary stents, prompt treatment of biliary obstruction.",
+            risk_factors: vec![("gallstones", "high"), ("previous biliary surgery", "high"), ("bile duct stent", "moderate"), ("biliary stricture", "high")],
+        },
+        DiseaseEntry {
+            name: "Peripheral Artery Disease",
+            description: "Narrowing of peripheral arteries reducing blood flow, usually to legs. Marker for systemic atherosclerosis.",
+            severity: "medium", contagious: false, icd11_code: "BD40",
+            age_group: "adults", category: "cardiovascular",
+            symptoms: vec![s("leg pain when walking",0.9,true), s("leg numbness",0.6,false), s("cold legs or feet",0.7,true), s("slow wound healing on legs",0.7,true), s("weak pulse in legs",0.6,false), s("skin color changes",0.5,false)],
+            treatment: "Lifestyle: exercise therapy, smoking cessation. Medications: antiplatelet (aspirin/clopidogrel), statins. Severe: angioplasty or bypass surgery.",
+            first_aid: "Keep feet warm and dry, walk until pain occurs then rest (supervised exercise). Seek vascular evaluation.",
+            prevention: "No smoking, regular exercise, manage diabetes and cholesterol, healthy diet.",
+            risk_factors: vec![("smoking", "high"), ("diabetes", "high"), ("hypertension", "high"), ("high cholesterol", "high"), ("age > 50", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Testicular Torsion",
+            description: "Twisting of the spermatic cord cutting blood supply to the testicle. Surgical emergency — hours matter.",
+            severity: "high", contagious: false, icd11_code: "GA50",
+            age_group: "children", category: "urological",
+            symptoms: vec![s("sudden severe testicular pain",0.95,true), s("swelling of scrotum",0.8,true), s("nausea",0.7,false), s("vomiting",0.6,false), s("abdominal pain",0.5,false), s("elevated testicle",0.7,true)],
+            treatment: "EMERGENCY: Surgical detorsion within 6 hours to save the testicle. Orchiopexy (fixation) of both testes.",
+            first_aid: "Do NOT delay — go to emergency room immediately. Do not eat or drink (surgery likely).",
+            prevention: "No reliable prevention. Orchiopexy for bell-clapper deformity if identified.",
+            risk_factors: vec![("age 12-18", "high"), ("bell-clapper deformity", "high"), ("previous torsion", "high"), ("cold weather", "low")],
+        },
+        DiseaseEntry {
+            name: "Placenta Previa",
+            description: "Placenta partially or completely covers the cervix. Causes painless vaginal bleeding in late pregnancy.",
+            severity: "high", contagious: false, icd11_code: "JA60",
+            age_group: "adults", category: "obstetric",
+            symptoms: vec![s("painless vaginal bleeding",0.9,true), s("bright red bleeding",0.8,true), s("uterine contractions",0.4,false), s("low-lying baby",0.5,false)],
+            treatment: "Bed rest, avoid intercourse/pelvic exams. Corticosteroids for fetal lung maturity if preterm. Cesarean delivery (planned at 36-37 weeks or emergent if hemorrhaging).",
+            first_aid: "Call ambulance. Lie on left side. Do NOT insert anything vaginally. Monitor blood loss.",
+            prevention: "No reliable prevention. Ultrasound screening identifies it early.",
+            risk_factors: vec![("previous cesarean section", "high"), ("multiple pregnancies", "moderate"), ("age > 35", "moderate"), ("smoking", "moderate"), ("previous placenta previa", "high")],
+        },
+        DiseaseEntry {
+            name: "Acute Kidney Injury",
+            description: "Sudden decline in kidney function over hours to days. Reversible if caught early, fatal if missed.",
+            severity: "high", contagious: false, icd11_code: "GB60",
+            age_group: "all", category: "renal",
+            symptoms: vec![s("decreased urination",0.9,true), s("swelling in legs",0.7,true), s("fatigue",0.6,false), s("nausea",0.6,false), s("confusion",0.5,false), s("shortness of breath",0.5,false), s("chest pain",0.4,false)],
+            treatment: "Treat underlying cause. IV fluids for prerenal. Stop nephrotoxic drugs. Dialysis if severe (hyperkalemia, acidosis, fluid overload).",
+            first_aid: "Seek emergency medical care. Track urine output. Avoid NSAIDs.",
+            prevention: "Adequate hydration, avoid nephrotoxic drugs, manage sepsis/blood pressure, contrast dye precautions.",
+            risk_factors: vec![("dehydration", "high"), ("sepsis", "high"), ("nephrotoxic drugs", "high"), ("age > 65", "high"), ("chronic kidney disease", "high")],
+        },
+        DiseaseEntry {
+            name: "Aortic Dissection",
+            description: "Tear in the inner wall of the aorta. Catastrophic emergency — rapid diagnosis and treatment essential.",
+            severity: "high", contagious: false, icd11_code: "BD41",
+            age_group: "adults", category: "cardiovascular",
+            symptoms: vec![s("sudden severe chest pain",0.95,true), s("tearing pain radiating to back",0.9,true), s("unequal blood pressure in arms",0.7,true), s("shortness of breath",0.5,false), s("loss of consciousness",0.5,false), s("sweating",0.5,false)],
+            treatment: "EMERGENCY: Type A (ascending): immediate surgery. Type B (descending): IV beta-blockers, pain control, BP management. Endovascular repair if complicated.",
+            first_aid: "Call emergency immediately. Keep patient still and calm. Do NOT give aspirin (risk of hemorrhage).",
+            prevention: "Blood pressure control, no smoking, regular aortic screening if Marfan/family history.",
+            risk_factors: vec![("hypertension", "high"), ("Marfan syndrome", "high"), ("bicuspid aortic valve", "high"), ("cocaine use", "high"), ("age > 60", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Epiglottitis",
+            description: "Bacterial infection causing rapid swelling of the epiglottis. Airway emergency, especially in children.",
+            severity: "high", contagious: false, icd11_code: "CA0E",
+            age_group: "all", category: "ENT",
+            symptoms: vec![s("severe sore throat",0.9,true), s("difficulty swallowing",0.9,true), s("drooling",0.8,true), s("high fever",0.7,false), s("muffled voice",0.7,false), s("stridor",0.6,false), s("tripod positioning",0.6,false)],
+            treatment: "AIRWAY EMERGENCY: Secure airway first (intubation or tracheostomy). IV antibiotics (ceftriaxone + vancomycin). Steroids. ICU monitoring.",
+            first_aid: "Do NOT examine throat (can trigger complete obstruction). Keep child calm and upright. Call emergency immediately.",
+            prevention: "Hib vaccination (dramatically reduced incidence in children).",
+            risk_factors: vec![("unvaccinated against Hib", "high"), ("immunosuppression", "high"), ("age 2-6 years", "moderate"), ("adults with comorbidities", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Atrial Fibrillation",
+            description: "Most common heart arrhythmia — irregular, often rapid heart rate increasing stroke risk.",
+            severity: "medium", contagious: false, icd11_code: "BC81",
+            age_group: "adults", category: "cardiovascular",
+            symptoms: vec![s("irregular heartbeat",0.9,true), s("rapid heartbeat",0.8,true), s("dizziness",0.6,false), s("shortness of breath",0.6,false), s("fatigue",0.6,false), s("chest discomfort",0.5,false), s("lightheadedness",0.5,false)],
+            treatment: "Rate control: beta-blockers, calcium channel blockers. Rhythm control: amiodarone, flecainide, cardioversion. Anticoagulation (DOACs) based on CHA2DS2-VASc score. Ablation for refractory cases.",
+            first_aid: "Sit or lie down, avoid caffeine/alcohol. Seek medical care if new onset or symptomatic.",
+            prevention: "Manage hypertension, limit alcohol, maintain healthy weight, treat sleep apnea.",
+            risk_factors: vec![("age > 65", "high"), ("hypertension", "high"), ("heart failure", "high"), ("obesity", "moderate"), ("alcohol excess", "high"), ("sleep apnea", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Scurvy",
+            description: "Vitamin C deficiency causing weakness, bleeding gums, and poor wound healing. Rare but still occurs.",
+            severity: "medium", contagious: false, icd11_code: "5B56",
+            age_group: "all", category: "nutritional",
+            symptoms: vec![s("bleeding gums",0.8,true), s("fatigue",0.7,true), s("bruising easily",0.7,true), s("joint pain",0.5,false), s("poor wound healing",0.6,false), s("loose teeth",0.6,false), s("dry skin",0.4,false), s("corkscrew hairs",0.5,false)],
+            treatment: "Vitamin C supplementation: 250mg twice daily for adults. Dietary improvement with citrus fruits, vegetables.",
+            first_aid: "Eat vitamin C-rich foods (oranges, lemons, peppers, tomatoes). Seek medical care.",
+            prevention: "Adequate dietary vitamin C (fruits and vegetables), supplementation if at risk.",
+            risk_factors: vec![("poor diet lacking fruits/vegetables", "high"), ("alcoholism", "high"), ("eating disorders", "moderate"), ("elderly living alone", "moderate"), ("food insecurity", "high")],
+        },
+        DiseaseEntry {
+            name: "Kawasaki Disease",
+            description: "Acute vasculitis primarily affecting children under 5. Can damage coronary arteries if untreated.",
+            severity: "high", contagious: false, icd11_code: "4A44",
+            age_group: "pediatric", category: "immunological",
+            symptoms: vec![s("high fever",0.9,true), s("rash",0.7,false), s("red eyes",0.7,true), s("swollen red lips",0.8,true), s("strawberry tongue",0.8,false), s("swollen hands and feet",0.7,true), s("swollen lymph nodes",0.5,false), s("irritability",0.5,false)],
+            treatment: "IVIG (intravenous immunoglobulin) within 10 days of fever onset. High-dose aspirin (then low-dose). Echocardiography to monitor coronary arteries.",
+            first_aid: "Seek medical care urgently for any child with fever >5 days plus these symptoms.",
+            prevention: "No known prevention. Early recognition and treatment prevent coronary complications.",
+            risk_factors: vec![("age < 5 years", "high"), ("Asian descent", "moderate"), ("male sex", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Addison's Disease",
+            description: "Adrenal insufficiency — adrenal glands produce insufficient cortisol and aldosterone. Can cause adrenal crisis.",
+            severity: "high", contagious: false, icd11_code: "5A74",
+            age_group: "adults", category: "endocrine",
+            symptoms: vec![s("fatigue",0.8,true), s("weight loss",0.7,true), s("skin darkening",0.8,true), s("low blood pressure",0.7,true), s("salt craving",0.6,false), s("nausea",0.5,false), s("muscle weakness",0.5,false), s("dizziness",0.5,false)],
+            treatment: "Lifelong hormone replacement: hydrocortisone (cortisol) and fludrocortisone (aldosterone). Stress dosing during illness. Medical alert bracelet.",
+            first_aid: "Adrenal crisis: emergency injection of hydrocortisone 100mg IM. Call emergency. IV fluids.",
+            prevention: "Cannot be prevented. Carry emergency hydrocortisone injection, medical alert ID.",
+            risk_factors: vec![("autoimmune disease", "high"), ("tuberculosis", "moderate"), ("HIV/AIDS", "moderate"), ("anticoagulant use", "low")],
+        },
+        DiseaseEntry {
+            name: "Pyloric Stenosis",
+            description: "Thickening of the pylorus muscle in infants causing projectile vomiting. Requires surgical correction.",
+            severity: "high", contagious: false, icd11_code: "DA72",
+            age_group: "neonates", category: "gastrointestinal",
+            symptoms: vec![s("projectile vomiting",0.95,true), s("always hungry after vomiting",0.8,true), s("weight loss",0.7,false), s("dehydration",0.7,false), s("constipation",0.5,false), s("olive-shaped mass in abdomen",0.7,true)],
+            treatment: "Pyloromyotomy (Ramstedt procedure) — curative. Pre-op: correct dehydration and electrolyte imbalances (metabolic alkalosis).",
+            first_aid: "Keep infant hydrated with small frequent feeds. Seek pediatric surgeon urgently.",
+            prevention: "No known prevention. Early recognition prevents severe dehydration.",
+            risk_factors: vec![("male sex", "high"), ("firstborn", "moderate"), ("family history", "high"), ("macrolide antibiotics in early infancy", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Multiple Sclerosis",
+            description: "Chronic autoimmune disease attacking the central nervous system myelin sheath. Causes progressive disability.",
+            severity: "high", contagious: false, icd11_code: "8A40",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("vision problems",0.8,true), s("numbness",0.7,true), s("tingling",0.7,true), s("muscle weakness",0.7,false), s("balance problems",0.6,false), s("fatigue",0.7,false), s("difficulty walking",0.6,false), s("bladder problems",0.5,false)],
+            treatment: "Disease-modifying therapies: interferons, glatiramer, natalizumab, ocrelizumab. Corticosteroids for relapses. Physiotherapy. Symptom management.",
+            first_aid: "During relapse: rest, avoid heat, seek neurological evaluation for corticosteroid treatment.",
+            prevention: "No proven prevention. Vitamin D sufficiency may reduce risk.",
+            risk_factors: vec![("female sex", "high"), ("age 20-40", "high"), ("northern latitude", "moderate"), ("family history", "moderate"), ("vitamin D deficiency", "moderate"), ("smoking", "moderate")],
+        },
     ]
 }
 
@@ -1224,28 +1390,28 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 65, "Expected at least 65 diseases, got {count}");
+        assert!(count >= 80, "Expected at least 80 diseases, got {count}");
     }
 
     #[test]
     fn test_seed_creates_symptoms() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM symptoms", [], |r| r.get(0)).unwrap();
-        assert!(count >= 40, "Expected at least 40 symptoms, got {count}");
+        assert!(count >= 50, "Expected at least 50 symptoms, got {count}");
     }
 
     #[test]
     fn test_seed_creates_treatments() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM treatments", [], |r| r.get(0)).unwrap();
-        assert!(count >= 65, "Expected at least 65 treatments, got {count}");
+        assert!(count >= 80, "Expected at least 80 treatments, got {count}");
     }
 
     #[test]
     fn test_seed_creates_risk_factors() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM risk_factors", [], |r| r.get(0)).unwrap();
-        assert!(count >= 60, "Expected at least 60 risk factors, got {count}");
+        assert!(count >= 80, "Expected at least 80 risk factors, got {count}");
     }
 
     #[test]
@@ -1274,7 +1440,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "4.0");
+        assert_eq!(ver, "5.0");
     }
 
     #[test]

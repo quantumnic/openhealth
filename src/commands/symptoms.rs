@@ -1,6 +1,7 @@
 use crate::commands::history;
+use crate::commands::profile;
 use crate::display;
-use crate::engine::scorer;
+use crate::engine::scorer::{self, PatientContext};
 use rusqlite::Connection;
 
 pub fn run(conn: &Connection, input: &str, json: bool) {
@@ -19,7 +20,12 @@ pub fn run(conn: &Connection, input: &str, json: bool) {
         return;
     }
 
-    let results = scorer::score_symptoms(conn, &symptom_list);
+    let context = PatientContext {
+        age: profile::get_profile_age(conn),
+        sex: profile::get_profile_sex(conn),
+    };
+
+    let results = scorer::score_symptoms_with_context(conn, &symptom_list, &context);
 
     // Save to history
     let result_json =
