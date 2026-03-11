@@ -1,0 +1,22 @@
+[package]
+name = "openhealth"
+version = "0.1.0"
+edition = "2021"
+authors = ["Nicola Spieser <quantumnic@users.noreply.github.com>"]
+description = "Offline AI medical diagnostics — symptom analysis, WHO protocols, 100+ languages, runs on any device. Free forever."
+license = "MIT"
+repository = "https://github.com/quantumnic/openhealth"
+readme = "README.md"
+keywords = ["health", "diagnostics", "offline", "medical", "WHO"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+rusqlite = { version = "0.31", features = ["bundled"] }
+clap = { version = "4", features = ["derive"] }
+colored = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "5"
+
+[dev-dependencies]
+tempfile = "3"
