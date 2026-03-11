@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '2.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '3.0')",
         [],
     )?;
     tx.commit()?;
@@ -814,6 +814,183 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Mosquito bite prevention, eliminate breeding sites, community vector control.",
             risk_factors: vec![("Aedes mosquito exposure", "high"), ("tropical/subtropical residence", "high"), ("age > 65 for severe disease", "moderate")],
         },
+        // ──────── NEW DISEASES v3.0 ────────
+        DiseaseEntry {
+            name: "Depression",
+            description: "Persistent depressive disorder affecting mood, thinking, and daily functioning. Leading cause of disability worldwide.",
+            severity: "medium", contagious: false, icd11_code: "6A70",
+            age_group: "all", category: "mental_health",
+            symptoms: vec![s("persistent sadness",0.9,true), s("loss of interest",0.9,true), s("fatigue",0.7,false), s("sleep disturbance",0.7,true), s("appetite changes",0.6,false), s("difficulty concentrating",0.6,false), s("feelings of worthlessness",0.7,false), s("suicidal thoughts",0.5,false)],
+            treatment: "Psychotherapy (CBT, interpersonal). SSRIs (fluoxetine, sertraline) first-line. Combination therapy most effective. ECT for severe/refractory cases.",
+            first_aid: "Listen without judgment. If suicidal: do not leave alone, remove means, call crisis line. Stay connected.",
+            prevention: "Social connections, regular exercise, sleep hygiene, stress management, early intervention.",
+            risk_factors: vec![("family history", "high"), ("trauma/abuse", "high"), ("chronic illness", "moderate"), ("social isolation", "high"), ("substance abuse", "high")],
+        },
+        DiseaseEntry {
+            name: "Generalized Anxiety Disorder",
+            description: "Excessive, persistent worry about everyday matters. Impairs daily functioning.",
+            severity: "medium", contagious: false, icd11_code: "6B00",
+            age_group: "all", category: "mental_health",
+            symptoms: vec![s("excessive worry",0.9,true), s("restlessness",0.7,true), s("fatigue",0.6,false), s("difficulty concentrating",0.6,false), s("muscle tension",0.7,true), s("sleep disturbance",0.7,false), s("irritability",0.5,false), s("rapid heartbeat",0.4,false)],
+            treatment: "CBT (first-line psychotherapy). SSRIs/SNRIs for medication. Buspirone as alternative. Relaxation techniques, mindfulness.",
+            first_aid: "Grounding techniques (5-4-3-2-1 senses). Slow breathing (4-7-8 pattern). Reassure safety.",
+            prevention: "Stress management, regular exercise, limit caffeine/alcohol, adequate sleep, mindfulness practice.",
+            risk_factors: vec![("family history", "high"), ("childhood adversity", "high"), ("female sex", "moderate"), ("chronic stress", "high")],
+        },
+        DiseaseEntry {
+            name: "PTSD",
+            description: "Post-traumatic stress disorder following exposure to traumatic events. Causes flashbacks, avoidance, and hyperarousal.",
+            severity: "medium", contagious: false, icd11_code: "6B40",
+            age_group: "all", category: "mental_health",
+            symptoms: vec![s("flashbacks",0.9,true), s("nightmares",0.8,true), s("avoidance behavior",0.8,true), s("hypervigilance",0.7,false), s("sleep disturbance",0.7,false), s("irritability",0.5,false), s("difficulty concentrating",0.5,false), s("emotional numbness",0.6,false)],
+            treatment: "Trauma-focused CBT or EMDR (first-line). SSRIs (sertraline, paroxetine). Prazosin for nightmares. Group therapy.",
+            first_aid: "Ensure safety, calm environment, grounding techniques. Do not force them to talk about trauma.",
+            prevention: "Early psychological intervention after trauma, social support, resilience training.",
+            risk_factors: vec![("combat exposure", "high"), ("sexual assault", "high"), ("childhood abuse", "high"), ("lack of social support", "high")],
+        },
+        DiseaseEntry {
+            name: "Systemic Lupus Erythematosus",
+            description: "Chronic autoimmune disease where the immune system attacks its own tissues. Affects joints, skin, kidneys, and more.",
+            severity: "high", contagious: false, icd11_code: "4A40",
+            age_group: "adults", category: "autoimmune",
+            symptoms: vec![s("butterfly rash on face",0.9,true), s("joint pain",0.8,true), s("fatigue",0.8,true), s("fever",0.5,false), s("photosensitivity",0.7,false), s("hair loss",0.5,false), s("mouth ulcers",0.5,false), s("chest pain",0.4,false), s("swollen lymph nodes",0.4,false)],
+            treatment: "NSAIDs for mild symptoms. Hydroxychloroquine (all patients). Corticosteroids for flares. Immunosuppressants (mycophenolate, azathioprine) for organ involvement.",
+            first_aid: "Rest during flares, sun protection, seek care if new organ symptoms develop.",
+            prevention: "No prevention, but sun protection and medication adherence reduce flares.",
+            risk_factors: vec![("female sex", "high"), ("age 15-45", "high"), ("African/Asian/Hispanic ancestry", "high"), ("family history of autoimmune disease", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Rheumatoid Arthritis",
+            description: "Chronic autoimmune disorder causing painful joint inflammation. Progressive if untreated.",
+            severity: "medium", contagious: false, icd11_code: "FA20",
+            age_group: "adults", category: "autoimmune",
+            symptoms: vec![s("joint pain",0.9,true), s("joint swelling",0.9,true), s("morning stiffness",0.8,true), s("fatigue",0.6,false), s("fever",0.3,false), s("weight loss",0.3,false), s("joint deformity",0.5,false)],
+            treatment: "Early DMARD therapy (methotrexate first-line). Biologics (TNF inhibitors) if inadequate response. NSAIDs/corticosteroids for symptom relief. Physiotherapy.",
+            first_aid: "Rest affected joints, warm/cold compresses, gentle range-of-motion exercises.",
+            prevention: "No known prevention. Early diagnosis and treatment prevent joint destruction.",
+            risk_factors: vec![("female sex", "high"), ("family history", "high"), ("smoking", "high"), ("age 40-60", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Celiac Disease",
+            description: "Autoimmune disorder triggered by gluten ingestion. Damages small intestine villi.",
+            severity: "medium", contagious: false, icd11_code: "DA95",
+            age_group: "all", category: "autoimmune",
+            symptoms: vec![s("diarrhea",0.7,true), s("bloating",0.8,true), s("abdominal pain",0.7,true), s("weight loss",0.6,false), s("fatigue",0.6,false), s("anemia",0.5,false), s("rash",0.4,false), s("joint pain",0.3,false)],
+            treatment: "Strict lifelong gluten-free diet (no wheat, barley, rye). Monitor for nutritional deficiencies. Dapsone for dermatitis herpetiformis.",
+            first_aid: "Remove gluten from diet immediately. Manage symptoms with fluids and rest.",
+            prevention: "No prevention for the disease itself. Strict gluten-free diet prevents symptoms and complications.",
+            risk_factors: vec![("family history", "high"), ("type 1 diabetes", "moderate"), ("Down syndrome", "moderate"), ("autoimmune thyroid disease", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hypothyroidism",
+            description: "Underactive thyroid gland producing insufficient thyroid hormones. Slows body metabolism.",
+            severity: "medium", contagious: false, icd11_code: "5A00",
+            age_group: "adults", category: "endocrine",
+            symptoms: vec![s("fatigue",0.8,true), s("weight gain",0.7,true), s("cold intolerance",0.8,true), s("constipation",0.6,false), s("dry skin",0.6,false), s("hair loss",0.5,false), s("depression",0.5,false), s("muscle weakness",0.4,false), s("puffy face",0.5,false)],
+            treatment: "Levothyroxine (synthetic T4) daily — lifelong replacement. Titrate to TSH. Take on empty stomach.",
+            first_aid: "Seek medical testing if symptoms present. Myxedema coma is an emergency — call for help.",
+            prevention: "Adequate iodine intake. Regular screening if high risk. No prevention for autoimmune (Hashimoto's).",
+            risk_factors: vec![("female sex", "high"), ("age > 60", "high"), ("autoimmune disease", "high"), ("iodine deficiency", "high"), ("previous thyroid surgery/radiation", "high")],
+        },
+        DiseaseEntry {
+            name: "Hyperthyroidism",
+            description: "Overactive thyroid producing excessive thyroid hormones. Accelerates metabolism.",
+            severity: "medium", contagious: false, icd11_code: "5A02",
+            age_group: "adults", category: "endocrine",
+            symptoms: vec![s("weight loss",0.8,true), s("rapid heartbeat",0.8,true), s("anxiety",0.7,true), s("tremor",0.7,false), s("sweating",0.7,false), s("heat intolerance",0.7,false), s("diarrhea",0.4,false), s("bulging eyes",0.6,false), s("fatigue",0.4,false)],
+            treatment: "Antithyroid drugs (methimazole, carbimazole). Radioactive iodine ablation. Thyroidectomy. Beta-blockers for symptom control.",
+            first_aid: "Thyroid storm is an emergency: cool patient, seek ER immediately.",
+            prevention: "No known prevention. Regular monitoring of thyroid function if at risk.",
+            risk_factors: vec![("female sex", "high"), ("family history", "high"), ("Graves' disease", "high"), ("excess iodine intake", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Gout",
+            description: "Inflammatory arthritis from uric acid crystal deposits in joints. Extremely painful.",
+            severity: "medium", contagious: false, icd11_code: "FA25",
+            age_group: "adults", category: "musculoskeletal",
+            symptoms: vec![s("sudden severe joint pain",0.95,true), s("joint swelling",0.8,true), s("joint redness",0.8,true), s("warmth in joint",0.7,false), s("limited range of motion",0.5,false)],
+            treatment: "Acute: NSAIDs, colchicine, or corticosteroids. Prevention: allopurinol or febuxostat to lower uric acid. Target urate <6 mg/dL.",
+            first_aid: "Rest the joint, ice packs, elevate. Take anti-inflammatory if available.",
+            prevention: "Limit purine-rich foods (red meat, shellfish), reduce alcohol (especially beer), stay hydrated, maintain healthy weight.",
+            risk_factors: vec![("high-purine diet", "high"), ("alcohol consumption", "high"), ("male sex", "high"), ("obesity", "high"), ("kidney disease", "high")],
+        },
+        DiseaseEntry {
+            name: "Osteoporosis",
+            description: "Bone density loss making bones fragile and fracture-prone. Silent until fracture occurs.",
+            severity: "medium", contagious: false, icd11_code: "FB83",
+            age_group: "adults", category: "musculoskeletal",
+            symptoms: vec![s("back pain",0.6,true), s("loss of height",0.7,true), s("stooped posture",0.7,true), s("bone fracture from minor trauma",0.9,true)],
+            treatment: "Bisphosphonates (alendronate, risedronate) first-line. Calcium + vitamin D supplementation. Denosumab, teriparatide for severe cases. Fall prevention.",
+            first_aid: "Immobilize fracture, seek medical care.",
+            prevention: "Weight-bearing exercise, adequate calcium (1000-1200mg/day) and vitamin D, avoid smoking, limit alcohol.",
+            risk_factors: vec![("female sex", "high"), ("postmenopausal", "high"), ("age > 65", "high"), ("low body weight", "moderate"), ("family history", "moderate"), ("corticosteroid use", "high"), ("smoking", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Gallstones",
+            description: "Hardened deposits in the gallbladder. Common, often asymptomatic but can cause severe pain.",
+            severity: "medium", contagious: false, icd11_code: "DC10",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("right upper abdominal pain",0.9,true), s("pain after fatty meals",0.8,true), s("nausea",0.7,false), s("vomiting",0.6,false), s("jaundice",0.5,false), s("fever",0.4,false)],
+            treatment: "Asymptomatic: watchful waiting. Symptomatic: laparoscopic cholecystectomy (gold standard). ERCP if common bile duct stones.",
+            first_aid: "NPO (nothing by mouth), pain management, seek medical care if fever or jaundice.",
+            prevention: "Healthy weight, avoid rapid weight loss, high-fiber diet, regular exercise.",
+            risk_factors: vec![("female sex", "high"), ("age > 40", "moderate"), ("obesity", "high"), ("rapid weight loss", "high"), ("family history", "moderate"), ("pregnancy", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Chronic Kidney Disease",
+            description: "Progressive loss of kidney function over months/years. Often silent until advanced stages.",
+            severity: "high", contagious: false, icd11_code: "GB61",
+            age_group: "adults", category: "renal",
+            symptoms: vec![s("fatigue",0.7,true), s("swelling in feet/ankles",0.8,true), s("decreased urination",0.6,false), s("nausea",0.5,false), s("shortness of breath",0.5,false), s("confusion",0.4,false), s("muscle cramps",0.5,false), s("itchy skin",0.4,false), s("high blood pressure",0.6,true)],
+            treatment: "Manage underlying cause (diabetes, hypertension). ACE inhibitors/ARBs. Dietary restrictions (protein, potassium, phosphorus). Dialysis or transplant in end-stage.",
+            first_aid: "Monitor fluid intake, seek medical care for worsening symptoms.",
+            prevention: "Control diabetes and blood pressure, avoid NSAIDs overuse, adequate hydration, regular screening if at risk.",
+            risk_factors: vec![("diabetes", "high"), ("hypertension", "high"), ("age > 60", "high"), ("family history", "moderate"), ("chronic NSAID use", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Endometriosis",
+            description: "Tissue similar to uterine lining grows outside the uterus. Causes chronic pain and infertility.",
+            severity: "medium", contagious: false, icd11_code: "GA10",
+            age_group: "adults", category: "gynecological",
+            symptoms: vec![s("severe menstrual pain",0.9,true), s("chronic pelvic pain",0.8,true), s("pain during intercourse",0.7,true), s("heavy menstrual bleeding",0.6,false), s("fatigue",0.5,false), s("bloating",0.4,false), s("painful urination",0.4,false), s("infertility",0.6,false)],
+            treatment: "NSAIDs for pain. Hormonal therapy (combined OCP, progestins, GnRH agonists). Laparoscopic excision surgery. Fertility treatment if needed.",
+            first_aid: "Heat packs for pain, NSAIDs, rest. Seek gynecological care for diagnosis.",
+            prevention: "No known prevention. Early diagnosis reduces progression.",
+            risk_factors: vec![("family history", "high"), ("never given birth", "moderate"), ("early menarche", "moderate"), ("short menstrual cycles", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Sickle Cell Disease",
+            description: "Inherited blood disorder causing abnormal hemoglobin. Red blood cells become rigid and sickle-shaped.",
+            severity: "high", contagious: false, icd11_code: "3A51",
+            age_group: "all", category: "hematological",
+            symptoms: vec![s("pain crisis",0.9,true), s("fatigue",0.7,true), s("anemia",0.8,true), s("swollen hands and feet",0.6,false), s("frequent infections",0.6,false), s("jaundice",0.5,false), s("delayed growth",0.4,false), s("vision problems",0.3,false)],
+            treatment: "Hydroxyurea (reduces crises). Pain management during crises. Blood transfusions. Penicillin prophylaxis in children. Bone marrow transplant (curative).",
+            first_aid: "Hydrate well, keep warm, pain medication. ER for chest syndrome or severe crisis.",
+            prevention: "Genetic counseling. Newborn screening for early intervention.",
+            risk_factors: vec![("African/Mediterranean/Middle Eastern ancestry", "high"), ("both parents carriers", "high")],
+        },
+        DiseaseEntry {
+            name: "Parkinson's Disease",
+            description: "Progressive neurodegenerative disorder affecting movement. Caused by dopamine neuron loss in the brain.",
+            severity: "high", contagious: false, icd11_code: "8A00.0",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("tremor",0.9,true), s("slow movement",0.8,true), s("muscle rigidity",0.8,true), s("balance problems",0.7,false), s("shuffling gait",0.6,false), s("speech changes",0.5,false), s("small handwriting",0.4,false), s("loss of smell",0.4,false)],
+            treatment: "Levodopa/carbidopa (gold standard). Dopamine agonists. MAO-B inhibitors. Deep brain stimulation for advanced disease. Physiotherapy.",
+            first_aid: "Assist with mobility, prevent falls. Ensure medication is taken on time.",
+            prevention: "No proven prevention. Regular exercise may reduce risk. Caffeine consumption associated with lower risk.",
+            risk_factors: vec![("age > 60", "high"), ("male sex", "moderate"), ("family history", "moderate"), ("pesticide exposure", "moderate"), ("head trauma", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Alzheimer's Disease",
+            description: "Progressive neurodegenerative disorder causing memory loss and cognitive decline. Most common cause of dementia.",
+            severity: "high", contagious: false, icd11_code: "8A20",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("memory loss",0.9,true), s("confusion",0.8,true), s("difficulty with familiar tasks",0.8,true), s("language problems",0.7,false), s("disorientation",0.7,false), s("poor judgment",0.6,false), s("mood changes",0.5,false), s("withdrawal from activities",0.5,false)],
+            treatment: "Cholinesterase inhibitors (donepezil, rivastigmine). Memantine for moderate-severe. Supportive care, structured routine. Caregiver support.",
+            first_aid: "Ensure safe environment, maintain routine, use memory aids. Seek care for behavioral changes.",
+            prevention: "Mental stimulation, social engagement, regular exercise, cardiovascular risk management, healthy diet (Mediterranean).",
+            risk_factors: vec![("age > 65", "high"), ("family history/genetics (APOE4)", "high"), ("Down syndrome", "high"), ("cardiovascular risk factors", "moderate"), ("head trauma history", "moderate")],
+        },
     ]
 }
 
@@ -826,28 +1003,28 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 50, "Expected at least 50 diseases, got {count}");
+        assert!(count >= 65, "Expected at least 65 diseases, got {count}");
     }
 
     #[test]
     fn test_seed_creates_symptoms() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM symptoms", [], |r| r.get(0)).unwrap();
-        assert!(count >= 30, "Expected at least 30 symptoms, got {count}");
+        assert!(count >= 40, "Expected at least 40 symptoms, got {count}");
     }
 
     #[test]
     fn test_seed_creates_treatments() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM treatments", [], |r| r.get(0)).unwrap();
-        assert!(count >= 50, "Expected at least 50 treatments, got {count}");
+        assert!(count >= 65, "Expected at least 65 treatments, got {count}");
     }
 
     #[test]
     fn test_seed_creates_risk_factors() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM risk_factors", [], |r| r.get(0)).unwrap();
-        assert!(count >= 50, "Expected at least 50 risk factors, got {count}");
+        assert!(count >= 60, "Expected at least 60 risk factors, got {count}");
     }
 
     #[test]
@@ -876,7 +1053,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "2.0");
+        assert_eq!(ver, "3.0");
     }
 
     #[test]

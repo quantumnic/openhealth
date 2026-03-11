@@ -135,3 +135,53 @@ fn test_cli_help() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Offline AI Medical Diagnostics"));
 }
+
+#[test]
+fn test_cli_search() {
+    let output = cargo_bin()
+        .args(["search", "fever"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("fever") || stdout.contains("Search"));
+}
+
+#[test]
+fn test_cli_search_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_search.db", "--json", "search", "malaria"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Malaria"));
+}
+
+#[test]
+fn test_cli_diff() {
+    let output = cargo_bin()
+        .args(["diff", "malaria", "dengue"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Malaria") || stdout.contains("Dengue") || stdout.contains("Shared"));
+}
+
+#[test]
+fn test_cli_diff_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_diff.db", "--json", "diff", "malaria", "dengue"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("shared_symptoms") || stdout.contains("disease_a"));
+}
+
+#[test]
+fn test_cli_diff_not_found() {
+    let output = cargo_bin()
+        .args(["diff", "xyznothing", "malaria"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("not found"));
+}

@@ -1,7 +1,9 @@
 pub mod check;
+pub mod diff;
 pub mod disease;
 pub mod emergency;
 pub mod list;
+pub mod search;
 pub mod stats;
 pub mod symptoms;
 pub mod treatment;

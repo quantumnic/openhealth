@@ -54,6 +54,18 @@ pub enum Commands {
     Stats,
     /// Update the local database
     Update,
+    /// Search symptoms and diseases in the database
+    Search {
+        /// Search query, e.g. "fever" or "malaria"
+        query: String,
+    },
+    /// Differential diagnosis — compare two diseases side by side
+    Diff {
+        /// First disease name
+        disease_a: String,
+        /// Second disease name
+        disease_b: String,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -90,5 +102,9 @@ fn main() {
         }
         Commands::Stats => commands::stats::run(&conn),
         Commands::Update => commands::update::run(&conn),
+        Commands::Search { query } => commands::search::run(&conn, &query, cli.json),
+        Commands::Diff { disease_a, disease_b } => {
+            commands::diff::run(&conn, &disease_a, &disease_b, cli.json);
+        }
     }
 }

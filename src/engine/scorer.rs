@@ -116,9 +116,16 @@ pub fn score_symptoms(conn: &Connection, input_symptoms: &[&str]) -> Vec<Diagnos
         };
         let coverage = matched.len() as f64 / disease_symptoms.len() as f64;
 
-        // Combined: weight ratio (35%) + primary bonus (30%) + coverage (25%) + specificity (10%)
+        // Precision penalty: if user gave many symptoms but only few matched,
+        // the disease is less likely (user has symptoms that don't fit this disease).
+        let input_count = normalized.len() as f64;
+        let match_precision = matched.len() as f64 / input_count;
+        let precision_factor = 0.5 + 0.5 * match_precision; // range [0.5, 1.0]
+
+        // Combined: weight ratio (35%) + primary bonus (30%) + coverage (20%) + specificity (10%) + precision (5%)
         let raw_score =
-            weight_ratio * 0.35 + primary_bonus + coverage * 0.25 + specificity_bonus.min(0.1);
+            (weight_ratio * 0.35 + primary_bonus + coverage * 0.20 + specificity_bonus.min(0.1))
+                * precision_factor;
         let probability = (raw_score * 100.0).clamp(1.0, 95.0);
 
         results.push(DiagnosisResult {
