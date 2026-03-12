@@ -792,4 +792,77 @@ mod tests {
         let results = score_symptoms(&conn, &["dark urine", "muscle pain"]);
         assert!(!results.is_empty(), "dark urine should expand via synonym");
     }
+
+    // v12 tests for new diseases
+    #[test]
+    fn test_score_narcolepsy() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["excessive daytime sleepiness", "cataplexy", "sleep paralysis"]);
+        let narc = results.iter().find(|r| r.disease_name == "Narcolepsy");
+        assert!(narc.is_some(), "Narcolepsy should appear");
+        assert!(narc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_diverticulitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["left lower abdominal pain", "fever", "abdominal tenderness"]);
+        let div = results.iter().find(|r| r.disease_name == "Diverticulitis");
+        assert!(div.is_some(), "Diverticulitis should appear");
+    }
+
+    #[test]
+    fn test_score_macular_degeneration() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["blurred central vision", "distorted vision", "dark spots in central vision"]);
+        let md = results.iter().find(|r| r.disease_name == "Macular Degeneration");
+        assert!(md.is_some(), "Macular Degeneration should appear");
+        assert!(md.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_pemphigus() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["painful oral blisters", "skin blisters that rupture easily", "painful erosions"]);
+        let pv = results.iter().find(|r| r.disease_name == "Pemphigus Vulgaris");
+        assert!(pv.is_some(), "Pemphigus Vulgaris should appear");
+    }
+
+    #[test]
+    fn test_score_takotsubo() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden chest pain", "shortness of breath", "palpitations"]);
+        let tk = results.iter().find(|r| r.disease_name == "Takotsubo Cardiomyopathy");
+        assert!(tk.is_some(), "Takotsubo Cardiomyopathy should appear");
+    }
+
+    #[test]
+    fn test_synonym_sleepy_all_the_time() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sleepy all the time", "cataplexy"]);
+        assert!(!results.is_empty(), "sleepy all the time should expand");
+    }
+
+    #[test]
+    fn test_synonym_stuffy_nose() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["stuffy nose", "face pressure"]);
+        assert!(!results.is_empty(), "stuffy nose + face pressure should match sinusitis");
+    }
+
+    #[test]
+    fn test_score_marfan() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["tall stature", "long limbs and fingers", "lens dislocation"]);
+        let mf = results.iter().find(|r| r.disease_name == "Marfan Syndrome");
+        assert!(mf.is_some(), "Marfan Syndrome should appear");
+    }
+
+    #[test]
+    fn test_score_hemophilia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["prolonged bleeding", "easy bruising", "joint bleeding"]);
+        let hm = results.iter().find(|r| r.disease_name == "Hemophilia");
+        assert!(hm.is_some(), "Hemophilia should appear");
+    }
 }

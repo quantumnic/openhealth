@@ -607,3 +607,75 @@ fn test_cli_disease_rhabdomyolysis() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Rhabdomyolysis"));
 }
+
+// v12 integration tests
+
+#[test]
+fn test_cli_compare_basic() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_compare.db", "compare", "Malaria,Dengue Fever"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Comparison") || stdout.contains("Shared") || stdout.contains("Malaria"));
+}
+
+#[test]
+fn test_cli_compare_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_compare_json.db", "--json", "compare", "Malaria,Cholera"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("shared_symptoms") || stdout.contains("diseases"));
+}
+
+#[test]
+fn test_cli_prevalence() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_prev.db", "prevalence"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Total") || stdout.contains("diseases"));
+}
+
+#[test]
+fn test_cli_prevalence_category() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_prev_cat.db", "prevalence", "--category", "infectious"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("INFECTIOUS") || stdout.contains("infectious") || stdout.contains("diseases"));
+}
+
+#[test]
+fn test_cli_prevalence_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_prev_json.db", "--json", "prevalence"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("disease") || stdout.contains("category"));
+}
+
+#[test]
+fn test_cli_disease_narcolepsy() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_narcolepsy.db", "disease", "Narcolepsy"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Narcolepsy"));
+}
+
+#[test]
+fn test_cli_disease_marfan() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_marfan.db", "disease", "Marfan Syndrome"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Marfan"));
+}

@@ -1,6 +1,7 @@
 pub mod body_system;
 pub mod check;
 pub mod comorbidity;
+pub mod compare;
 pub mod diff;
 pub mod disease;
 pub mod emergency;
@@ -8,6 +9,7 @@ pub mod export;
 pub mod history;
 pub mod interact;
 pub mod list;
+pub mod prevalence;
 pub mod profile;
 pub mod risk;
 pub mod search;

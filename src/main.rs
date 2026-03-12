@@ -122,6 +122,11 @@ pub enum Commands {
     },
     /// Validate database integrity and report issues
     Validate,
+    /// Compare multiple diseases side by side (symptoms, severity, risk factors)
+    Compare {
+        /// Disease names (2-5), comma-separated, e.g. "malaria,dengue fever,typhoid fever"
+        diseases: String,
+    },
     /// Find diseases that commonly co-occur (shared risk factors and symptoms)
     Comorbidity {
         /// Disease name
@@ -129,6 +134,12 @@ pub enum Commands {
         /// Max results (default: 10)
         #[arg(long, default_value_t = 10)]
         limit: usize,
+    },
+    /// Disease prevalence overview grouped by category
+    Prevalence {
+        /// Filter by category (infectious, respiratory, cardiovascular, etc.)
+        #[arg(long)]
+        category: Option<String>,
     },
     /// Check drug-disease interactions and contraindications
     Interact {
@@ -205,8 +216,15 @@ fn main() {
         Commands::Validate => {
             commands::validate::run(&conn, cli.json);
         }
+        Commands::Compare { diseases } => {
+            let names: Vec<&str> = diseases.split(',').map(|s| s.trim()).collect();
+            commands::compare::run(&conn, &names, cli.json);
+        }
         Commands::Comorbidity { name, limit } => {
             commands::comorbidity::run(&conn, &name, limit, cli.json);
+        }
+        Commands::Prevalence { category } => {
+            commands::prevalence::run(&conn, category.as_deref(), cli.json);
         }
         Commands::Interact { drug } => {
             commands::interact::run(&conn, &drug, cli.json);
