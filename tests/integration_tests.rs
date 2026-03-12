@@ -679,3 +679,99 @@ fn test_cli_disease_marfan() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Marfan"));
 }
+
+// v13 integration tests
+
+#[test]
+fn test_cli_region_list() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_region_list.db", "region"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("chest"));
+    assert!(stdout.contains("head"));
+}
+
+#[test]
+fn test_cli_region_chest() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_region_chest.db", "region", "chest"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Heart Attack") || stdout.contains("Pneumonia") || stdout.contains("Asthma"));
+}
+
+#[test]
+fn test_cli_region_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_region_json.db", "--json", "region", "eyes"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"region\""));
+}
+
+#[test]
+fn test_cli_almanac() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_almanac.db", "almanac", "--month", "1"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("January") || stdout.contains("Winter"));
+}
+
+#[test]
+fn test_cli_almanac_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_almanac_json.db", "--json", "almanac", "--month", "7"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"month\""));
+    assert!(stdout.contains("Summer"));
+}
+
+#[test]
+fn test_cli_disease_dental_abscess() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_dental.db", "disease", "Dental Abscess"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Dental Abscess"));
+    assert!(stdout.contains("toothache"));
+}
+
+#[test]
+fn test_cli_disease_burnout() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_burnout.db", "disease", "Burnout Syndrome"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Burnout"));
+    assert!(stdout.contains("emotional exhaustion"));
+}
+
+#[test]
+fn test_cli_symptoms_toothache() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_sym_tooth.db", "symptoms", "toothache facial swelling fever"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Dental Abscess") || stdout.contains("toothache"));
+}
+
+#[test]
+fn test_cli_symptoms_burnout() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_sym_burn.db", "symptoms", "emotional exhaustion insomnia irritability"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Burnout") || stdout.contains("exhaustion"));
+}

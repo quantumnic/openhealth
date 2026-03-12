@@ -151,6 +151,17 @@ pub enum Commands {
         /// Disease name, e.g. "malaria" or "heart attack"
         name: String,
     },
+    /// Explore diseases by body region (head, chest, abdomen, etc.)
+    Region {
+        /// Body region, e.g. "chest", "head", "abdomen" (omit to list all)
+        region: Option<String>,
+    },
+    /// Seasonal health almanac — diseases and tips for each month
+    Almanac {
+        /// Month number (1-12, default: current month)
+        #[arg(long)]
+        month: Option<u32>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -231,6 +242,12 @@ fn main() {
         }
         Commands::Timeline { name } => {
             commands::timeline::run(&conn, &name, cli.json);
+        }
+        Commands::Region { region } => {
+            commands::region::run(&conn, region.as_deref(), cli.json);
+        }
+        Commands::Almanac { month } => {
+            commands::almanac::run(&conn, month, cli.json);
         }
     }
 }

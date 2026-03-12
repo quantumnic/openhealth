@@ -1,3 +1,4 @@
+pub mod almanac;
 pub mod body_system;
 pub mod check;
 pub mod comorbidity;
@@ -11,6 +12,7 @@ pub mod interact;
 pub mod list;
 pub mod prevalence;
 pub mod profile;
+pub mod region;
 pub mod risk;
 pub mod search;
 pub mod similar;
