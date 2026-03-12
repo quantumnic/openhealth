@@ -30,7 +30,7 @@ OpenHealth is a **fully offline** medical diagnostic tool that:
 - 📊 **Ranks possible conditions** with confidence percentages
 - 🚦 **Triages severity**: 🟢 Home care / 🟡 See doctor / 🔴 Emergency
 - 💊 **Provides WHO treatment protocols** with first aid instructions
-- 🛡️ **Covers 80+ diseases** including the major killers in developing countries
+- 🛡️ **Covers 185+ diseases** including the major killers in developing countries
 - 📴 **Works completely offline** — no internet, no API keys, no cloud
 
 ## 🚀 Installation
@@ -81,6 +81,13 @@ openhealth emergency
 ```
 Step-by-step emergency response guide: CPR, bleeding, choking, burns, snakebite, stroke.
 
+### Comorbidity Analysis
+```bash
+openhealth comorbidity "diabetes"
+openhealth comorbidity "heart attack" --limit 5
+```
+Find diseases that commonly co-occur based on shared risk factors and symptoms.
+
 ### Database Status
 ```bash
 openhealth update
@@ -89,7 +96,7 @@ Check database version and statistics.
 
 ## 🗃️ Diseases Covered
 
-OpenHealth includes detailed data for **80+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
+OpenHealth includes detailed data for **185+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
 
 | Category | Diseases |
 |----------|----------|
@@ -103,7 +110,10 @@ OpenHealth includes detailed data for **80+ conditions**, prioritizing the disea
 | **Autoimmune** | Lupus, Rheumatoid Arthritis, Celiac Disease, MS |
 | **Cardiovascular** | DVT, Atrial Fibrillation, PAD, Aortic Dissection |
 | **Skin/Wound** | Burns, Wound Infection, Scabies, Cellulitis, Psoriasis, Eczema |
-| **Other** | HIV, Hepatitis B/C, Rabies, Tetanus, Meningitis, Mpox |
+| **Oncological** | Lung, Breast, Cervical, Colorectal, Prostate, Ovarian, Pancreatic, Melanoma |
+| **Endocrine** | Thyroid Storm, PCOS, Addison's, Cushing's, Pheochromocytoma |
+| **Neurodevelopmental** | ADHD, Autism Spectrum Disorder |
+| **Other** | HIV, Hepatitis B/C, Rabies, Tetanus, Meningitis, Mpox, Sepsis |
 
 ## 🧠 How It Works
 

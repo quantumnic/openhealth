@@ -122,6 +122,14 @@ pub enum Commands {
     },
     /// Validate database integrity and report issues
     Validate,
+    /// Find diseases that commonly co-occur (shared risk factors and symptoms)
+    Comorbidity {
+        /// Disease name
+        name: String,
+        /// Max results (default: 10)
+        #[arg(long, default_value_t = 10)]
+        limit: usize,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -186,6 +194,9 @@ fn main() {
         }
         Commands::Validate => {
             commands::validate::run(&conn, cli.json);
+        }
+        Commands::Comorbidity { name, limit } => {
+            commands::comorbidity::run(&conn, &name, limit, cli.json);
         }
     }
 }

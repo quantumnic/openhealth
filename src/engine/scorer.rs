@@ -676,28 +676,28 @@ mod tests {
     }
 
     #[test]
-    fn test_score_iron_deficiency_anemia() {
+    fn test_score_anemia() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["fatigue", "weakness", "pale skin", "dizziness"]);
-        let ida = results.iter().find(|r| r.disease_name == "Iron Deficiency Anemia");
-        assert!(ida.is_some(), "Iron Deficiency Anemia should appear");
+        let anemia = results.iter().find(|r| r.disease_name == "Anemia");
+        assert!(anemia.is_some(), "Anemia should appear");
     }
 
     #[test]
-    fn test_score_pancreatitis() {
+    fn test_score_acute_pancreatitis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["severe abdominal pain", "pain radiating to back", "nausea", "vomiting"]);
-        let panc = results.iter().find(|r| r.disease_name == "Pancreatitis");
-        assert!(panc.is_some(), "Pancreatitis should appear");
+        let panc = results.iter().find(|r| r.disease_name == "Acute Pancreatitis");
+        assert!(panc.is_some(), "Acute Pancreatitis should appear");
         assert!(panc.unwrap().probability > 30.0);
     }
 
     #[test]
-    fn test_score_sinusitis() {
+    fn test_score_common_cold() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["facial pain", "nasal congestion", "thick nasal discharge"]);
-        let sinus = results.iter().find(|r| r.disease_name == "Sinusitis");
-        assert!(sinus.is_some(), "Sinusitis should appear");
+        let results = score_symptoms(&conn, &["nasal congestion", "sore throat", "cough", "sneezing"]);
+        let cold = results.iter().find(|r| r.disease_name == "Common Cold");
+        assert!(cold.is_some(), "Common Cold should appear");
     }
 
     #[test]

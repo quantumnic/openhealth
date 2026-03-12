@@ -452,3 +452,65 @@ fn test_cli_disease_heatstroke() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Heatstroke"));
 }
+
+// v10.0 tests
+
+#[test]
+fn test_cli_comorbidity_diabetes() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_comorbidity.db", "comorbidity", "Diabetes"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Comorbidity") || stdout.contains("relevance"));
+}
+
+#[test]
+fn test_cli_comorbidity_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_comorbidity_json.db", "--json", "comorbidity", "Heart Attack"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("shared_risk_factors") || stdout.contains("related"));
+}
+
+#[test]
+fn test_cli_disease_endometriosis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_endo.db", "disease", "Endometriosis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Endometriosis"));
+}
+
+#[test]
+fn test_cli_disease_parkinsons() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_park.db", "disease", "Parkinson's Disease"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Parkinson"));
+}
+
+#[test]
+fn test_cli_disease_sepsis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_sepsis.db", "disease", "Sepsis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Sepsis"));
+}
+
+#[test]
+fn test_cli_disease_dvt() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_dvt.db", "disease", "Deep Vein Thrombosis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Deep Vein Thrombosis") || stdout.contains("blood clot"));
+}
