@@ -531,6 +531,68 @@ mod tests {
     }
 
     #[test]
+    fn test_score_pulmonary_embolism() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(
+            &conn,
+            &["sudden shortness of breath", "chest pain", "rapid heart rate", "leg swelling"],
+        );
+        let pe = results.iter().find(|r| r.disease_name == "Pulmonary Embolism");
+        assert!(pe.is_some(), "Pulmonary Embolism should appear");
+        assert!(pe.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_scarlet_fever() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["red rash", "strawberry tongue", "sore throat", "fever"]);
+        let sf = results.iter().find(|r| r.disease_name == "Scarlet Fever");
+        assert!(sf.is_some(), "Scarlet Fever should appear");
+    }
+
+    #[test]
+    fn test_score_pericarditis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sharp chest pain", "pain worse when lying down"]);
+        let pc = results.iter().find(|r| r.disease_name == "Pericarditis");
+        assert!(pc.is_some(), "Pericarditis should appear");
+    }
+
+    #[test]
+    fn test_score_encephalitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fever", "severe headache", "confusion", "seizures"]);
+        let enc = results.iter().find(|r| r.disease_name == "Encephalitis");
+        assert!(enc.is_some(), "Encephalitis should appear");
+    }
+
+    #[test]
+    fn test_score_ectopic_pregnancy() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sharp pelvic pain", "vaginal bleeding", "missed period"]);
+        let ep = results.iter().find(|r| r.disease_name == "Ectopic Pregnancy");
+        assert!(ep.is_some(), "Ectopic Pregnancy should appear");
+    }
+
+    #[test]
+    fn test_score_intussusception() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(
+            &conn,
+            &["severe intermittent abdominal pain", "red currant jelly stool", "vomiting"],
+        );
+        let intus = results.iter().find(|r| r.disease_name == "Intussusception");
+        assert!(intus.is_some(), "Intussusception should appear");
+    }
+
+    #[test]
+    fn test_synonym_throwing_up() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["throwing up", "fever"]);
+        assert!(!results.is_empty(), "throwing up should expand to vomiting");
+    }
+
+    #[test]
     fn test_cooccurrence_bonus_multiple_primary() {
         let conn = db::init_memory_database().unwrap();
         // Cholera has 3 primary symptoms: watery diarrhea, vomiting, dehydration

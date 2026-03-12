@@ -104,6 +104,11 @@ pub enum Commands {
         #[arg(long, default_value_t = 5)]
         limit: usize,
     },
+    /// Assess disease risk based on personal risk factors
+    Risk {
+        /// Comma-separated risk factors, e.g. "smoking, obesity, diabetes"
+        factors: String,
+    },
     /// Explore diseases grouped by body system
     #[command(name = "body-system")]
     BodySystem {
@@ -162,6 +167,9 @@ fn main() {
         }
         Commands::Similar { name, limit } => {
             commands::similar::run(&conn, &name, limit, cli.json);
+        }
+        Commands::Risk { factors } => {
+            commands::risk::run(&conn, &factors, cli.json);
         }
         Commands::BodySystem { system } => {
             commands::body_system::run(&conn, system.as_deref(), cli.json);

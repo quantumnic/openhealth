@@ -310,6 +310,36 @@ fn test_cli_body_system_filter() {
 }
 
 #[test]
+fn test_cli_risk_smoking() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_risk.db", "risk", "smoking, obesity"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Risk Assessment") || stdout.contains("risk"));
+}
+
+#[test]
+fn test_cli_risk_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_risk_j.db", "--json", "risk", "smoking"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("disease") || stdout.contains("risk_score") || stdout.contains("[]"));
+}
+
+#[test]
+fn test_cli_disease_pulmonary_embolism() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_pe.db", "disease", "Pulmonary Embolism"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Pulmonary Embolism"));
+}
+
+#[test]
 fn test_cli_body_system_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
         .args(["--db-path", "/tmp/openhealth_test_bs.db", "--json", "body-system"])

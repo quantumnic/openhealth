@@ -7,6 +7,7 @@ pub mod export;
 pub mod history;
 pub mod list;
 pub mod profile;
+pub mod risk;
 pub mod search;
 pub mod similar;
 pub mod stats;

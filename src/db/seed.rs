@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '6.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '7.0')",
         [],
     )?;
     tx.commit()?;
@@ -1544,6 +1544,150 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Change tampons frequently, use lowest absorbency, wound hygiene, early treatment of skin infections.",
             risk_factors: vec![("tampon use", "high"), ("skin wounds/surgery", "high"), ("recent childbirth", "moderate"), ("nasal packing", "moderate")],
         },
+        // ──────── NEW DISEASES v7.0 ────────
+        DiseaseEntry {
+            name: "Pulmonary Embolism",
+            description: "Blood clot lodged in pulmonary artery blocking blood flow to the lungs. Life-threatening emergency.",
+            severity: "high", contagious: false, icd11_code: "BB00",
+            age_group: "adults", category: "cardiovascular",
+            symptoms: vec![s("sudden shortness of breath",0.9,true), s("chest pain",0.8,true), s("rapid heart rate",0.7,true), s("cough",0.4,false), s("coughing blood",0.5,false), s("dizziness",0.5,false), s("leg swelling",0.6,false), s("anxiety",0.4,false)],
+            treatment: "EMERGENCY: Anticoagulation with heparin, then DOAC or warfarin. Massive PE: systemic thrombolysis (alteplase) or catheter-directed therapy. Hemodynamically unstable: consider surgical embolectomy.",
+            first_aid: "Call emergency services. Keep patient still and calm. Sit upright if breathing difficulty. Administer oxygen if available.",
+            prevention: "Early mobilization after surgery, compression stockings, prophylactic anticoagulation in high-risk patients, avoid prolonged immobility.",
+            risk_factors: vec![("recent surgery", "high"), ("prolonged immobility", "high"), ("DVT history", "high"), ("cancer", "high"), ("oral contraceptives", "moderate"), ("obesity", "moderate"), ("long-haul travel", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Ectopic Pregnancy",
+            description: "Pregnancy implanted outside the uterus, usually in fallopian tube. Surgical emergency if ruptured.",
+            severity: "high", contagious: false, icd11_code: "JA01",
+            age_group: "adults", category: "obstetric",
+            symptoms: vec![s("sharp pelvic pain",0.9,true), s("vaginal bleeding",0.7,true), s("shoulder tip pain",0.6,true), s("dizziness",0.6,false), s("nausea",0.5,false), s("missed period",0.7,false), s("fainting",0.5,false)],
+            treatment: "Unruptured: methotrexate (if eligible) or laparoscopic salpingectomy/salpingostomy. Ruptured: emergency surgery with hemodynamic stabilization.",
+            first_aid: "Call emergency services immediately. Do not eat or drink. Lie down with legs elevated if feeling faint.",
+            prevention: "Prompt treatment of PID/STIs, avoid smoking, early ultrasound in pregnancy if risk factors.",
+            risk_factors: vec![("previous ectopic pregnancy", "high"), ("PID/STI history", "high"), ("IUD in situ", "moderate"), ("tubal surgery", "high"), ("smoking", "moderate"), ("fertility treatment", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Scarlet Fever",
+            description: "Bacterial infection (Group A Streptococcus) causing characteristic red rash with sandpaper texture. Common in children.",
+            severity: "medium", contagious: true, icd11_code: "1B50",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("red rash",0.9,true), s("strawberry tongue",0.8,true), s("sore throat",0.8,true), s("fever",0.7,false), s("flushed cheeks",0.6,false), s("skin peeling",0.5,false), s("headache",0.4,false), s("nausea",0.3,false)],
+            treatment: "Penicillin V or amoxicillin for 10 days. Erythromycin if penicillin-allergic. Supportive: fluids, rest, analgesics.",
+            first_aid: "Rest, fluids, soft foods. Isolate from other children until 24h after starting antibiotics.",
+            prevention: "Good hand hygiene, avoid sharing utensils, prompt treatment of strep throat to prevent spread.",
+            risk_factors: vec![("age 5-15", "high"), ("close contact with infected", "high"), ("school/daycare setting", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Encephalitis",
+            description: "Inflammation of the brain, usually viral. Can cause permanent brain damage or death if untreated.",
+            severity: "high", contagious: false, icd11_code: "8A00.1",
+            age_group: "all", category: "neurological",
+            symptoms: vec![s("fever",0.8,true), s("severe headache",0.8,true), s("confusion",0.8,true), s("seizures",0.7,false), s("neck stiffness",0.6,false), s("sensitivity to light",0.5,false), s("speech problems",0.5,false), s("weakness",0.4,false), s("hallucinations",0.4,false)],
+            treatment: "Acyclovir IV immediately if HSV suspected. Supportive ICU care: seizure management, ICP monitoring, ventilation if needed. Treat underlying cause.",
+            first_aid: "Seek emergency medical care immediately. Recovery position if unconscious. Note time of symptom onset.",
+            prevention: "Vaccination (JE, tick-borne encephalitis, rabies), mosquito/tick bite prevention, safe sex practices.",
+            risk_factors: vec![("immunosuppression", "high"), ("age < 1 or > 65", "high"), ("HSV infection", "high"), ("mosquito/tick exposure in endemic areas", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Pericarditis",
+            description: "Inflammation of the pericardium (heart sac). Usually viral, causes sharp chest pain worsened by breathing.",
+            severity: "medium", contagious: false, icd11_code: "BB01",
+            age_group: "all", category: "cardiovascular",
+            symptoms: vec![s("sharp chest pain",0.9,true), s("pain worse when lying down",0.8,true), s("pain relieved by leaning forward",0.7,true), s("fever",0.5,false), s("shortness of breath",0.5,false), s("pericardial friction rub",0.6,false), s("fatigue",0.4,false)],
+            treatment: "NSAIDs (ibuprofen/aspirin) + colchicine for 3 months. Corticosteroids if refractory. Pericardiocentesis if tamponade. Treat underlying cause.",
+            first_aid: "Sit upright and lean forward for relief. Seek medical evaluation to rule out heart attack.",
+            prevention: "No specific prevention. Prompt treatment of infections, colchicine to prevent recurrence.",
+            risk_factors: vec![("recent viral infection", "high"), ("autoimmune disease", "moderate"), ("post-cardiac surgery", "moderate"), ("kidney failure", "moderate"), ("male sex", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Cystic Fibrosis",
+            description: "Genetic disorder causing thick mucus buildup in lungs, pancreas, and other organs. Progressive lung damage.",
+            severity: "high", contagious: false, icd11_code: "CA25",
+            age_group: "all", category: "respiratory",
+            symptoms: vec![s("persistent cough",0.8,true), s("thick sputum",0.8,true), s("recurrent lung infections",0.8,true), s("poor weight gain",0.7,false), s("salty-tasting skin",0.7,true), s("shortness of breath",0.6,false), s("nasal polyps",0.4,false), s("greasy stools",0.6,false)],
+            treatment: "Airway clearance (chest physiotherapy, PEP devices). CFTR modulators (elexacaftor/tezacaftor/ivacaftor). Inhaled antibiotics, mucolytics (dornase alfa). Pancreatic enzyme replacement. Lung transplant for end-stage.",
+            first_aid: "Maintain airway clearance routine, hydrate well, seek care for acute exacerbations.",
+            prevention: "Genetic counseling, newborn screening for early intervention. Cannot be prevented.",
+            risk_factors: vec![("both parents carriers of CFTR mutation", "high"), ("Caucasian ancestry", "moderate"), ("family history", "high")],
+        },
+        DiseaseEntry {
+            name: "Chagas Disease",
+            description: "Parasitic infection (Trypanosoma cruzi) transmitted by triatomine (kissing) bugs. Can cause fatal cardiomyopathy decades later.",
+            severity: "high", contagious: false, icd11_code: "1F52",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("fever",0.6,false), s("fatigue",0.5,false), s("swelling at bite site",0.7,true), s("swollen eyelid",0.7,true), s("body aches",0.4,false), s("rash",0.3,false), s("heart palpitations",0.6,false), s("difficulty swallowing",0.5,false), s("abdominal pain",0.4,false)],
+            treatment: "Acute: benznidazole or nifurtimox (8-12 weeks). Chronic cardiac: heart failure management, pacemaker if needed. Antiparasitic treatment in children and acute cases.",
+            first_aid: "Seek medical care if bitten by triatomine bug in endemic area. Do not scratch bite site.",
+            prevention: "Insecticide spraying of homes, bed nets, screen blood donations, housing improvement in endemic areas.",
+            risk_factors: vec![("living in rural Latin America", "high"), ("adobe/thatched housing", "high"), ("blood transfusion in endemic area", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Severe Dengue",
+            description: "Life-threatening complication of dengue with plasma leakage, hemorrhage, and organ failure. Warning signs appear 24-48h after fever breaks.",
+            severity: "high", contagious: false, icd11_code: "1D20.1",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("severe abdominal pain",0.8,true), s("persistent vomiting",0.8,true), s("bleeding gums",0.7,true), s("rapid breathing",0.6,false), s("fatigue",0.7,false), s("blood in vomit",0.6,false), s("restlessness",0.5,false), s("liver enlargement",0.5,false)],
+            treatment: "EMERGENCY: Aggressive IV fluid resuscitation (isotonic crystalloids). Monitor hematocrit. Platelet/blood transfusion if severe hemorrhage. ICU for shock. Avoid NSAIDs.",
+            first_aid: "Seek hospital immediately if warning signs appear after dengue fever. Keep hydrated with ORS.",
+            prevention: "Same as dengue: mosquito control, eliminate standing water. Dengvaxia vaccine in seropositive individuals.",
+            risk_factors: vec![("previous dengue infection (different serotype)", "high"), ("age < 15", "moderate"), ("pregnancy", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Rotavirus Gastroenteritis",
+            description: "Leading cause of severe diarrhea in children under 5. Highly contagious. Vaccine-preventable.",
+            severity: "medium", contagious: true, icd11_code: "1A22",
+            age_group: "children", category: "gastrointestinal",
+            symptoms: vec![s("severe watery diarrhea",0.9,true), s("vomiting",0.8,true), s("fever",0.7,true), s("abdominal pain",0.5,false), s("dehydration",0.8,false), s("irritability",0.4,false), s("poor feeding",0.5,false)],
+            treatment: "ORS aggressively. Zinc supplementation (10-20mg/day for 10-14 days). IV fluids if severe dehydration. Continue breastfeeding. No antibiotics needed.",
+            first_aid: "Small frequent sips of ORS. Continue feeding. Seek medical care if unable to drink, sunken eyes, or no urine for 6h.",
+            prevention: "Rotavirus vaccine (given orally at 2, 4, 6 months). Hand washing, safe water.",
+            risk_factors: vec![("age 6-24 months", "high"), ("unvaccinated", "high"), ("daycare attendance", "moderate"), ("malnutrition", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Intussusception",
+            description: "Part of intestine telescopes into adjacent section. Most common abdominal emergency in early childhood.",
+            severity: "high", contagious: false, icd11_code: "DA93",
+            age_group: "children", category: "gastrointestinal",
+            symptoms: vec![s("severe intermittent abdominal pain",0.9,true), s("vomiting",0.7,true), s("red currant jelly stool",0.8,true), s("abdominal mass",0.6,false), s("lethargy",0.6,false), s("drawing up knees",0.7,false), s("pallor",0.5,false)],
+            treatment: "Air/barium enema reduction (first-line, 80-95% success). Surgical reduction if enema fails or perforation suspected. IV fluids, NG tube.",
+            first_aid: "Seek emergency medical care immediately. Do not feed the child. Note timing of pain episodes.",
+            prevention: "No reliable prevention. Prompt recognition is critical.",
+            risk_factors: vec![("age 6 months to 3 years", "high"), ("recent viral illness", "moderate"), ("Meckel's diverticulum", "moderate"), ("male sex", "moderate")],
+        },
+        DiseaseEntry {
+            name: "MDR-Tuberculosis",
+            description: "Multi-drug resistant TB — resistant to at least isoniazid and rifampicin. Requires prolonged complex treatment.",
+            severity: "high", contagious: true, icd11_code: "1B10.1",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("persistent cough",0.9,true), s("coughing blood",0.7,true), s("night sweats",0.8,true), s("weight loss",0.7,false), s("fever",0.6,false), s("fatigue",0.6,false), s("chest pain",0.5,false)],
+            treatment: "WHO-recommended shorter regimen (9-11 months) or longer regimen (18-20 months). Bedaquiline, pretomanid, linezolid (BPaL). Culture-guided therapy. Directly observed therapy.",
+            first_aid: "Isolate, respiratory hygiene, seek specialized TB treatment center.",
+            prevention: "Complete standard TB treatment to prevent resistance, BCG vaccine, infection control in healthcare settings.",
+            risk_factors: vec![("incomplete TB treatment", "high"), ("contact with MDR-TB patient", "high"), ("HIV co-infection", "high"), ("imprisonment", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Onchocerciasis",
+            description: "River blindness — parasitic disease from black fly bites. Causes severe itching and blindness.",
+            severity: "medium", contagious: false, icd11_code: "1F68",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("intense itching",0.9,true), s("skin nodules",0.7,true), s("vision problems",0.8,true), s("skin depigmentation",0.6,false), s("skin thickening",0.5,false), s("rash",0.4,false)],
+            treatment: "Ivermectin (150μg/kg single dose, repeated every 6-12 months). Doxycycline (kills Wolbachia endosymbionts, 6 weeks). Mass drug administration in endemic areas.",
+            first_aid: "Avoid scratching, seek medical testing if in endemic area with symptoms.",
+            prevention: "Community-directed treatment with ivermectin, black fly larval control, personal protective measures near rivers.",
+            risk_factors: vec![("living near fast-flowing rivers in endemic Africa/Americas", "high"), ("agricultural work near rivers", "high")],
+        },
+        DiseaseEntry {
+            name: "G6PD Deficiency",
+            description: "Inherited enzyme deficiency making red blood cells vulnerable to oxidative damage. Triggers hemolytic crises.",
+            severity: "medium", contagious: false, icd11_code: "3A10",
+            age_group: "all", category: "hematological",
+            symptoms: vec![s("jaundice",0.8,true), s("dark urine",0.8,true), s("fatigue",0.7,true), s("rapid heartbeat",0.6,false), s("pale skin",0.6,false), s("shortness of breath",0.5,false), s("back pain",0.4,false)],
+            treatment: "Remove trigger (stop offending drug, treat infection). Supportive: fluids, blood transfusion for severe anemia. Folic acid supplementation.",
+            first_aid: "Stop any new medications, hydrate well, seek medical care for dark urine or jaundice.",
+            prevention: "Avoid trigger drugs (primaquine, dapsone, sulfonamides, fava beans). Carry medical alert card. Screen before prescribing at-risk drugs.",
+            risk_factors: vec![("African/Mediterranean/Asian ancestry", "high"), ("male sex", "high"), ("fava bean ingestion", "high"), ("certain medications", "high")],
+        },
     ]
 }
 
@@ -1556,7 +1700,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 95, "Expected at least 95 diseases, got {count}");
+        assert!(count >= 109, "Expected at least 109 diseases, got {count}");
     }
 
     #[test]
@@ -1606,7 +1750,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "6.0");
+        assert_eq!(ver, "7.0");
     }
 
     #[test]
@@ -1745,5 +1889,38 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("nervous", "anxiety"),
         ("worried", "excessive worry"),
         ("panic", "anxiety"),
+        // New synonyms v7.0
+        ("blood in stool", "red currant jelly stool"),
+        ("bloody stool", "red currant jelly stool"),
+        ("tummy ache", "abdominal pain"),
+        ("belly pain", "abdominal pain"),
+        ("can't breathe", "shortness of breath"),
+        ("difficulty breathing", "shortness of breath"),
+        ("chest tightness", "chest pain"),
+        ("heart racing", "rapid heart rate"),
+        ("fast heartbeat", "rapid heartbeat"),
+        ("palpitations", "heart palpitations"),
+        ("throwing up", "vomiting"),
+        ("puking", "vomiting"),
+        ("loose stools", "diarrhea"),
+        ("the runs", "diarrhea"),
+        ("dizzy", "dizziness"),
+        ("lightheaded", "dizziness"),
+        ("faint", "fainting"),
+        ("passed out", "fainting"),
+        ("stiff neck", "neck stiffness"),
+        ("can't see well", "vision problems"),
+        ("blurry vision", "vision problems"),
+        ("scratchy throat", "sore throat"),
+        ("swollen glands", "swollen lymph nodes"),
+        ("runny nose", "nasal congestion"),
+        ("stuffed up", "nasal congestion"),
+        ("yellow skin", "jaundice"),
+        ("yellow eyes", "jaundice"),
+        ("blood in urine", "dark urine"),
+        ("peeling skin", "skin peeling"),
+        ("skin flaking", "skin peeling"),
+        ("fits", "seizures"),
+        ("convulsions", "seizures"),
     ]
 }
