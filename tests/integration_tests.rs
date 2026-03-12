@@ -775,3 +775,44 @@ fn test_cli_symptoms_burnout() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Burnout") || stdout.contains("exhaustion"));
 }
+
+// v14 integration tests
+#[test]
+fn test_cli_danger_signs() {
+    let output = cargo_bin()
+        .args(["danger-signs"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("DANGER SIGNS") || stdout.contains("danger"));
+}
+
+#[test]
+fn test_cli_danger_signs_child() {
+    let output = cargo_bin()
+        .args(["danger-signs", "child"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("IMCI") || stdout.contains("CHILDREN") || stdout.contains("breastfeed"));
+}
+
+#[test]
+fn test_cli_danger_signs_maternal() {
+    let output = cargo_bin()
+        .args(["danger-signs", "maternal"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("PREGNANCY") || stdout.contains("vaginal bleeding") || stdout.contains("Maternal"));
+}
+
+#[test]
+fn test_cli_danger_signs_adult() {
+    let output = cargo_bin()
+        .args(["danger-signs", "adult"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("ADULTS") || stdout.contains("Chest pain"));
+}

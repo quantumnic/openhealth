@@ -10,6 +10,8 @@ pub struct DiagnosisResult {
     pub missing_key_symptoms: Vec<String>,
     pub severity: String,
     pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence_note: Option<String>,
 }
 
 /// Optional demographic context for age/sex-aware scoring.
@@ -181,6 +183,29 @@ pub fn score_symptoms_with_context(
         // Demographic adjustment: boost/penalize based on age/sex fit
         let demographic_factor = compute_demographic_factor(context, age_group);
 
+        // Negative evidence: check if patient has symptoms that argue against this disease
+        let negative_map = get_negative_evidence();
+        let neg_penalty = if let Some(neg_symptoms) = negative_map.get(disease_name.as_str()) {
+            let neg_count = neg_symptoms.iter()
+                .filter(|ns| normalized.iter().any(|input| fuzzy_match(input, &ns.to_lowercase())))
+                .count();
+            // Each contradicting symptom reduces score by 15%
+            (0.85_f64).powi(neg_count as i32)
+        } else {
+            1.0
+        };
+
+        // Confidence note: indicate when missing key symptoms or negative evidence affects score
+        let confidence_note = if !missing_primary.is_empty() && neg_penalty < 1.0 {
+            Some("Missing key symptoms and contradicting evidence present".to_string())
+        } else if neg_penalty < 1.0 {
+            Some("Some symptoms argue against this diagnosis".to_string())
+        } else if missing_primary.len() >= 2 {
+            Some("Multiple key symptoms missing — lower confidence".to_string())
+        } else {
+            None
+        };
+
         // Combined score
         let raw_score = (weight_ratio * 0.35
             + primary_bonus
@@ -188,7 +213,8 @@ pub fn score_symptoms_with_context(
             + specificity_bonus.min(0.1)
             + cooccurrence_bonus)
             * precision_factor
-            * demographic_factor;
+            * demographic_factor
+            * neg_penalty;
         let probability = (raw_score * 100.0).clamp(1.0, 95.0);
 
         results.push(DiagnosisResult {
@@ -198,6 +224,7 @@ pub fn score_symptoms_with_context(
             missing_key_symptoms: missing_primary,
             severity: severity.clone(),
             description: description.clone(),
+            confidence_note,
         });
     }
 
@@ -310,6 +337,33 @@ fn fuzzy_match(input: &str, symptom: &str) -> bool {
 /// Build a lookup map from synonym → canonical symptom name.
 fn build_synonym_map() -> HashMap<&'static str, &'static str> {
     crate::db::seed::get_symptom_synonyms().into_iter().collect()
+}
+
+/// Negative evidence: symptoms that argue AGAINST a diagnosis.
+/// If a patient has these symptoms, the disease is less likely.
+fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
+    let mut map = HashMap::new();
+    // Heart attack: typically NO fever, no rash
+    map.insert("Heart Attack", vec!["rash", "high fever", "diarrhea"]);
+    // Stroke: typically no fever early, no cough
+    map.insert("Stroke", vec!["cough", "diarrhea", "rash"]);
+    // Appendicitis: pain typically RIGHT side, no cough
+    map.insert("Appendicitis", vec!["cough", "rash", "sore throat"]);
+    // Common Cold: no high fever, no rash, no severe headache
+    map.insert("Common Cold", vec!["high fever", "rash", "severe headache", "confusion"]);
+    // Malaria: no cough, no sore throat typically
+    map.insert("Malaria", vec!["cough", "sore throat", "rash"]);
+    // Cholera: no fever typically, no rash
+    map.insert("Cholera", vec!["high fever", "rash", "cough"]);
+    // Migraine: no fever, no rash
+    map.insert("Migraine", vec!["fever", "rash", "diarrhea"]);
+    // Asthma: no fever (unless infection), no rash
+    map.insert("Asthma", vec!["fever", "rash", "diarrhea"]);
+    // Lactose Intolerance: no fever, no rash
+    map.insert("Lactose Intolerance", vec!["fever", "rash", "fatigue", "weight loss"]);
+    // Tension Headache: no fever, no vision changes, no rash
+    map.insert("Tension Headache", vec!["fever", "rash", "vomiting", "vision changes"]);
+    map
 }
 
 /// Simple Levenshtein edit distance for typo tolerance.
@@ -864,5 +918,85 @@ mod tests {
         let results = score_symptoms(&conn, &["prolonged bleeding", "easy bruising", "joint bleeding"]);
         let hm = results.iter().find(|r| r.disease_name == "Hemophilia");
         assert!(hm.is_some(), "Hemophilia should appear");
+    }
+
+    // v14 tests
+    #[test]
+    fn test_negative_evidence_reduces_score() {
+        let conn = db::init_memory_database().unwrap();
+        // Malaria has negative evidence for "cough" — adding cough should reduce malaria score
+        let without_cough = score_symptoms(&conn, &["fever", "chills", "headache"]);
+        let with_cough = score_symptoms(&conn, &["fever", "chills", "headache", "cough"]);
+        let mal_without = without_cough.iter().find(|r| r.disease_name == "Malaria");
+        let mal_with = with_cough.iter().find(|r| r.disease_name == "Malaria");
+        if let (Some(mw), Some(mc)) = (mal_without, mal_with) {
+            assert!(
+                mw.probability >= mc.probability,
+                "Malaria should score same or lower with contradicting symptom 'cough'"
+            );
+        }
+    }
+
+    #[test]
+    fn test_confidence_note_present() {
+        let conn = db::init_memory_database().unwrap();
+        // Malaria with cough (negative evidence) should get a confidence note
+        let results = score_symptoms(&conn, &["fever", "chills", "cough"]);
+        let malaria = results.iter().find(|r| r.disease_name == "Malaria");
+        if let Some(m) = malaria {
+            assert!(
+                m.confidence_note.is_some(),
+                "Should have confidence note when negative evidence present"
+            );
+        }
+    }
+
+    #[test]
+    fn test_score_cdiff() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["watery diarrhea", "abdominal pain", "fever"]);
+        let cdiff = results.iter().find(|r| r.disease_name == "Clostridioides difficile Infection");
+        assert!(cdiff.is_some(), "C. diff should appear");
+    }
+
+    #[test]
+    fn test_score_carbon_monoxide() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["headache", "dizziness", "confusion", "nausea"]);
+        let co = results.iter().find(|r| r.disease_name == "Carbon Monoxide Poisoning");
+        assert!(co.is_some(), "Carbon Monoxide Poisoning should appear");
+    }
+
+    #[test]
+    fn test_score_dka() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["excessive thirst", "frequent urination", "fruity breath odor", "nausea"]);
+        let dka = results.iter().find(|r| r.disease_name == "Diabetic Ketoacidosis");
+        assert!(dka.is_some(), "DKA should appear");
+        assert!(dka.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_botulism() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["descending paralysis", "double vision", "difficulty swallowing"]);
+        let bot = results.iter().find(|r| r.disease_name == "Botulism");
+        assert!(bot.is_some(), "Botulism should appear");
+    }
+
+    #[test]
+    fn test_score_cauda_equina() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["saddle anesthesia", "urinary retention", "back pain"]);
+        let ce = results.iter().find(|r| r.disease_name == "Cauda Equina Syndrome");
+        assert!(ce.is_some(), "Cauda Equina Syndrome should appear");
+    }
+
+    #[test]
+    fn test_score_ludwig_angina() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["floor of mouth swelling", "difficulty swallowing", "drooling", "fever"]);
+        let la = results.iter().find(|r| r.disease_name == "Ludwig Angina");
+        assert!(la.is_some(), "Ludwig Angina should appear");
     }
 }

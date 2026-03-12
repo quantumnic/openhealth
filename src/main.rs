@@ -162,6 +162,12 @@ pub enum Commands {
         #[arg(long)]
         month: Option<u32>,
     },
+    /// WHO danger signs — critical warning signs for children, maternal, and neonatal emergencies
+    #[command(name = "danger-signs")]
+    DangerSigns {
+        /// Category: child, maternal, neonatal, adult (omit for all)
+        category: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -248,6 +254,9 @@ fn main() {
         }
         Commands::Almanac { month } => {
             commands::almanac::run(&conn, month, cli.json);
+        }
+        Commands::DangerSigns { category } => {
+            commands::danger_signs::run(category.as_deref(), cli.json);
         }
     }
 }

@@ -3,6 +3,7 @@ pub mod body_system;
 pub mod check;
 pub mod comorbidity;
 pub mod compare;
+pub mod danger_signs;
 pub mod diff;
 pub mod disease;
 pub mod emergency;
