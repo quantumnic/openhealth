@@ -14,3 +14,4 @@ pub mod stats;
 pub mod symptoms;
 pub mod treatment;
 pub mod update;
+pub mod validate;

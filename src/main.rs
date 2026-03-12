@@ -115,6 +115,8 @@ pub enum Commands {
         /// Filter by body system, e.g. "respiratory" or "cardiovascular"
         system: Option<String>,
     },
+    /// Validate database integrity and report issues
+    Validate,
 }
 
 fn default_db_path() -> PathBuf {
@@ -173,6 +175,9 @@ fn main() {
         }
         Commands::BodySystem { system } => {
             commands::body_system::run(&conn, system.as_deref(), cli.json);
+        }
+        Commands::Validate => {
+            commands::validate::run(&conn, cli.json);
         }
     }
 }

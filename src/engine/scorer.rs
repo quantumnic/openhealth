@@ -592,6 +592,60 @@ mod tests {
         assert!(!results.is_empty(), "throwing up should expand to vomiting");
     }
 
+
+    #[test]
+    fn test_score_heatstroke() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["high fever", "confusion", "hot dry skin"]);
+        let hs = results.iter().find(|r| r.disease_name == "Heatstroke");
+        assert!(hs.is_some(), "Heatstroke should appear");
+    }
+
+    #[test]
+    fn test_score_peritonitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe abdominal pain", "abdominal rigidity", "fever"]);
+        let pt = results.iter().find(|r| r.disease_name == "Peritonitis");
+        assert!(pt.is_some(), "Peritonitis should appear");
+    }
+
+    #[test]
+    fn test_score_bells_palsy() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["facial drooping", "inability to close eye", "drooling"]);
+        let bp = results.iter().find(|r| r.disease_name == "Bell's Palsy");
+        assert!(bp.is_some(), "Bell's Palsy should appear");
+    }
+
+    #[test]
+    fn test_score_necrotizing_fasciitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe pain disproportionate to appearance", "rapid skin redness spreading", "fever"]);
+        let nf = results.iter().find(|r| r.disease_name == "Necrotizing Fasciitis");
+        assert!(nf.is_some(), "Necrotizing Fasciitis should appear");
+    }
+
+    #[test]
+    fn test_score_bronchiolitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["wheezing", "cough", "rapid breathing"]);
+        let br = results.iter().find(|r| r.disease_name == "Bronchiolitis");
+        assert!(br.is_some(), "Bronchiolitis should appear");
+    }
+
+    #[test]
+    fn test_synonym_ringing_in_ears() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["ringing in ears", "hearing loss"]);
+        assert!(!results.is_empty(), "ringing in ears should match via synonym");
+    }
+
+    #[test]
+    fn test_synonym_photophobia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["photophobia", "eye pain"]);
+        assert!(!results.is_empty(), "photophobia should match via synonym");
+    }
     #[test]
     fn test_cooccurrence_bonus_multiple_primary() {
         let conn = db::init_memory_database().unwrap();

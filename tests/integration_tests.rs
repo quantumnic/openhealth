@@ -348,3 +348,45 @@ fn test_cli_body_system_json() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("disease_count") || stdout.contains("system"));
 }
+
+#[test]
+fn test_cli_validate() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_validate.db", "validate"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Validation"));
+}
+
+#[test]
+fn test_cli_validate_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_validate_j.db", "--json", "validate"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"valid\""));
+}
+
+#[test]
+fn test_cli_disease_necrotizing_fasciitis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_nf.db", "disease", "Necrotizing Fasciitis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Necrotizing Fasciitis"));
+}
+
+#[test]
+fn test_cli_disease_heatstroke() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_hs.db", "disease", "Heatstroke"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Heatstroke"));
+}
