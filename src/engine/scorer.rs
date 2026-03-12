@@ -160,9 +160,20 @@ pub fn score_symptoms_with_context(
         let precision_factor = 0.5 + 0.5 * match_precision; // range [0.5, 1.0]
 
         // Co-occurrence bonus: matching multiple primary symptoms together
-        // is stronger evidence than matching them individually
+        // is stronger evidence than matching them individually.
+        // Enhanced: scales with total matched symptoms (cluster detection).
         let cooccurrence_bonus = if primary_matched >= 2 {
-            0.05 * (primary_matched as f64 - 1.0).min(3.0)
+            let primary_bonus = 0.05 * (primary_matched as f64 - 1.0).min(3.0);
+            let cluster_bonus = if matched.len() >= 4 {
+                0.03 * (matched.len() as f64 - 3.0).min(4.0)
+            } else {
+                0.0
+            };
+            primary_bonus + cluster_bonus
+        } else if matched.len() >= 4 {
+            // Even without multiple primaries, matching many symptoms
+            // of a single disease is strong evidence
+            0.02 * (matched.len() as f64 - 3.0).min(3.0)
         } else {
             0.0
         };
@@ -358,7 +369,7 @@ mod tests {
     #[test]
     fn test_score_unknown_symptom() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["alien_probe_marks"]);
+        let results = score_symptoms(&conn, &["xyzzyplugh"]);
         assert!(results.is_empty());
     }
 
@@ -646,6 +657,70 @@ mod tests {
         let results = score_symptoms(&conn, &["photophobia", "eye pain"]);
         assert!(!results.is_empty(), "photophobia should match via synonym");
     }
+    #[test]
+    fn test_score_lupus() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["butterfly rash", "joint pain", "fatigue", "fever"]);
+        let lupus = results.iter().find(|r| r.disease_name == "Systemic Lupus Erythematosus");
+        assert!(lupus.is_some(), "SLE should appear in results");
+        assert!(lupus.unwrap().probability > 20.0);
+    }
+
+    #[test]
+    fn test_score_gout() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe joint pain", "joint swelling", "joint redness"]);
+        let gout = results.iter().find(|r| r.disease_name == "Gout");
+        assert!(gout.is_some(), "Gout should appear in results");
+        assert!(gout.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_iron_deficiency_anemia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fatigue", "weakness", "pale skin", "dizziness"]);
+        let ida = results.iter().find(|r| r.disease_name == "Iron Deficiency Anemia");
+        assert!(ida.is_some(), "Iron Deficiency Anemia should appear");
+    }
+
+    #[test]
+    fn test_score_pancreatitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe abdominal pain", "pain radiating to back", "nausea", "vomiting"]);
+        let panc = results.iter().find(|r| r.disease_name == "Pancreatitis");
+        assert!(panc.is_some(), "Pancreatitis should appear");
+        assert!(panc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_sinusitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["facial pain", "nasal congestion", "thick nasal discharge"]);
+        let sinus = results.iter().find(|r| r.disease_name == "Sinusitis");
+        assert!(sinus.is_some(), "Sinusitis should appear");
+    }
+
+    #[test]
+    fn test_synonym_brain_fog() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["brain fog", "widespread pain", "fatigue"]);
+        assert!(!results.is_empty(), "brain fog should expand to cognitive difficulties");
+    }
+
+    #[test]
+    fn test_cluster_bonus_many_symptoms() {
+        let conn = db::init_memory_database().unwrap();
+        // Many matching symptoms should get cluster bonus
+        let results = score_symptoms(
+            &conn,
+            &["fever", "chills", "sweating", "headache", "nausea", "vomiting", "muscle pain", "fatigue"],
+        );
+        let malaria = results.iter().find(|r| r.disease_name == "Malaria");
+        assert!(malaria.is_some());
+        // With cluster bonus, should score very high
+        assert!(malaria.unwrap().probability > 60.0, "Cluster bonus should push score high");
+    }
+
     #[test]
     fn test_cooccurrence_bonus_multiple_primary() {
         let conn = db::init_memory_database().unwrap();

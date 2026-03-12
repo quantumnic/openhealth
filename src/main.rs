@@ -115,6 +115,11 @@ pub enum Commands {
         /// Filter by body system, e.g. "respiratory" or "cardiovascular"
         system: Option<String>,
     },
+    /// Quick triage assessment — red flag detection and severity classification
+    Triage {
+        /// Comma or space-separated symptoms
+        symptoms: String,
+    },
     /// Validate database integrity and report issues
     Validate,
 }
@@ -175,6 +180,9 @@ fn main() {
         }
         Commands::BodySystem { system } => {
             commands::body_system::run(&conn, system.as_deref(), cli.json);
+        }
+        Commands::Triage { symptoms } => {
+            commands::triage::run(&conn, &symptoms, cli.json);
         }
         Commands::Validate => {
             commands::validate::run(&conn, cli.json);

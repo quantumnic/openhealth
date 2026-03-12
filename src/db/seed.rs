@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '8.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '9.0')",
         [],
     )?;
     tx.commit()?;
@@ -1853,91 +1853,219 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Proper contact lens hygiene (clean, replace on schedule, remove before sleep). Protect eyes from trauma. Treat dry eyes.",
             risk_factors: vec![("contact lens wear", "high"), ("eye trauma", "high"), ("dry eyes", "moderate"), ("immunosuppression", "moderate"), ("vitamin A deficiency", "high")],
         },
+        // ── v0.9.0 additions: oncological, autoimmune, endocrine, metabolic, ENT ──
+        DiseaseEntry {
+            name: "Lung Cancer",
+            description: "Malignant tumor of the lungs. Leading cause of cancer death worldwide. Strongly associated with smoking. Early stages often asymptomatic.",
+            severity: "high", contagious: false, icd11_code: "2C25",
+            age_group: "adults", category: "oncological",
+            symptoms: vec![s("chronic cough",0.8,true), s("coughing up blood",0.9,true), s("shortness of breath",0.7,true), s("chest pain",0.6,false), s("weight loss",0.7,false), s("fatigue",0.5,false), s("hoarseness",0.4,false), s("wheezing",0.4,false), s("bone pain",0.3,false)],
+            treatment: "Surgery (lobectomy/pneumonectomy) for early stage. Chemotherapy, radiation, targeted therapy (EGFR/ALK inhibitors), immunotherapy (pembrolizumab). Palliative care for advanced.",
+            first_aid: "Not an acute emergency unless hemoptysis is massive. Seek urgent oncology referral for persistent cough >3 weeks, especially with blood.",
+            prevention: "Do not smoke / stop smoking. Avoid secondhand smoke. Radon testing in homes. Occupational exposure protection. Low-dose CT screening for high-risk individuals.",
+            risk_factors: vec![("smoking", "high"), ("secondhand smoke exposure", "high"), ("radon exposure", "moderate"), ("asbestos exposure", "high"), ("family history of lung cancer", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Colorectal Cancer",
+            description: "Cancer of the colon or rectum. Third most common cancer globally. Often preventable with screening. Develops from polyps over years.",
+            severity: "high", contagious: false, icd11_code: "2B90",
+            age_group: "adults", category: "oncological",
+            symptoms: vec![s("change in bowel habits",0.8,true), s("blood in stool",0.9,true), s("abdominal pain",0.6,false), s("weight loss",0.7,false), s("fatigue",0.5,false), s("iron deficiency anemia",0.6,false), s("bloating",0.4,false), s("narrow stools",0.5,false)],
+            treatment: "Surgery (colectomy) for localized disease. Adjuvant chemotherapy (FOLFOX). Radiation for rectal cancer. Targeted therapy (bevacizumab, cetuximab). Immunotherapy for MSI-high tumors.",
+            first_aid: "Not typically an emergency. Seek medical evaluation for persistent change in bowel habits, rectal bleeding, or unexplained weight loss.",
+            prevention: "Regular screening (colonoscopy from age 45). High-fiber diet. Limit red/processed meat. Exercise regularly. Limit alcohol. Maintain healthy weight.",
+            risk_factors: vec![("age over 50", "high"), ("family history", "high"), ("inflammatory bowel disease", "high"), ("obesity", "moderate"), ("smoking", "moderate"), ("high red meat intake", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Breast Cancer",
+            description: "Malignant tumor of breast tissue. Most common cancer in women worldwide. Early detection through screening dramatically improves outcomes.",
+            severity: "high", contagious: false, icd11_code: "2C6",
+            age_group: "adults", category: "oncological",
+            symptoms: vec![s("breast lump",0.9,true), s("breast pain",0.5,false), s("nipple discharge",0.6,false), s("skin dimpling on breast",0.7,true), s("nipple retraction",0.6,false), s("swollen lymph nodes",0.5,false), s("breast skin redness",0.4,false), s("weight loss",0.3,false)],
+            treatment: "Surgery (lumpectomy or mastectomy). Radiation therapy. Chemotherapy. Hormonal therapy (tamoxifen, aromatase inhibitors). HER2-targeted therapy (trastuzumab). CDK4/6 inhibitors.",
+            first_aid: "Not an emergency. Seek prompt medical evaluation for any new breast lump, skin change, or nipple discharge.",
+            prevention: "Regular mammography screening (from age 40-50). Breast self-examination. Maintain healthy weight. Limit alcohol. Breastfeeding may reduce risk. Genetic testing for BRCA carriers.",
+            risk_factors: vec![("BRCA1/BRCA2 mutation", "high"), ("family history", "high"), ("age over 50", "moderate"), ("obesity", "moderate"), ("alcohol consumption", "moderate"), ("hormone replacement therapy", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Cervical Cancer",
+            description: "Cancer of the cervix, almost always caused by HPV infection. Highly preventable with vaccination and screening. Major cause of cancer death in low-income countries.",
+            severity: "high", contagious: false, icd11_code: "2C77",
+            age_group: "adults", category: "gynecological",
+            symptoms: vec![s("abnormal vaginal bleeding",0.9,true), s("vaginal discharge",0.6,false), s("pelvic pain",0.7,true), s("pain during intercourse",0.5,false), s("weight loss",0.5,false), s("fatigue",0.4,false), s("back pain",0.3,false)],
+            treatment: "Early: conization or hysterectomy. Advanced: chemoradiation (cisplatin + radiation). Metastatic: chemotherapy (cisplatin/paclitaxel), immunotherapy (pembrolizumab). Palliative care.",
+            first_aid: "Seek medical care for abnormal vaginal bleeding, especially post-menopausal or between periods.",
+            prevention: "HPV vaccination (ages 9-26). Regular Pap smears / HPV testing. Safe sex practices. Smoking cessation.",
+            risk_factors: vec![("HPV infection", "high"), ("smoking", "high"), ("immunosuppression", "high"), ("multiple sexual partners", "moderate"), ("no screening history", "high")],
+        },
+        DiseaseEntry {
+            name: "Systemic Lupus Erythematosus",
+            description: "Chronic autoimmune disease affecting multiple organ systems. Characterized by flares and remissions. Butterfly rash is classic but not always present.",
+            severity: "medium", contagious: false, icd11_code: "4A40",
+            age_group: "adults", category: "autoimmune",
+            symptoms: vec![s("butterfly rash",0.9,true), s("joint pain",0.8,true), s("fatigue",0.7,true), s("fever",0.5,false), s("hair loss",0.5,false), s("mouth ulcers",0.4,false), s("photosensitivity",0.6,false), s("chest pain",0.4,false), s("swelling",0.4,false)],
+            treatment: "NSAIDs for mild symptoms. Hydroxychloroquine (mainstay). Corticosteroids for flares. Immunosuppressants (mycophenolate, azathioprine). Belimumab for refractory cases. Nephritis: cyclophosphamide or mycophenolate.",
+            first_aid: "Not an emergency unless organ-threatening flare (renal, CNS). Seek medical care for new symptoms or worsening flare.",
+            prevention: "No prevention known. Sun protection crucial. Regular monitoring. Medication adherence. Avoid triggers (stress, UV exposure).",
+            risk_factors: vec![("female sex", "high"), ("age 15-45", "moderate"), ("African/Asian/Hispanic ancestry", "moderate"), ("family history of autoimmune disease", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Multiple Sclerosis",
+            description: "Chronic autoimmune disease of the central nervous system. Immune system attacks myelin sheath. Causes progressive neurological disability.",
+            severity: "medium", contagious: false, icd11_code: "8A40",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("numbness",0.8,true), s("tingling",0.7,true), s("vision problems",0.8,true), s("fatigue",0.7,false), s("weakness",0.6,false), s("dizziness",0.5,false), s("balance problems",0.6,false), s("bladder problems",0.4,false), s("muscle spasms",0.5,false)],
+            treatment: "Disease-modifying therapies (interferon, glatiramer, fingolimod, ocrelizumab, natalizumab). Corticosteroids for acute relapses. Symptomatic: baclofen for spasticity, amantadine for fatigue. Physical therapy.",
+            first_aid: "Not typically an emergency. Seek urgent evaluation for acute vision loss, sudden weakness, or new neurological symptoms.",
+            prevention: "No proven prevention. Vitamin D supplementation may reduce risk. Avoid smoking. Early treatment delays progression.",
+            risk_factors: vec![("female sex", "moderate"), ("age 20-40", "moderate"), ("northern latitude residence", "moderate"), ("vitamin D deficiency", "moderate"), ("smoking", "moderate"), ("family history", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Celiac Disease",
+            description: "Autoimmune disorder triggered by gluten ingestion. Damages small intestinal villi, causing malabsorption. Affects ~1% of population worldwide.",
+            severity: "medium", contagious: false, icd11_code: "DA95",
+            age_group: "all", category: "autoimmune",
+            symptoms: vec![s("diarrhea",0.7,true), s("bloating",0.7,true), s("abdominal pain",0.6,false), s("weight loss",0.6,false), s("fatigue",0.6,false), s("iron deficiency anemia",0.5,false), s("nausea",0.4,false), s("skin rash",0.4,false), s("joint pain",0.3,false)],
+            treatment: "Strict lifelong gluten-free diet. Nutritional supplementation (iron, folate, calcium, vitamin D). Dapsone for dermatitis herpetiformis. Monitor with serology and repeat biopsy.",
+            first_aid: "Not an emergency. Seek evaluation for chronic diarrhea, unexplained weight loss, or persistent fatigue.",
+            prevention: "No prevention known. Early diagnosis through screening of at-risk groups. First-degree relatives should be tested.",
+            risk_factors: vec![("HLA-DQ2/DQ8 genotype", "high"), ("family history", "high"), ("type 1 diabetes", "moderate"), ("other autoimmune conditions", "moderate"), ("Down syndrome", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Addison's Disease",
+            description: "Primary adrenal insufficiency. Adrenal glands produce insufficient cortisol and aldosterone. Can be life-threatening in adrenal crisis.",
+            severity: "high", contagious: false, icd11_code: "5A74",
+            age_group: "adults", category: "endocrine",
+            symptoms: vec![s("fatigue",0.8,true), s("weight loss",0.7,true), s("hyperpigmentation",0.8,true), s("low blood pressure",0.7,false), s("dizziness",0.6,false), s("nausea",0.5,false), s("abdominal pain",0.4,false), s("muscle weakness",0.5,false), s("salt craving",0.5,false)],
+            treatment: "Lifelong hormone replacement: hydrocortisone (cortisol) and fludrocortisone (aldosterone). Stress dosing during illness/surgery. Adrenal crisis: IV hydrocortisone 100mg + IV saline.",
+            first_aid: "Adrenal crisis: Give emergency hydrocortisone injection if available. IV fluids. Seek emergency medical care immediately.",
+            prevention: "Cannot prevent autoimmune Addison's. Carry medical alert bracelet. Emergency hydrocortisone kit. Educate on stress dosing. Regular endocrine follow-up.",
+            risk_factors: vec![("autoimmune disease", "high"), ("tuberculosis", "moderate"), ("fungal infections", "low"), ("anticoagulant therapy", "low"), ("family history of autoimmune disease", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Cushing's Syndrome",
+            description: "Excess cortisol disorder causing characteristic fat redistribution, muscle wasting, and metabolic complications. Often from corticosteroid medications or pituitary adenoma.",
+            severity: "medium", contagious: false, icd11_code: "5A71",
+            age_group: "adults", category: "endocrine",
+            symptoms: vec![s("weight gain",0.8,true), s("moon face",0.8,true), s("purple stretch marks",0.7,true), s("muscle weakness",0.6,false), s("high blood pressure",0.6,false), s("fatigue",0.5,false), s("acne",0.4,false), s("easy bruising",0.5,false), s("depression",0.4,false)],
+            treatment: "Reduce/stop exogenous corticosteroids if iatrogenic. Pituitary adenoma: transsphenoidal surgery. Adrenal tumors: adrenalectomy. Medical: ketoconazole, metyrapone, osilodrostat. Radiation for residual disease.",
+            first_aid: "Not an acute emergency. Seek endocrinology referral for suspected Cushing's features.",
+            prevention: "Use lowest effective corticosteroid dose. Monitor patients on long-term steroids. Periodic cortisol testing when indicated.",
+            risk_factors: vec![("long-term corticosteroid use", "high"), ("pituitary adenoma", "high"), ("adrenal tumor", "moderate"), ("obesity", "low")],
+        },
+        DiseaseEntry {
+            name: "Gout",
+            description: "Inflammatory arthritis from uric acid crystal deposition in joints. Extremely painful acute attacks. Most commonly affects the big toe (podagra).",
+            severity: "medium", contagious: false, icd11_code: "FA25",
+            age_group: "adults", category: "musculoskeletal",
+            symptoms: vec![s("severe joint pain",0.9,true), s("joint swelling",0.8,true), s("joint redness",0.7,true), s("warmth over joint",0.6,false), s("limited range of motion",0.5,false), s("fever",0.3,false), s("tophi",0.4,false)],
+            treatment: "Acute: NSAIDs (indomethacin), colchicine, corticosteroids. Chronic: allopurinol or febuxostat to lower uric acid. Target urate <6 mg/dL. Pegloticase for refractory.",
+            first_aid: "Rest and elevate affected joint. Apply ice. Take NSAIDs if available. Stay hydrated. Avoid alcohol.",
+            prevention: "Limit purine-rich foods (red meat, organ meat, shellfish). Reduce alcohol (especially beer). Stay hydrated. Maintain healthy weight. Urate-lowering therapy for recurrent attacks.",
+            risk_factors: vec![("high purine diet", "high"), ("alcohol consumption", "high"), ("obesity", "moderate"), ("kidney disease", "moderate"), ("male sex", "moderate"), ("diuretic use", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Fibromyalgia",
+            description: "Chronic widespread pain disorder with fatigue, sleep disturbance, and cognitive difficulties. No structural damage found. Affects ~2-4% of population.",
+            severity: "low", contagious: false, icd11_code: "MG30.0",
+            age_group: "adults", category: "musculoskeletal",
+            symptoms: vec![s("widespread pain",0.9,true), s("fatigue",0.8,true), s("sleep disturbance",0.7,true), s("cognitive difficulties",0.6,false), s("headache",0.5,false), s("depression",0.4,false), s("anxiety",0.4,false), s("tingling",0.3,false), s("muscle stiffness",0.5,false)],
+            treatment: "Multimodal approach: exercise (aerobic + strength), CBT, sleep hygiene. Medications: duloxetine, pregabalin, milnacipran, amitriptyline (low-dose). Avoid opioids.",
+            first_aid: "Not an emergency. Gentle movement, heat application, stress reduction. Seek rheumatology evaluation for diagnosis.",
+            prevention: "No proven prevention. Regular exercise may reduce risk. Stress management. Good sleep habits. Early treatment of contributing conditions.",
+            risk_factors: vec![("female sex", "moderate"), ("family history", "moderate"), ("rheumatic disease", "moderate"), ("psychological stress", "moderate"), ("physical trauma", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Phenylketonuria (PKU)",
+            description: "Inherited metabolic disorder. Cannot break down phenylalanine. Untreated causes severe intellectual disability. Detected by newborn screening.",
+            severity: "medium", contagious: false, icd11_code: "5C50",
+            age_group: "all", category: "metabolic",
+            symptoms: vec![s("intellectual disability",0.8,true), s("seizures",0.6,false), s("behavioral problems",0.5,false), s("musty body odor",0.7,true), s("eczema",0.4,false), s("light skin pigmentation",0.5,false), s("microcephaly",0.4,false)],
+            treatment: "Lifelong phenylalanine-restricted diet. Medical formula supplementation. Sapropterin (BH4) for responsive patients. Large neutral amino acid supplements. Pegvaliase for adults.",
+            first_aid: "Not an acute emergency. Ensure dietary compliance. Seek metabolic specialist for elevated Phe levels.",
+            prevention: "Newborn screening (mandatory in most countries). Early dietary intervention prevents intellectual disability. Maternal PKU: strict diet before and during pregnancy.",
+            risk_factors: vec![("both parents carriers", "high"), ("consanguinity", "moderate"), ("no newborn screening", "high")],
+        },
+        DiseaseEntry {
+            name: "Otitis Media",
+            description: "Middle ear infection. Very common in children. Usually bacterial or viral. Can cause hearing loss if recurrent or chronic.",
+            severity: "low", contagious: false, icd11_code: "AB10",
+            age_group: "children", category: "ENT",
+            symptoms: vec![s("ear pain",0.9,true), s("fever",0.6,false), s("irritability",0.5,false), s("hearing loss",0.5,false), s("ear discharge",0.6,true), s("tugging at ear",0.4,false), s("poor sleep",0.3,false), s("loss of appetite",0.3,false)],
+            treatment: "Watchful waiting for mild cases (48-72h). Amoxicillin first-line if antibiotics needed. Pain relief: ibuprofen/acetaminophen. Tympanostomy tubes for recurrent cases.",
+            first_aid: "Pain relief with warm compress over ear. Acetaminophen or ibuprofen for pain and fever. Keep ear dry. Seek medical care if no improvement in 48h.",
+            prevention: "Breastfeeding (6+ months). Pneumococcal and flu vaccination. Avoid secondhand smoke. Avoid bottle-propping. Hand hygiene.",
+            risk_factors: vec![("age under 5", "high"), ("daycare attendance", "moderate"), ("bottle feeding", "moderate"), ("secondhand smoke", "moderate"), ("cleft palate", "high")],
+        },
+        DiseaseEntry {
+            name: "Sinusitis",
+            description: "Inflammation of paranasal sinuses. Usually follows viral upper respiratory infection. Bacterial sinusitis if symptoms persist >10 days or worsen after initial improvement.",
+            severity: "low", contagious: false, icd11_code: "CA0A",
+            age_group: "all", category: "ENT",
+            symptoms: vec![s("facial pain",0.8,true), s("nasal congestion",0.8,true), s("thick nasal discharge",0.7,true), s("headache",0.6,false), s("cough",0.4,false), s("fever",0.4,false), s("reduced sense of smell",0.5,false), s("fatigue",0.3,false), s("dental pain",0.3,false)],
+            treatment: "Viral: supportive (saline irrigation, decongestants, analgesics). Bacterial: amoxicillin-clavulanate first-line. Intranasal corticosteroids. Chronic: endoscopic sinus surgery if refractory.",
+            first_aid: "Saline nasal irrigation. Steam inhalation. Stay hydrated. Warm compress over sinuses. OTC pain relievers.",
+            prevention: "Hand hygiene. Influenza vaccination. Manage allergies. Avoid smoking. Humidify air. Saline nasal rinses during cold season.",
+            risk_factors: vec![("allergies", "high"), ("nasal polyps", "high"), ("smoking", "moderate"), ("dental infections", "moderate"), ("immunodeficiency", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Vertigo (BPPV)",
+            description: "Benign Paroxysmal Positional Vertigo. Most common cause of vertigo. Caused by displaced otoconia in semicircular canals. Brief spinning episodes triggered by head position changes.",
+            severity: "low", contagious: false, icd11_code: "AB31.0",
+            age_group: "adults", category: "ENT",
+            symptoms: vec![s("dizziness",0.9,true), s("vertigo",0.9,true), s("nausea",0.6,false), s("balance problems",0.7,false), s("nystagmus",0.6,true), s("vomiting",0.3,false)],
+            treatment: "Epley maneuver (canalith repositioning) — highly effective. Semont maneuver alternative. Self-treatment with Brandt-Daroff exercises. Rarely: surgical posterior canal plugging.",
+            first_aid: "Sit or lie down immediately when dizzy. Avoid sudden head movements. Epley maneuver if trained. Do not drive during episodes.",
+            prevention: "No proven prevention. Sleep with head slightly elevated. Move slowly when changing positions. Fall prevention measures for elderly.",
+            risk_factors: vec![("age over 60", "moderate"), ("head trauma", "moderate"), ("ear surgery", "moderate"), ("prolonged bed rest", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Iron Deficiency Anemia",
+            description: "Most common nutritional deficiency worldwide. Insufficient iron for hemoglobin production. Affects ~30% of world population. Common in women and children in low-resource settings.",
+            severity: "medium", contagious: false, icd11_code: "3A00",
+            age_group: "all", category: "hematological",
+            symptoms: vec![s("fatigue",0.8,true), s("weakness",0.7,true), s("pale skin",0.7,true), s("shortness of breath",0.5,false), s("dizziness",0.5,false), s("cold hands and feet",0.4,false), s("brittle nails",0.4,false), s("headache",0.3,false), s("pica",0.3,false)],
+            treatment: "Oral iron supplementation (ferrous sulfate 325mg daily). Vitamin C to enhance absorption. IV iron (ferric carboxymaltose) for severe or intolerant patients. Treat underlying cause (GI bleeding, heavy menses).",
+            first_aid: "Not an emergency unless severe (Hb <7). Increase iron-rich foods (meat, beans, leafy greens). Seek medical evaluation for symptoms.",
+            prevention: "Iron-rich diet. Iron supplementation in pregnancy. Delayed cord clamping in newborns. Treat hookworm in endemic areas. Screen at-risk populations.",
+            risk_factors: vec![("heavy menstruation", "high"), ("pregnancy", "high"), ("vegetarian/vegan diet", "moderate"), ("GI blood loss", "high"), ("hookworm infection", "high"), ("frequent blood donation", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Pancreatitis",
+            description: "Inflammation of the pancreas. Acute form can be life-threatening. Most common causes are gallstones and alcohol. Severe cases require ICU admission.",
+            severity: "high", contagious: false, icd11_code: "DC31",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("severe abdominal pain",0.9,true), s("pain radiating to back",0.8,true), s("nausea",0.7,false), s("vomiting",0.7,false), s("fever",0.5,false), s("rapid heart rate",0.5,false), s("abdominal tenderness",0.6,false), s("bloating",0.4,false)],
+            treatment: "NPO (nothing by mouth) initially. IV fluids aggressively. Pain management (avoid morphine — use hydromorphone). ERCP for gallstone pancreatitis. Necrosectomy for infected necrosis. Cholecystectomy to prevent recurrence.",
+            first_aid: "Do not eat or drink. Seek emergency medical care for severe upper abdominal pain radiating to back, especially with vomiting.",
+            prevention: "Limit alcohol consumption. Treat gallstones. Maintain healthy weight. Control triglycerides. Avoid medications known to cause pancreatitis.",
+            risk_factors: vec![("gallstones", "high"), ("heavy alcohol use", "high"), ("high triglycerides", "moderate"), ("certain medications", "moderate"), ("ERCP procedure", "moderate"), ("smoking", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Psoriasis",
+            description: "Chronic autoimmune skin disease with characteristic silvery-scaled plaques. Affects 2-3% of population. Associated with psoriatic arthritis and cardiovascular risk.",
+            severity: "low", contagious: false, icd11_code: "EA90",
+            age_group: "all", category: "dermatological",
+            symptoms: vec![s("red patches of skin",0.9,true), s("silvery scales",0.8,true), s("itchy skin",0.7,false), s("dry cracked skin",0.6,false), s("joint pain",0.4,false), s("nail pitting",0.5,false), s("skin burning",0.3,false), s("thick nails",0.3,false)],
+            treatment: "Mild: topical corticosteroids, vitamin D analogs (calcipotriol). Moderate: phototherapy (UVB), methotrexate, cyclosporine. Severe: biologics (adalimumab, secukinumab, ustekinumab, risankizumab).",
+            first_aid: "Moisturize regularly. Avoid skin trauma (Koebner phenomenon). Lukewarm baths with gentle soap. OTC hydrocortisone for mild flares.",
+            prevention: "No cure or prevention. Manage triggers (stress, infection, skin injury, alcohol). Maintain healthy weight. Moisturize. Moderate sun exposure may help.",
+            risk_factors: vec![("family history", "high"), ("stress", "moderate"), ("obesity", "moderate"), ("smoking", "moderate"), ("streptococcal infection", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Prostate Cancer",
+            description: "Most common non-skin cancer in men. Usually slow-growing. Screening controversial. Ranges from indolent to aggressive metastatic disease.",
+            severity: "high", contagious: false, icd11_code: "2C82",
+            age_group: "adults", category: "oncological",
+            symptoms: vec![s("difficulty urinating",0.7,true), s("frequent urination",0.6,true), s("weak urine stream",0.6,false), s("blood in urine",0.5,false), s("bone pain",0.5,false), s("weight loss",0.4,false), s("erectile dysfunction",0.3,false), s("back pain",0.3,false)],
+            treatment: "Active surveillance for low-risk. Radical prostatectomy or radiation therapy for localized. Androgen deprivation therapy (ADT). Chemotherapy (docetaxel). Novel agents: abiraterone, enzalutamide. PARP inhibitors for BRCA+.",
+            first_aid: "Not an emergency. Seek urology evaluation for urinary symptoms, especially with blood in urine or unexplained bone pain.",
+            prevention: "No proven prevention. PSA screening (discuss with doctor). Healthy diet (lycopene-rich foods). Regular exercise. Maintain healthy weight.",
+            risk_factors: vec![("age over 50", "high"), ("African ancestry", "high"), ("family history", "high"), ("obesity", "moderate"), ("BRCA2 mutation", "high")],
+        },
     ]
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::db;
-
-    #[test]
-    fn test_seed_creates_diseases() {
-        let conn = db::init_memory_database().unwrap();
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 124, "Expected at least 109 diseases, got {count}");
-    }
-
-    #[test]
-    fn test_seed_creates_symptoms() {
-        let conn = db::init_memory_database().unwrap();
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM symptoms", [], |r| r.get(0)).unwrap();
-        assert!(count >= 50, "Expected at least 50 symptoms, got {count}");
-    }
-
-    #[test]
-    fn test_seed_creates_treatments() {
-        let conn = db::init_memory_database().unwrap();
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM treatments", [], |r| r.get(0)).unwrap();
-        assert!(count >= 95, "Expected at least 95 treatments, got {count}");
-    }
-
-    #[test]
-    fn test_seed_creates_risk_factors() {
-        let conn = db::init_memory_database().unwrap();
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM risk_factors", [], |r| r.get(0)).unwrap();
-        assert!(count >= 95, "Expected at least 95 risk factors, got {count}");
-    }
-
-    #[test]
-    fn test_seed_idempotent() {
-        let conn = db::init_memory_database().unwrap();
-        let c1: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        seed_if_empty(&conn).unwrap();
-        let c2: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert_eq!(c1, c2);
-    }
-
-    #[test]
-    fn test_disease_has_symptoms() {
-        let conn = db::init_memory_database().unwrap();
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM disease_symptoms ds JOIN diseases d ON d.id = ds.disease_id WHERE d.name = 'Malaria'",
-            [], |r| r.get(0),
-        ).unwrap();
-        assert!(count >= 5, "Malaria should have at least 5 symptoms");
-    }
-
-    #[test]
-    fn test_metadata_seed_version() {
-        let conn = db::init_memory_database().unwrap();
-        let ver: String = conn.query_row(
-            "SELECT value FROM metadata WHERE key = 'seed_version'",
-            [], |r| r.get(0),
-        ).unwrap();
-        assert_eq!(ver, "8.0");
-    }
-
-    #[test]
-    fn test_covid19_exists() {
-        let conn = db::init_memory_database().unwrap();
-        let name: String = conn.query_row(
-            "SELECT name FROM diseases WHERE name = 'COVID-19'",
-            [], |r| r.get(0),
-        ).unwrap();
-        assert_eq!(name, "COVID-19");
-    }
-
-    #[test]
-    fn test_disease_has_risk_factors() {
-        let conn = db::init_memory_database().unwrap();
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM risk_factors rf JOIN diseases d ON d.id = rf.disease_id WHERE d.name = 'Heart Attack'",
-            [], |r| r.get(0),
-        ).unwrap();
-        assert!(count >= 3, "Heart Attack should have at least 3 risk factors");
-    }
-}
 /// Synonym map for symptom fuzzy matching — maps common alternatives to canonical names.
 pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
     vec![
@@ -2112,5 +2240,120 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("watery eyes", "excessive tearing"),
         ("sensitive to light", "light sensitivity"),
         ("photophobia", "light sensitivity"),
+        // v9.0 synonyms
+        ("lump", "breast lump"),
+        ("blood in poo", "blood in stool"),
+        ("bloody poo", "blood in stool"),
+        ("rectal bleeding", "blood in stool"),
+        ("peeing often", "frequent urination"),
+        ("hard to pee", "difficulty urinating"),
+        ("weak stream", "weak urine stream"),
+        ("sun sensitivity", "photosensitivity"),
+        ("joint aches", "joint pain"),
+        ("itchy", "itchy skin"),
+        ("scratching", "intense itching"),
+        ("tummy pain", "abdominal pain"),
+        ("ear ache", "ear pain"),
+        ("ear hurts", "ear pain"),
+        ("sinus pain", "facial pain"),
+        ("sinus pressure", "facial pain"),
+        ("spinning", "vertigo"),
+        ("room spinning", "vertigo"),
+        ("pale", "pale skin"),
+        ("cold fingers", "cold hands and feet"),
+        ("scalp flakes", "silvery scales"),
+        ("hair falling out", "hair loss"),
+        ("losing hair", "hair loss"),
+        ("dark skin patches", "hyperpigmentation"),
+        ("moon face", "moon face"),
+        ("stretch marks", "purple stretch marks"),
+        ("widespread aches", "widespread pain"),
+        ("all over pain", "widespread pain"),
+        ("brain fog", "cognitive difficulties"),
+        ("fuzzy thinking", "cognitive difficulties"),
+        ("memory problems", "cognitive difficulties"),
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_seed_creates_diseases() {
+        let conn = db::init_memory_database().unwrap();
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
+        assert!(count >= 161, "Expected at least 161 diseases, got {count}");
+    }
+
+    #[test]
+    fn test_seed_creates_symptoms() {
+        let conn = db::init_memory_database().unwrap();
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM symptoms", [], |r| r.get(0)).unwrap();
+        assert!(count >= 50, "Expected at least 50 symptoms, got {count}");
+    }
+
+    #[test]
+    fn test_seed_creates_treatments() {
+        let conn = db::init_memory_database().unwrap();
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM treatments", [], |r| r.get(0)).unwrap();
+        assert!(count >= 95, "Expected at least 95 treatments, got {count}");
+    }
+
+    #[test]
+    fn test_seed_creates_risk_factors() {
+        let conn = db::init_memory_database().unwrap();
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM risk_factors", [], |r| r.get(0)).unwrap();
+        assert!(count >= 95, "Expected at least 95 risk factors, got {count}");
+    }
+
+    #[test]
+    fn test_seed_idempotent() {
+        let conn = db::init_memory_database().unwrap();
+        let c1: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
+        seed_if_empty(&conn).unwrap();
+        let c2: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
+        assert_eq!(c1, c2);
+    }
+
+    #[test]
+    fn test_disease_has_symptoms() {
+        let conn = db::init_memory_database().unwrap();
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM disease_symptoms ds JOIN diseases d ON d.id = ds.disease_id WHERE d.name = 'Malaria'",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert!(count >= 5, "Malaria should have at least 5 symptoms");
+    }
+
+    #[test]
+    fn test_metadata_seed_version() {
+        let conn = db::init_memory_database().unwrap();
+        let ver: String = conn.query_row(
+            "SELECT value FROM metadata WHERE key = 'seed_version'",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(ver, "9.0");
+    }
+
+    #[test]
+    fn test_covid19_exists() {
+        let conn = db::init_memory_database().unwrap();
+        let name: String = conn.query_row(
+            "SELECT name FROM diseases WHERE name = 'COVID-19'",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(name, "COVID-19");
+    }
+
+    #[test]
+    fn test_disease_has_risk_factors() {
+        let conn = db::init_memory_database().unwrap();
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM risk_factors rf JOIN diseases d ON d.id = rf.disease_id WHERE d.name = 'Heart Attack'",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert!(count >= 3, "Heart Attack should have at least 3 risk factors");
+    }
 }
