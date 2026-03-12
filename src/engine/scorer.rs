@@ -734,4 +734,62 @@ mod tests {
             "Multiple primary symptoms should boost score significantly"
         );
     }
+
+    // v11.0 tests for new diseases
+    #[test]
+    fn test_score_myasthenia_gravis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["muscle weakness", "drooping eyelids", "double vision"]);
+        let mg = results.iter().find(|r| r.disease_name == "Myasthenia Gravis");
+        assert!(mg.is_some(), "Myasthenia Gravis should appear");
+        assert!(mg.unwrap().probability > 20.0);
+    }
+
+    #[test]
+    fn test_score_guillain_barre() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["ascending muscle weakness", "tingling", "difficulty walking"]);
+        let gbs = results.iter().find(|r| r.disease_name == "Guillain-Barré Syndrome");
+        assert!(gbs.is_some(), "Guillain-Barré Syndrome should appear");
+    }
+
+    #[test]
+    fn test_score_rhabdomyolysis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe muscle pain", "dark brown urine", "muscle weakness"]);
+        let rhabdo = results.iter().find(|r| r.disease_name == "Rhabdomyolysis");
+        assert!(rhabdo.is_some(), "Rhabdomyolysis should appear");
+        assert!(rhabdo.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_tension_headache() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["bilateral headache", "pressing pain", "neck stiffness"]);
+        let th = results.iter().find(|r| r.disease_name == "Tension Headache");
+        assert!(th.is_some(), "Tension Headache should appear");
+    }
+
+    #[test]
+    fn test_score_acute_glaucoma() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe eye pain", "blurred vision", "halos around lights", "nausea"]);
+        let gl = results.iter().find(|r| r.disease_name == "Acute Angle-Closure Glaucoma");
+        assert!(gl.is_some(), "Acute Angle-Closure Glaucoma should appear");
+        assert!(gl.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_droopy_eyelid() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["droopy eyelid", "double vision"]);
+        assert!(!results.is_empty(), "droopy eyelid should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_dark_urine() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["dark urine", "muscle pain"]);
+        assert!(!results.is_empty(), "dark urine should expand via synonym");
+    }
 }

@@ -130,6 +130,16 @@ pub enum Commands {
         #[arg(long, default_value_t = 10)]
         limit: usize,
     },
+    /// Check drug-disease interactions and contraindications
+    Interact {
+        /// Drug name, e.g. "ibuprofen" or "metformin"
+        drug: String,
+    },
+    /// Show expected disease progression timeline
+    Timeline {
+        /// Disease name, e.g. "malaria" or "heart attack"
+        name: String,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -197,6 +207,12 @@ fn main() {
         }
         Commands::Comorbidity { name, limit } => {
             commands::comorbidity::run(&conn, &name, limit, cli.json);
+        }
+        Commands::Interact { drug } => {
+            commands::interact::run(&conn, &drug, cli.json);
+        }
+        Commands::Timeline { name } => {
+            commands::timeline::run(&conn, &name, cli.json);
         }
     }
 }

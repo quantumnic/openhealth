@@ -88,6 +88,22 @@ openhealth comorbidity "heart attack" --limit 5
 ```
 Find diseases that commonly co-occur based on shared risk factors and symptoms.
 
+### Drug-Disease Interactions *(new in v0.11)*
+```bash
+openhealth interact "ibuprofen"
+openhealth interact "metformin"
+openhealth --json interact "aspirin"
+```
+Check known drug-disease contraindications and safety warnings. Covers NSAIDs, corticosteroids, antibiotics, cardiovascular drugs, psychiatric medications, and more.
+
+### Disease Progression Timeline *(new in v0.11)*
+```bash
+openhealth timeline "malaria"
+openhealth timeline "heart attack"
+openhealth --json timeline "covid-19"
+```
+Visualize expected disease progression phases with timeframes, key symptoms per phase, and warning signs for escalation.
+
 ### Database Status
 ```bash
 openhealth update
@@ -96,7 +112,7 @@ Check database version and statistics.
 
 ## 🗃️ Diseases Covered
 
-OpenHealth includes detailed data for **185+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
+OpenHealth includes detailed data for **200+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
 
 | Category | Diseases |
 |----------|----------|

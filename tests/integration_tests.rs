@@ -514,3 +514,96 @@ fn test_cli_disease_dvt() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Deep Vein Thrombosis") || stdout.contains("blood clot"));
 }
+
+// v11.0 tests
+
+#[test]
+fn test_cli_interact_ibuprofen() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_interact.db", "interact", "ibuprofen"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("DRUG-DISEASE") || stdout.contains("interaction"));
+    assert!(stdout.contains("Asthma") || stdout.contains("bronchospasm"));
+}
+
+#[test]
+fn test_cli_interact_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_interact_j.db", "--json", "interact", "aspirin"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"drug\"") && stdout.contains("interactions"));
+}
+
+#[test]
+fn test_cli_interact_unknown_drug() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_interact_u.db", "interact", "xyzzydrug"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("No known interactions"));
+}
+
+#[test]
+fn test_cli_timeline_malaria() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_timeline.db", "timeline", "malaria"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("TIMELINE") || stdout.contains("Incubation"));
+}
+
+#[test]
+fn test_cli_timeline_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_timeline_j.db", "--json", "timeline", "heart attack"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"phases\"") && stdout.contains("warning_signs"));
+}
+
+#[test]
+fn test_cli_timeline_unknown() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_timeline_u.db", "timeline", "xyzzy"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("not found") || stdout.contains("Available"));
+}
+
+#[test]
+fn test_cli_disease_myasthenia_gravis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_mg.db", "disease", "Myasthenia Gravis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Myasthenia Gravis"));
+}
+
+#[test]
+fn test_cli_disease_guillain_barre() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_gbs.db", "disease", "Guillain-Barré Syndrome"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Guillain"));
+}
+
+#[test]
+fn test_cli_disease_rhabdomyolysis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_rhabdo.db", "disease", "Rhabdomyolysis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Rhabdomyolysis"));
+}
