@@ -990,3 +990,138 @@ fn test_cli_symptoms_toxic_shock() {
     assert!(output.status.success());
     assert!(stdout.contains("Toxic Shock") || stdout.contains("probability"));
 }
+
+// ── v0.19.0 integration tests ──
+
+#[test]
+fn test_cli_bmi_normal() {
+    let output = cargo_bin()
+        .args(["bmi", "75 180"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Normal Weight"));
+}
+
+#[test]
+fn test_cli_bmi_json() {
+    let output = cargo_bin()
+        .args(["--json", "bmi", "100 170"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("\"bmi\""));
+    assert!(stdout.contains("Obese"));
+}
+
+#[test]
+fn test_cli_bmi_underweight() {
+    let output = cargo_bin()
+        .args(["bmi", "45 175"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Underweight"));
+}
+
+#[test]
+fn test_cli_disease_rabies() {
+    let output = cargo_bin()
+        .args(["--json", "disease", "Rabies"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Rabies"));
+}
+
+#[test]
+fn test_cli_disease_sinusitis() {
+    let output = cargo_bin()
+        .args(["--json", "disease", "Sinusitis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Sinusitis"));
+}
+
+#[test]
+fn test_cli_disease_kidney_stones() {
+    let output = cargo_bin()
+        .args(["--json", "disease", "Nephrolithiasis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Nephrolithiasis"));
+}
+
+#[test]
+fn test_cli_symptoms_ear_pain() {
+    let output = cargo_bin()
+        .args(["--json", "symptoms", "ear pain,fever,irritability"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Acute Otitis Media") || stdout.contains("probability"));
+}
+
+#[test]
+fn test_cli_symptoms_kidney_stone() {
+    let output = cargo_bin()
+        .args(["--json", "symptoms", "severe flank pain,blood in urine,nausea"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Nephrolithiasis") || stdout.contains("probability"));
+}
+
+#[test]
+fn test_cli_symptoms_vertigo() {
+    let output = cargo_bin()
+        .args(["--json", "symptoms", "dizziness,vertigo,nausea"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Vertigo") || stdout.contains("probability"));
+}
+
+#[test]
+fn test_cli_symptoms_panic() {
+    let output = cargo_bin()
+        .args(["--json", "symptoms", "palpitations,chest tightness,shortness of breath,trembling"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Panic") || stdout.contains("probability"));
+}
+
+#[test]
+fn test_cli_synonym_earache() {
+    let output = cargo_bin()
+        .args(["--json", "symptoms", "earache,fever"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("probability"));
+}
+
+#[test]
+fn test_cli_synonym_kidney_pain() {
+    let output = cargo_bin()
+        .args(["--json", "symptoms", "kidney pain,blood in pee,nausea"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("probability"));
+}

@@ -25,6 +25,11 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Calculate Body Mass Index and health classification
+    Bmi {
+        /// Weight (kg) and height (cm), e.g. "75 180"
+        input: String,
+    },
     /// Interactive symptom checker — guided Q&A
     Check,
     /// Quick symptom analysis
@@ -216,6 +221,9 @@ fn main() {
     };
 
     match cli.command {
+        Commands::Bmi { input } => {
+            commands::bmi::run(&input, cli.json);
+        }
         Commands::Check => commands::check::run(&conn),
         Commands::Symptoms { symptoms } => commands::symptoms::run(&conn, &symptoms, cli.json),
         Commands::Disease { name } => commands::disease::run(&conn, &name, cli.json),

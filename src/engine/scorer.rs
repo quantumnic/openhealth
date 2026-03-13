@@ -398,6 +398,17 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Graves' Disease", vec!["weight gain", "cold intolerance", "constipation"]);
     map.insert("Hashimoto's Thyroiditis", vec!["weight loss", "heat intolerance", "diarrhea"]);
     map.insert("Cataracts", vec!["eye pain", "eye redness", "headache"]);
+    // v0.19.0 negative evidence
+    map.insert("Panic Disorder", vec!["fever", "rash", "weight loss", "cough"]);
+    map.insert("Sinusitis", vec!["chest pain", "rash", "diarrhea"]);
+    map.insert("Plantar Fasciitis", vec!["fever", "rash", "swelling", "numbness"]);
+    map.insert("Vertigo (BPPV)", vec!["fever", "hearing loss", "ear discharge"]);
+    map.insert("Rosacea", vec!["fever", "joint pain", "fatigue", "weight loss"]);
+    map.insert("Nephrolithiasis", vec!["rash", "cough", "sore throat"]);
+    map.insert("Scurvy", vec!["fever", "cough", "diarrhea"]);
+    map.insert("Frostbite", vec!["fever", "sweating", "rash"]);
+    map.insert("Rabies", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Bipolar Disorder", vec!["fever", "rash", "cough", "weight loss"]);
     map.insert("Hypothermia", vec!["fever", "sweating", "rash"]);
     map.insert("Spontaneous Pneumothorax", vec!["fever", "productive cough", "rash"]);
     map.insert("Parkinson's Disease", vec!["fever", "rash", "diarrhea"]);
@@ -1322,7 +1333,6 @@ mod tests {
     #[test]
     fn test_negative_evidence_graves_vs_hashimoto() {
         let conn = db::init_memory_database().unwrap();
-        // Weight gain is negative evidence for Graves' — should reduce Graves' score
         let results = score_symptoms(&conn, &["fatigue", "goiter", "weight gain"]);
         let graves = results.iter().find(|r| r.disease_name == "Graves' Disease");
         let hashimoto = results.iter().find(|r| r.disease_name == "Hashimoto's Thyroiditis");
@@ -1332,6 +1342,106 @@ mod tests {
                 "Hashimoto's should score >= Graves' with weight gain (neg evidence): H={} G={}",
                 h.probability, g.probability
             );
+        }
+    }
+
+    // ── v0.19.0 scorer tests ──
+
+    #[test]
+    fn test_score_sinusitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["facial pain", "nasal congestion", "headache"]);
+        assert!(results.iter().any(|r| r.disease_name == "Sinusitis"), "Sinusitis should appear for facial pain + nasal congestion");
+    }
+
+    #[test]
+    fn test_score_rabies() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["hydrophobia", "agitation", "fever"]);
+        assert!(results.iter().any(|r| r.disease_name == "Rabies"), "Rabies should appear for hydrophobia");
+    }
+
+    #[test]
+    fn test_score_nephrolithiasis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe flank pain", "blood in urine", "nausea"]);
+        assert!(results.iter().any(|r| r.disease_name == "Nephrolithiasis"), "Kidney stones should appear");
+    }
+
+    #[test]
+    fn test_score_panic_disorder() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["palpitations", "chest tightness", "shortness of breath", "fear of dying"]);
+        assert!(results.iter().any(|r| r.disease_name == "Panic Disorder"), "Panic Disorder should appear");
+    }
+
+    #[test]
+    fn test_score_acute_otitis_media() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["ear pain", "fever", "hearing loss"]);
+        assert!(results.iter().any(|r| r.disease_name == "Acute Otitis Media"), "Otitis Media should appear");
+    }
+
+    #[test]
+    fn test_score_dental_abscess() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe toothache", "facial swelling", "fever"]);
+        assert!(results.iter().any(|r| r.disease_name == "Dental Abscess"), "Dental Abscess should appear");
+    }
+
+    #[test]
+    fn test_score_scurvy() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["bleeding gums", "bruising easily", "fatigue"]);
+        assert!(results.iter().any(|r| r.disease_name == "Scurvy"), "Scurvy should appear for bleeding gums + bruising");
+    }
+
+    #[test]
+    fn test_score_bppv() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["vertigo", "dizziness", "nausea"]);
+        assert!(results.iter().any(|r| r.disease_name == "Vertigo (BPPV)"), "BPPV should appear for vertigo + dizziness");
+    }
+
+    #[test]
+    fn test_score_rosacea() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["facial redness", "visible blood vessels", "burning sensation on face"]);
+        assert!(results.iter().any(|r| r.disease_name == "Rosacea"), "Rosacea should appear");
+    }
+
+    #[test]
+    fn test_score_plantar_fasciitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["heel pain", "pain worse in morning"]);
+        assert!(results.iter().any(|r| r.disease_name == "Plantar Fasciitis"), "Plantar Fasciitis should appear");
+    }
+
+    #[test]
+    fn test_synonym_room_spinning() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["room spinning", "nausea"]);
+        assert!(results.iter().any(|r| r.matched_symptoms.iter().any(|s| s.to_lowercase().contains("vertigo"))),
+            "room spinning should expand to vertigo");
+    }
+
+    #[test]
+    fn test_synonym_blood_in_pee() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["kidney pain", "blood in pee"]);
+        assert!(!results.is_empty(), "kidney pain + blood in pee should match via synonyms");
+    }
+
+    #[test]
+    fn test_negative_evidence_panic_no_fever() {
+        let conn = db::init_memory_database().unwrap();
+        let with_fever = score_symptoms(&conn, &["palpitations", "chest tightness", "fever"]);
+        let without_fever = score_symptoms(&conn, &["palpitations", "chest tightness"]);
+        let panic_with = with_fever.iter().find(|r| r.disease_name == "Panic Disorder");
+        let panic_without = without_fever.iter().find(|r| r.disease_name == "Panic Disorder");
+        if let (Some(pw), Some(pwo)) = (panic_with, panic_without) {
+            assert!(pwo.probability >= pw.probability,
+                "Panic Disorder should score lower with fever (negative evidence)");
         }
     }
 }

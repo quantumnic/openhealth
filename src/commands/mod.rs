@@ -1,4 +1,5 @@
 pub mod almanac;
+pub mod bmi;
 pub mod body_system;
 pub mod check;
 pub mod comorbidity;
