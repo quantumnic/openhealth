@@ -816,3 +816,74 @@ fn test_cli_danger_signs_adult() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("ADULTS") || stdout.contains("Chest pain"));
 }
+
+// ── v15 tests ──
+
+#[test]
+fn test_cli_predict_malaria() {
+    let output = cargo_bin()
+        .args(["predict", "malaria"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Prognosis") || stdout.contains("Malaria"));
+}
+
+#[test]
+fn test_cli_predict_json() {
+    let output = cargo_bin()
+        .args(["--json", "predict", "heart attack"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("\"disease\"") && stdout.contains("Heart Attack"));
+}
+
+#[test]
+fn test_cli_predict_unknown() {
+    let output = cargo_bin()
+        .args(["predict", "xyznonexistent"])
+        .output()
+        .expect("failed to execute");
+    let combined = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(combined.contains("not found"));
+}
+
+#[test]
+fn test_cli_disease_erysipelas() {
+    let output = cargo_bin()
+        .args(["disease", "erysipelas"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Erysipelas"));
+}
+
+#[test]
+fn test_cli_symptoms_cluster_headache() {
+    let output = cargo_bin()
+        .args(["symptoms", "severe unilateral headache,tearing,eye redness"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Cluster Headache"));
+}
+
+#[test]
+fn test_cli_symptoms_hyperkalemia() {
+    let output = cargo_bin()
+        .args(["symptoms", "muscle weakness,palpitations,bradycardia"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Hyperkalemia"));
+}

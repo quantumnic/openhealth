@@ -162,6 +162,11 @@ pub enum Commands {
         #[arg(long)]
         month: Option<u32>,
     },
+    /// Predict disease prognosis, complications, and outcomes
+    Predict {
+        /// Disease name, e.g. "malaria" or "heart attack"
+        name: String,
+    },
     /// WHO danger signs — critical warning signs for children, maternal, and neonatal emergencies
     #[command(name = "danger-signs")]
     DangerSigns {
@@ -254,6 +259,9 @@ fn main() {
         }
         Commands::Almanac { month } => {
             commands::almanac::run(&conn, month, cli.json);
+        }
+        Commands::Predict { name } => {
+            commands::predict::run(&conn, &name, cli.json);
         }
         Commands::DangerSigns { category } => {
             commands::danger_signs::run(category.as_deref(), cli.json);

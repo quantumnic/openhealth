@@ -11,6 +11,7 @@ pub mod export;
 pub mod history;
 pub mod interact;
 pub mod list;
+pub mod predict;
 pub mod prevalence;
 pub mod profile;
 pub mod region;

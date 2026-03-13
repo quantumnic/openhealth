@@ -363,6 +363,24 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Lactose Intolerance", vec!["fever", "rash", "fatigue", "weight loss"]);
     // Tension Headache: no fever, no vision changes, no rash
     map.insert("Tension Headache", vec!["fever", "rash", "vomiting", "vision changes"]);
+    // Cluster Headache: no fever, no neck stiffness
+    map.insert("Cluster Headache", vec!["fever", "neck stiffness", "rash"]);
+    // Pneumonia: no rash typically
+    map.insert("Pneumonia", vec!["rash", "joint pain", "diarrhea"]);
+    // Anaphylaxis: typically rapid onset, no gradual fever
+    map.insert("Anaphylaxis", vec!["gradual onset", "fever"]);
+    // Peptic Ulcer: no fever unless perforated
+    map.insert("Peptic Ulcer Disease", vec!["fever", "rash", "cough"]);
+    // Gout: no bilateral, no fever usually (unless tophaceous)
+    map.insert("Gout", vec!["cough", "rash", "diarrhea"]);
+    // GERD: no fever, no weight loss
+    map.insert("Irritable Bowel Syndrome", vec!["fever", "bloody stool", "weight loss"]);
+    // Conversion Disorder: no organic signs
+    map.insert("Conversion Disorder", vec!["fever", "rash", "weight loss"]);
+    // Hyperkalemia: no rash, no cough
+    map.insert("Hyperkalemia", vec!["rash", "cough", "fever"]);
+    // DVT: typically unilateral, no rash
+    map.insert("Deep Vein Thrombosis", vec!["rash", "cough", "fever"]);
     map
 }
 
