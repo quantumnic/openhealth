@@ -180,8 +180,9 @@ pub fn score_symptoms_with_context(
             0.0
         };
 
-        // Demographic adjustment: boost/penalize based on age/sex fit
-        let demographic_factor = compute_demographic_factor(context, age_group);
+        // Demographic adjustment: boost/penalize based on age/sex fit and category
+        let demographic_factor = compute_demographic_factor(context, age_group)
+            * compute_sex_factor(context, _category);
 
         // Negative evidence: check if patient has symptoms that argue against this disease
         let negative_map = get_negative_evidence();
@@ -263,22 +264,34 @@ fn compute_demographic_factor(context: &PatientContext, age_group: &str) -> f64 
         }
     }
 
-    // Sex-based adjustments for specific disease age groups
-    // (handled via category in seed data, but age_group gives a hint)
-    if let Some(ref sex) = context.sex {
-        match age_group {
-            // Obstetric/gynecological conditions strongly favor female
-            "adults" | "adult" => {
-                // No blanket adjustment; category-level would be better
-                // but we keep it neutral here
-            }
-            _ => {}
-        }
-        // Just ensure sex is used to suppress the unused warning
-        let _ = sex;
-    }
-
     factor
+}
+
+/// Sex-based demographic adjustment for category-specific diseases.
+fn compute_sex_factor(context: &PatientContext, category: &str) -> f64 {
+    if let Some(ref sex) = context.sex {
+        let sex_lower = sex.to_lowercase();
+        match category {
+            "gynecological" | "obstetric" => {
+                if sex_lower == "male" {
+                    0.05 // extremely unlikely in males
+                } else {
+                    1.1
+                }
+            }
+            "urological" => {
+                // Some urological conditions like testicular torsion are male-only
+                if sex_lower == "female" {
+                    0.7
+                } else {
+                    1.05
+                }
+            }
+            _ => 1.0,
+        }
+    } else {
+        1.0
+    }
 }
 
 /// Count how many diseases each symptom appears in (for specificity calculation).
@@ -390,6 +403,14 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Parkinson's Disease", vec!["fever", "rash", "diarrhea"]);
     map.insert("Alzheimer's Disease", vec!["fever", "acute pain", "rash"]);
     map.insert("Fibromyalgia", vec!["fever", "joint swelling", "rash"]);
+    // v17 negative evidence
+    map.insert("Carpal Tunnel Syndrome", vec!["fever", "rash", "cough"]);
+    map.insert("Endometriosis", vec!["fever", "rash", "cough"]);
+    map.insert("Celiac Disease", vec!["fever", "rash", "cough"]);
+    map.insert("Bipolar Disorder", vec!["fever", "rash", "cough", "joint pain"]);
+    map.insert("Plantar Fasciitis", vec!["fever", "rash", "cough"]);
+    map.insert("Sciatica", vec!["fever", "rash", "cough"]);
+    map.insert("Postpartum Depression", vec!["fever", "rash", "cough"]);
     map
 }
 
@@ -1093,6 +1114,94 @@ mod tests {
         let results = score_symptoms(&conn, &["easy bruising", "petechiae", "purpura", "nosebleeds"]);
         let itp = results.iter().find(|r| r.disease_name == "Idiopathic Thrombocytopenic Purpura");
         assert!(itp.is_some(), "ITP should appear");
+    }
+
+    // v17 disease tests
+    #[test]
+    fn test_score_wilsons_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["jaundice", "tremor", "Kayser-Fleischer rings"]);
+        let wd = results.iter().find(|r| r.disease_name == "Wilson's Disease");
+        assert!(wd.is_some(), "Wilson's Disease should appear");
+        assert!(wd.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_cystic_fibrosis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["persistent cough with thick mucus", "recurrent lung infections", "poor weight gain"]);
+        let cf = results.iter().find(|r| r.disease_name == "Cystic Fibrosis");
+        assert!(cf.is_some(), "Cystic Fibrosis should appear");
+    }
+
+    #[test]
+    fn test_score_carpal_tunnel() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["hand numbness", "hand tingling", "wrist pain"]);
+        let ct = results.iter().find(|r| r.disease_name == "Carpal Tunnel Syndrome");
+        assert!(ct.is_some(), "Carpal Tunnel Syndrome should appear");
+        assert!(ct.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_endometriosis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe menstrual cramps", "chronic pelvic pain", "pain during intercourse"]);
+        let endo = results.iter().find(|r| r.disease_name == "Endometriosis");
+        assert!(endo.is_some(), "Endometriosis should appear");
+    }
+
+    #[test]
+    fn test_score_testicular_torsion() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden severe scrotal pain", "scrotal swelling", "nausea"]);
+        let tt = results.iter().find(|r| r.disease_name == "Testicular Torsion");
+        assert!(tt.is_some(), "Testicular Torsion should appear");
+    }
+
+    #[test]
+    fn test_score_sickle_cell_crisis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe bone pain", "chest pain", "fever"]);
+        let scc = results.iter().find(|r| r.disease_name == "Sickle Cell Crisis");
+        assert!(scc.is_some(), "Sickle Cell Crisis should appear");
+    }
+
+    #[test]
+    fn test_score_celiac() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chronic diarrhea", "bloating", "weight loss"]);
+        let cel = results.iter().find(|r| r.disease_name == "Celiac Disease");
+        assert!(cel.is_some(), "Celiac Disease should appear");
+    }
+
+    #[test]
+    fn test_sex_factor_gynecological() {
+        let male_ctx = PatientContext { age: Some(30), sex: Some("male".to_string()) };
+        let female_ctx = PatientContext { age: Some(30), sex: Some("female".to_string()) };
+        let male_f = compute_sex_factor(&male_ctx, "gynecological");
+        let female_f = compute_sex_factor(&female_ctx, "gynecological");
+        assert!(male_f < female_f, "Gynecological should penalize males: m={} f={}", male_f, female_f);
+    }
+
+    #[test]
+    fn test_sex_factor_neutral() {
+        let ctx = PatientContext { age: Some(30), sex: Some("male".to_string()) };
+        assert_eq!(compute_sex_factor(&ctx, "infectious"), 1.0);
+    }
+
+    #[test]
+    fn test_synonym_period_pain() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["period pain", "pelvic pain"]);
+        assert!(!results.is_empty(), "period pain should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_testicle_pain() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["testicle pain", "nausea"]);
+        assert!(!results.is_empty(), "testicle pain should expand via synonym");
     }
 
     #[test]

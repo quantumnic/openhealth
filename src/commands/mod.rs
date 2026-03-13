@@ -13,6 +13,7 @@ pub mod history;
 pub mod interact;
 pub mod list;
 pub mod predict;
+pub mod quiz;
 pub mod prevalence;
 pub mod profile;
 pub mod region;

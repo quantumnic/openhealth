@@ -179,6 +179,12 @@ pub enum Commands {
         /// Comma-separated conditions in family, e.g. "diabetes, breast cancer, heart attack"
         conditions: String,
     },
+    /// Interactive medical knowledge quiz — test your health knowledge
+    Quiz {
+        /// Number of questions (default: 10)
+        #[arg(long, default_value_t = 10)]
+        count: usize,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -274,6 +280,9 @@ fn main() {
         }
         Commands::FamilyHistory { conditions } => {
             commands::family_history::run(&conn, &conditions, cli.json);
+        }
+        Commands::Quiz { count } => {
+            commands::quiz::run(&conn, count);
         }
     }
 }
