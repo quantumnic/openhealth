@@ -195,6 +195,15 @@ pub enum Commands {
         /// Vital signs as key=value pairs, e.g. "hr=72 bp=120/80 temp=37.2 spo2=98 rr=16"
         input: String,
     },
+    /// Age- and sex-appropriate health screening recommendations (USPSTF, WHO, ACS)
+    Screen {
+        /// Age in years (filters to applicable screenings)
+        #[arg(long)]
+        age: Option<u8>,
+        /// Sex: male or female (filters sex-specific screenings)
+        #[arg(long)]
+        sex: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -299,6 +308,9 @@ fn main() {
         }
         Commands::Vitals { input } => {
             commands::vitals::run(&input, cli.json);
+        }
+        Commands::Screen { age, sex } => {
+            commands::screen::run(age, sex.as_deref(), cli.json);
         }
     }
 }
