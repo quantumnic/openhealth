@@ -27,3 +27,4 @@ pub mod treatment;
 pub mod update;
 pub mod triage;
 pub mod validate;
+pub mod vitals;

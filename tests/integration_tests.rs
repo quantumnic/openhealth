@@ -932,3 +932,61 @@ fn test_cli_disease_hypothermia() {
     assert!(output.status.success());
     assert!(stdout.contains("Hypothermia"));
 }
+
+// v18 integration tests
+#[test]
+fn test_cli_vitals_normal() {
+    let output = cargo_bin()
+        .args(["--json", "vitals", "hr=72 bp=120/80 temp=37.0 spo2=98 rr=16"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Heart Rate"));
+    assert!(stdout.contains("normal"));
+}
+
+#[test]
+fn test_cli_vitals_critical() {
+    let output = cargo_bin()
+        .args(["--json", "vitals", "hr=160 spo2=85"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("critical"));
+    assert!(stdout.contains("CRITICAL"));
+}
+
+#[test]
+fn test_cli_disease_addisons() {
+    let output = cargo_bin()
+        .args(["disease", "Addison's Disease"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Addison"));
+}
+
+#[test]
+fn test_cli_disease_aortic_dissection() {
+    let output = cargo_bin()
+        .args(["--json", "disease", "Aortic Dissection"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Aortic Dissection"));
+}
+
+#[test]
+fn test_cli_symptoms_toxic_shock() {
+    let output = cargo_bin()
+        .args(["--json", "symptoms", "high fever,rash,low blood pressure"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Toxic Shock") || stdout.contains("probability"));
+}

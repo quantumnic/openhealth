@@ -185,6 +185,11 @@ pub enum Commands {
         #[arg(long, default_value_t = 10)]
         count: usize,
     },
+    /// Interpret vital signs — heart rate, blood pressure, temperature, SpO2, respiratory rate
+    Vitals {
+        /// Vital signs as key=value pairs, e.g. "hr=72 bp=120/80 temp=37.2 spo2=98 rr=16"
+        input: String,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -283,6 +288,9 @@ fn main() {
         }
         Commands::Quiz { count } => {
             commands::quiz::run(&conn, count);
+        }
+        Commands::Vitals { input } => {
+            commands::vitals::run(&input, cli.json);
         }
     }
 }

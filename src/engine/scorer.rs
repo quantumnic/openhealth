@@ -411,6 +411,15 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Plantar Fasciitis", vec!["fever", "rash", "cough"]);
     map.insert("Sciatica", vec!["fever", "rash", "cough"]);
     map.insert("Postpartum Depression", vec!["fever", "rash", "cough"]);
+    // v18 negative evidence
+    map.insert("Addison's Disease", vec!["weight gain", "moon face", "high blood pressure"]);
+    map.insert("Cushing's Syndrome", vec!["weight loss", "hyperpigmentation", "low blood pressure"]);
+    map.insert("Aortic Dissection", vec!["rash", "fever", "gradual onset"]);
+    map.insert("Myocarditis", vec!["rash", "joint pain", "diarrhea"]);
+    map.insert("Multiple Sclerosis", vec!["fever", "rash", "diarrhea"]);
+    map.insert("Trigeminal Neuralgia", vec!["fever", "rash", "bilateral pain"]);
+    map.insert("Toxic Shock Syndrome", vec!["gradual onset", "joint stiffness"]);
+    map.insert("Sarcoidosis", vec!["high fever", "diarrhea", "vomiting"]);
     map
 }
 
@@ -1202,6 +1211,112 @@ mod tests {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["testicle pain", "nausea"]);
         assert!(!results.is_empty(), "testicle pain should expand via synonym");
+    }
+
+    // v18 disease tests
+    #[test]
+    fn test_score_addisons_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fatigue", "weight loss", "hyperpigmentation", "low blood pressure"]);
+        let ad = results.iter().find(|r| r.disease_name == "Addison's Disease");
+        assert!(ad.is_some(), "Addison's Disease should appear");
+        assert!(ad.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_cushings_syndrome() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["weight gain", "moon face", "purple stretch marks", "easy bruising"]);
+        let cs = results.iter().find(|r| r.disease_name == "Cushing's Syndrome");
+        assert!(cs.is_some(), "Cushing's Syndrome should appear");
+        assert!(cs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_aortic_dissection() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden tearing chest pain", "pain radiating to back", "weak pulse"]);
+        let ad = results.iter().find(|r| r.disease_name == "Aortic Dissection");
+        assert!(ad.is_some(), "Aortic Dissection should appear");
+    }
+
+    #[test]
+    fn test_score_kawasaki() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(3), sex: None };
+        let results = score_symptoms_with_context(&conn, &["high fever", "red eyes", "strawberry tongue", "rash"], &child_ctx);
+        let kd = results.iter().find(|r| r.disease_name == "Kawasaki Disease");
+        assert!(kd.is_some(), "Kawasaki Disease should appear");
+    }
+
+    #[test]
+    fn test_score_multiple_sclerosis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["vision problems", "numbness", "tingling", "fatigue"]);
+        let ms = results.iter().find(|r| r.disease_name == "Multiple Sclerosis");
+        assert!(ms.is_some(), "Multiple Sclerosis should appear");
+    }
+
+    #[test]
+    fn test_score_als() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["muscle weakness", "muscle twitching", "difficulty speaking"]);
+        let als = results.iter().find(|r| r.disease_name == "Amyotrophic Lateral Sclerosis");
+        assert!(als.is_some(), "ALS should appear");
+    }
+
+    #[test]
+    fn test_score_toxic_shock() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["high fever", "low blood pressure", "diffuse red rash", "confusion"]);
+        let tss = results.iter().find(|r| r.disease_name == "Toxic Shock Syndrome");
+        assert!(tss.is_some(), "Toxic Shock Syndrome should appear");
+    }
+
+    #[test]
+    fn test_score_myocarditis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chest pain", "shortness of breath", "rapid heartbeat", "fever"]);
+        let mc = results.iter().find(|r| r.disease_name == "Myocarditis");
+        assert!(mc.is_some(), "Myocarditis should appear");
+    }
+
+    #[test]
+    fn test_score_hepatitis_a() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["jaundice", "dark urine", "nausea", "fatigue"]);
+        let ha = results.iter().find(|r| r.disease_name == "Hepatitis A");
+        assert!(ha.is_some(), "Hepatitis A should appear");
+    }
+
+    #[test]
+    fn test_negative_evidence_addisons_vs_cushings() {
+        let conn = db::init_memory_database().unwrap();
+        // Weight gain is negative for Addison's; should favor Cushing's
+        let results = score_symptoms(&conn, &["fatigue", "weight gain", "moon face"]);
+        let addison = results.iter().find(|r| r.disease_name == "Addison's Disease");
+        let cushing = results.iter().find(|r| r.disease_name == "Cushing's Syndrome");
+        if let (Some(a), Some(c)) = (addison, cushing) {
+            assert!(
+                c.probability >= a.probability,
+                "Cushing's should score >= Addison's with weight gain: C={} A={}",
+                c.probability, a.probability
+            );
+        }
+    }
+
+    #[test]
+    fn test_synonym_trouble_swallowing() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["trouble swallowing", "chest pain"]);
+        assert!(!results.is_empty(), "trouble swallowing should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_dark_skin_patches() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["dark skin patches", "fatigue", "weight loss"]);
+        assert!(!results.is_empty(), "dark skin patches should match via synonym");
     }
 
     #[test]
