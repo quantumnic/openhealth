@@ -173,6 +173,12 @@ pub enum Commands {
         /// Category: child, maternal, neonatal, adult (omit for all)
         category: Option<String>,
     },
+    /// Assess disease risk based on family medical history
+    #[command(name = "family-history")]
+    FamilyHistory {
+        /// Comma-separated conditions in family, e.g. "diabetes, breast cancer, heart attack"
+        conditions: String,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -265,6 +271,9 @@ fn main() {
         }
         Commands::DangerSigns { category } => {
             commands::danger_signs::run(category.as_deref(), cli.json);
+        }
+        Commands::FamilyHistory { conditions } => {
+            commands::family_history::run(&conn, &conditions, cli.json);
         }
     }
 }

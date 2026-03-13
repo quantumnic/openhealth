@@ -1,6 +1,6 @@
 [package]
 name = "openhealth"
-version = "0.15.0"
+version = "0.16.0"
 edition = "2021"
 authors = ["Nicola Spieser <quantumnic@users.noreply.github.com>"]
 description = "Offline AI medical diagnostics — symptom analysis, WHO protocols, 100+ languages, runs on any device. Free forever."

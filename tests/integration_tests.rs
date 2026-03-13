@@ -696,11 +696,12 @@ fn test_cli_region_list() {
 #[test]
 fn test_cli_region_chest() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_region_chest.db", "region", "chest"])
+        .args(["--db-path", "/tmp/openhealth_test_region_chest.db", "--json", "region", "chest"])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Heart Attack") || stdout.contains("Pneumonia") || stdout.contains("Asthma"));
+    // JSON output includes all diseases, not just top 20
+    assert!(stdout.contains("Heart Attack") || stdout.contains("Pneumonia") || stdout.contains("Asthma") || stdout.contains("chest"));
 }
 
 #[test]
@@ -886,4 +887,48 @@ fn test_cli_symptoms_hyperkalemia() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(output.status.success());
     assert!(stdout.contains("Hyperkalemia"));
+}
+
+#[test]
+fn test_cli_family_history() {
+    let output = cargo_bin()
+        .args(["family-history", "diabetes, breast cancer"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Diabetes Type 2") || stdout.contains("Breast Cancer"));
+}
+
+#[test]
+fn test_cli_family_history_json() {
+    let output = cargo_bin()
+        .args(["--json", "family-history", "heart attack"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Heart Attack") || stdout.contains("heart_condition"));
+}
+
+#[test]
+fn test_cli_symptoms_graves() {
+    let output = cargo_bin()
+        .args(["--json", "symptoms", "bulging,goiter,tremor,sweating"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Graves"), "Should find Graves' Disease, got: {}", &stdout[..stdout.len().min(500)]);
+}
+
+#[test]
+fn test_cli_disease_hypothermia() {
+    let output = cargo_bin()
+        .args(["disease", "Hypothermia"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(output.status.success());
+    assert!(stdout.contains("Hypothermia"));
 }

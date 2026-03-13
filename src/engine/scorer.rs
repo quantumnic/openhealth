@@ -381,6 +381,15 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Hyperkalemia", vec!["rash", "cough", "fever"]);
     // DVT: typically unilateral, no rash
     map.insert("Deep Vein Thrombosis", vec!["rash", "cough", "fever"]);
+    // v16 negative evidence
+    map.insert("Graves' Disease", vec!["weight gain", "cold intolerance", "constipation"]);
+    map.insert("Hashimoto's Thyroiditis", vec!["weight loss", "heat intolerance", "diarrhea"]);
+    map.insert("Cataracts", vec!["eye pain", "eye redness", "headache"]);
+    map.insert("Hypothermia", vec!["fever", "sweating", "rash"]);
+    map.insert("Spontaneous Pneumothorax", vec!["fever", "productive cough", "rash"]);
+    map.insert("Parkinson's Disease", vec!["fever", "rash", "diarrhea"]);
+    map.insert("Alzheimer's Disease", vec!["fever", "acute pain", "rash"]);
+    map.insert("Fibromyalgia", vec!["fever", "joint swelling", "rash"]);
     map
 }
 
@@ -1016,5 +1025,89 @@ mod tests {
         let results = score_symptoms(&conn, &["floor of mouth swelling", "difficulty swallowing", "drooling", "fever"]);
         let la = results.iter().find(|r| r.disease_name == "Ludwig Angina");
         assert!(la.is_some(), "Ludwig Angina should appear");
+    }
+
+    // v16 disease tests
+    #[test]
+    fn test_score_graves_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["weight loss", "rapid heartbeat", "bulging eyes", "heat intolerance"]);
+        let gd = results.iter().find(|r| r.disease_name == "Graves' Disease");
+        assert!(gd.is_some(), "Graves' Disease should appear");
+        assert!(gd.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_hashimotos() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fatigue", "weight gain", "cold intolerance", "dry skin"]);
+        let ht = results.iter().find(|r| r.disease_name == "Hashimoto's Thyroiditis");
+        assert!(ht.is_some(), "Hashimoto's Thyroiditis should appear");
+    }
+
+    #[test]
+    fn test_score_septic_arthritis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["acute joint pain", "joint swelling", "fever", "inability to move joint"]);
+        let sa = results.iter().find(|r| r.disease_name == "Septic Arthritis");
+        assert!(sa.is_some(), "Septic Arthritis should appear");
+        assert!(sa.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_hypothermia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["shivering", "confusion", "loss of coordination", "cold pale skin"]);
+        let hypo = results.iter().find(|r| r.disease_name == "Hypothermia");
+        assert!(hypo.is_some(), "Hypothermia should appear");
+    }
+
+    #[test]
+    fn test_score_spontaneous_pneumothorax() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden chest pain", "shortness of breath", "decreased breath sounds"]);
+        let sp = results.iter().find(|r| r.disease_name == "Spontaneous Pneumothorax");
+        assert!(sp.is_some(), "Spontaneous Pneumothorax should appear");
+    }
+
+    #[test]
+    fn test_score_chronic_migraine() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["frequent headaches", "throbbing head pain", "light sensitivity", "nausea"]);
+        let cm = results.iter().find(|r| r.disease_name == "Chronic Migraine");
+        assert!(cm.is_some(), "Chronic Migraine should appear");
+        assert!(cm.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_acute_porphyria() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe abdominal pain", "dark red urine", "confusion", "rapid heart rate"]);
+        let aip = results.iter().find(|r| r.disease_name == "Acute Intermittent Porphyria");
+        assert!(aip.is_some(), "Acute Intermittent Porphyria should appear");
+    }
+
+    #[test]
+    fn test_score_itp() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["easy bruising", "petechiae", "purpura", "nosebleeds"]);
+        let itp = results.iter().find(|r| r.disease_name == "Idiopathic Thrombocytopenic Purpura");
+        assert!(itp.is_some(), "ITP should appear");
+    }
+
+    #[test]
+    fn test_negative_evidence_graves_vs_hashimoto() {
+        let conn = db::init_memory_database().unwrap();
+        // Weight gain is negative evidence for Graves' — should reduce Graves' score
+        let results = score_symptoms(&conn, &["fatigue", "goiter", "weight gain"]);
+        let graves = results.iter().find(|r| r.disease_name == "Graves' Disease");
+        let hashimoto = results.iter().find(|r| r.disease_name == "Hashimoto's Thyroiditis");
+        if let (Some(g), Some(h)) = (graves, hashimoto) {
+            assert!(
+                h.probability >= g.probability,
+                "Hashimoto's should score >= Graves' with weight gain (neg evidence): H={} G={}",
+                h.probability, g.probability
+            );
+        }
     }
 }

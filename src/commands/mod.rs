@@ -8,6 +8,7 @@ pub mod diff;
 pub mod disease;
 pub mod emergency;
 pub mod export;
+pub mod family_history;
 pub mod history;
 pub mod interact;
 pub mod list;
