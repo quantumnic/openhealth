@@ -204,6 +204,14 @@ pub enum Commands {
         #[arg(long)]
         sex: Option<String>,
     },
+    /// Daily water intake calculator based on weight, activity, and climate
+    Hydration {
+        /// Weight (kg), activity level, climate, e.g. "70 moderate hot"
+        input: String,
+    },
+    /// Severity classification guide with database statistics
+    #[command(name = "severity-guide")]
+    SeverityGuide,
 }
 
 fn default_db_path() -> PathBuf {
@@ -311,6 +319,12 @@ fn main() {
         }
         Commands::Screen { age, sex } => {
             commands::screen::run(age, sex.as_deref(), cli.json);
+        }
+        Commands::Hydration { input } => {
+            commands::hydration::run(&input, cli.json);
+        }
+        Commands::SeverityGuide => {
+            commands::severity_guide::run(&conn, cli.json);
         }
     }
 }

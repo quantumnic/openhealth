@@ -431,6 +431,17 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Trigeminal Neuralgia", vec!["fever", "rash", "bilateral pain"]);
     map.insert("Toxic Shock Syndrome", vec!["gradual onset", "joint stiffness"]);
     map.insert("Sarcoidosis", vec!["high fever", "diarrhea", "vomiting"]);
+    // v21 negative evidence
+    map.insert("Achalasia", vec!["diarrhea", "fever", "rash"]);
+    map.insert("Pheochromocytoma", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Polymyalgia Rheumatica", vec!["rash", "swollen joints", "muscle weakness"]);
+    map.insert("Restless Legs Syndrome", vec!["fever", "rash", "joint swelling"]);
+    map.insert("Normal Pressure Hydrocephalus", vec!["fever", "rash", "acute onset"]);
+    map.insert("Interstitial Cystitis", vec!["fever", "blood in urine", "rash"]);
+    map.insert("Peripheral Artery Disease", vec!["rash", "fever", "bilateral arm pain"]);
+    map.insert("Thoracic Outlet Syndrome", vec!["fever", "rash", "bilateral symptoms"]);
+    map.insert("Vocal Cord Dysfunction", vec!["fever", "rash", "wheezing on exhale"]);
+    map.insert("Erythema Nodosum", vec!["blisters", "itching", "scaling"]);
     map
 }
 
@@ -1443,5 +1454,143 @@ mod tests {
             assert!(pwo.probability >= pw.probability,
                 "Panic Disorder should score lower with fever (negative evidence)");
         }
+    }
+}
+
+// ── v0.21.0 scorer tests ──
+
+#[cfg(test)]
+mod tests_v21 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_achalasia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["difficulty swallowing", "regurgitation", "chest pain"]);
+        let ac = results.iter().find(|r| r.disease_name == "Achalasia");
+        assert!(ac.is_some(), "Achalasia should appear");
+        assert!(ac.unwrap().probability > 20.0);
+    }
+
+    #[test]
+    fn test_score_pheochromocytoma() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["episodic hypertension", "severe headache", "excessive sweating", "rapid heartbeat"]);
+        let pheo = results.iter().find(|r| r.disease_name == "Pheochromocytoma");
+        assert!(pheo.is_some(), "Pheochromocytoma should appear");
+        assert!(pheo.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_polymyalgia_rheumatica() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["shoulder pain and stiffness", "hip pain and stiffness", "fatigue"]);
+        let pmr = results.iter().find(|r| r.disease_name == "Polymyalgia Rheumatica");
+        assert!(pmr.is_some(), "Polymyalgia Rheumatica should appear");
+    }
+
+    #[test]
+    fn test_score_cholangitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fever", "jaundice", "right upper quadrant pain"]);
+        let ch = results.iter().find(|r| r.disease_name == "Cholangitis");
+        assert!(ch.is_some(), "Cholangitis should appear");
+        assert!(ch.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_interstitial_cystitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["bladder pressure", "urinary urgency", "chronic pelvic pain"]);
+        let ic = results.iter().find(|r| r.disease_name == "Interstitial Cystitis");
+        assert!(ic.is_some(), "Interstitial Cystitis should appear");
+    }
+
+    #[test]
+    fn test_score_hemolytic_uremic_syndrome() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(3), sex: None };
+        let results = score_symptoms_with_context(&conn, &["bloody diarrhea", "decreased urination", "pallor"], &child_ctx);
+        let hus = results.iter().find(|r| r.disease_name == "Hemolytic Uremic Syndrome");
+        assert!(hus.is_some(), "HUS should appear");
+    }
+
+    #[test]
+    fn test_score_restless_legs() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["urge to move legs", "uncomfortable leg sensations", "insomnia"]);
+        let rls = results.iter().find(|r| r.disease_name == "Restless Legs Syndrome");
+        assert!(rls.is_some(), "RLS should appear");
+    }
+
+    #[test]
+    fn test_score_orbital_cellulitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["eye swelling", "eye pain", "proptosis", "fever"]);
+        let oc = results.iter().find(|r| r.disease_name == "Orbital Cellulitis");
+        assert!(oc.is_some(), "Orbital Cellulitis should appear");
+        assert!(oc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_normal_pressure_hydrocephalus() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["gait disturbance", "urinary incontinence", "cognitive decline"]);
+        let nph = results.iter().find(|r| r.disease_name == "Normal Pressure Hydrocephalus");
+        assert!(nph.is_some(), "NPH should appear");
+        assert!(nph.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_mastoiditis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["swelling behind ear", "ear pain", "fever"]);
+        let mast = results.iter().find(|r| r.disease_name == "Mastoiditis");
+        assert!(mast.is_some(), "Mastoiditis should appear");
+    }
+
+    #[test]
+    fn test_score_peripheral_artery_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["leg pain when walking", "leg cramping", "cold feet"]);
+        let pad = results.iter().find(|r| r.disease_name == "Peripheral Artery Disease");
+        assert!(pad.is_some(), "PAD should appear");
+    }
+
+    #[test]
+    fn test_score_hyperemesis_gravidarum() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe persistent vomiting", "nausea", "weight loss", "dehydration"]);
+        let hg = results.iter().find(|r| r.disease_name == "Hyperemesis Gravidarum");
+        assert!(hg.is_some(), "Hyperemesis Gravidarum should appear");
+    }
+
+    #[test]
+    fn test_synonym_restless_legs() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["restless legs", "insomnia"]);
+        assert!(!results.is_empty(), "restless legs should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_claudication() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["claudication", "cold feet"]);
+        assert!(!results.is_empty(), "claudication should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_cant_swallow() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["can't swallow", "chest pain"]);
+        assert!(!results.is_empty(), "can't swallow should expand to difficulty swallowing");
+    }
+
+    #[test]
+    fn test_synonym_wobbly_walking() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["wobbly walking", "memory problems"]);
+        assert!(!results.is_empty(), "wobbly walking should expand to gait disturbance");
     }
 }

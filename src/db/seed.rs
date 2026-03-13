@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '20.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '21.0')",
         [],
     )?;
     tx.commit()?;
@@ -3579,6 +3579,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Dress in layers. Keep extremities covered. Stay dry. Limit exposure time in extreme cold. Avoid alcohol before cold exposure.",
             risk_factors: vec![("prolonged cold exposure", "high"), ("inadequate clothing", "high"), ("peripheral vascular disease", "moderate"), ("smoking", "moderate"), ("alcohol use in cold", "moderate")],
         },
+        // ── v0.21.0 new diseases ──
+        DiseaseEntry {
+            name: "Achalasia",
+            description: "Esophageal motility disorder causing difficulty swallowing due to failure of the lower esophageal sphincter to relax.",
+            severity: "medium", contagious: false, icd11_code: "DA22.0",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("difficulty swallowing",0.9,true), s("regurgitation",0.8,true), s("chest pain",0.6,false), s("weight loss",0.5,false), s("heartburn",0.4,false), s("nocturnal cough",0.3,false)],
+            treatment: "Pneumatic dilation, Heller myotomy, peroral endoscopic myotomy (POEM). Botulinum toxin injection for poor surgical candidates.",
+            first_aid: "Eat slowly, chew thoroughly, remain upright after meals. Seek gastroenterology referral.",
+            prevention: "No known prevention. Early diagnosis improves outcomes.",
+            risk_factors: vec![("autoimmune conditions", "moderate"), ("viral infections", "low"), ("age 25-60", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Pheochromocytoma",
+            description: "Rare neuroendocrine tumor of the adrenal medulla causing episodic hypertension, headache, and sweating.",
+            severity: "high", contagious: false, icd11_code: "5A00.0",
+            age_group: "adults", category: "endocrine",
+            symptoms: vec![s("episodic hypertension",0.9,true), s("severe headache",0.8,true), s("excessive sweating",0.8,true), s("rapid heartbeat",0.7,false), s("tremor",0.5,false), s("anxiety",0.4,false), s("pallor",0.5,false), s("nausea",0.3,false)],
+            treatment: "Surgical resection after alpha-blockade (phenoxybenzamine 2-4 weeks pre-op). Beta-blockers ONLY after alpha-blockade. Metyrosine for inoperable cases.",
+            first_aid: "Control blood pressure urgently. Avoid catecholamine-releasing triggers. Seek endocrine emergency care.",
+            prevention: "Genetic screening for MEN2, VHL, SDH mutations in high-risk families.",
+            risk_factors: vec![("MEN2 syndrome", "high"), ("von Hippel-Lindau disease", "high"), ("neurofibromatosis type 1", "moderate"), ("SDH gene mutations", "high")],
+        },
+        DiseaseEntry {
+            name: "Polymyalgia Rheumatica",
+            description: "Inflammatory disorder causing muscle pain and stiffness, especially in shoulders and hips. Common in adults over 50.",
+            severity: "medium", contagious: false, icd11_code: "FA24.0",
+            age_group: "adults", category: "rheumatological",
+            symptoms: vec![s("shoulder pain and stiffness",0.9,true), s("hip pain and stiffness",0.8,true), s("morning stiffness lasting over 45 minutes",0.8,true), s("fatigue",0.6,false), s("malaise",0.5,false), s("mild fever",0.3,false), s("weight loss",0.3,false)],
+            treatment: "Low-dose prednisone (12.5-25mg/day) with gradual taper over 1-2 years. Monitor for giant cell arteritis. Methotrexate as steroid-sparing agent.",
+            first_aid: "Rest, gentle range-of-motion exercises, seek rheumatology referral.",
+            prevention: "No known prevention. Monitor for temporal arteritis symptoms.",
+            risk_factors: vec![("age over 50", "high"), ("female sex", "moderate"), ("Northern European descent", "moderate"), ("giant cell arteritis", "high")],
+        },
+        DiseaseEntry {
+            name: "Cholangitis",
+            description: "Acute bacterial infection of the bile duct, usually due to obstruction. Part of Charcot's triad: fever, jaundice, right upper quadrant pain.",
+            severity: "high", contagious: false, icd11_code: "DC15.0",
+            age_group: "adults", category: "hepatic",
+            symptoms: vec![s("fever",0.9,true), s("jaundice",0.9,true), s("right upper quadrant pain",0.9,true), s("chills",0.7,false), s("confusion",0.5,false), s("low blood pressure",0.5,false), s("nausea",0.4,false), s("dark urine",0.4,false)],
+            treatment: "IV antibiotics (piperacillin-tazobactam or meropenem). Urgent biliary drainage via ERCP. Surgery for underlying cause (gallstones, stricture).",
+            first_aid: "Recognize Charcot's triad as emergency. IV fluids, monitor vitals, urgent hospital transfer.",
+            prevention: "Treat gallstones. Post-ERCP stent management. Prophylactic antibiotics for high-risk procedures.",
+            risk_factors: vec![("gallstones", "high"), ("previous biliary surgery", "high"), ("biliary stent", "moderate"), ("bile duct stricture", "high")],
+        },
+        DiseaseEntry {
+            name: "Interstitial Cystitis",
+            description: "Chronic bladder condition causing bladder pressure, pain, and sometimes pelvic pain. Also known as painful bladder syndrome.",
+            severity: "medium", contagious: false, icd11_code: "GC01.0",
+            age_group: "adults", category: "urological",
+            symptoms: vec![s("chronic pelvic pain",0.8,true), s("bladder pressure",0.9,true), s("urinary urgency",0.8,true), s("frequent urination",0.7,false), s("pain during intercourse",0.5,false), s("pain worsens as bladder fills",0.6,false)],
+            treatment: "Pentosan polysulfate sodium. Bladder instillations (DMSO, heparin). Amitriptyline. Physical therapy. Dietary modifications. Hydrodistention for diagnosis/treatment.",
+            first_aid: "Avoid bladder irritants (caffeine, alcohol, citrus, spicy foods). Bladder training exercises.",
+            prevention: "Stress management. Avoid known dietary triggers. Pelvic floor physical therapy.",
+            risk_factors: vec![("female sex", "high"), ("autoimmune disorders", "moderate"), ("irritable bowel syndrome", "moderate"), ("fibromyalgia", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hemolytic Uremic Syndrome",
+            description: "Thrombotic microangiopathy causing hemolytic anemia, thrombocytopenia, and acute kidney injury. Often triggered by Shiga toxin-producing E. coli.",
+            severity: "high", contagious: false, icd11_code: "3B64.0",
+            age_group: "children", category: "hematological",
+            symptoms: vec![s("bloody diarrhea",0.9,true), s("decreased urination",0.8,true), s("fatigue",0.7,false), s("pallor",0.7,false), s("easy bruising",0.6,false), s("swelling",0.5,false), s("confusion",0.4,false), s("seizures",0.3,false)],
+            treatment: "Supportive care: IV fluids, RBC transfusion, dialysis for acute kidney injury. Eculizumab for atypical HUS. Avoid antibiotics and antimotility agents in STEC-HUS.",
+            first_aid: "Monitor urine output. Seek emergency care for bloody diarrhea with decreased urination. Do NOT give anti-diarrheal medications.",
+            prevention: "Cook ground beef thoroughly (≥70°C). Avoid unpasteurized dairy. Hand hygiene after animal contact.",
+            risk_factors: vec![("E. coli O157:H7 infection", "high"), ("age under 5", "high"), ("antibiotic use during STEC infection", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Restless Legs Syndrome",
+            description: "Neurological sensorimotor disorder causing uncomfortable leg sensations and an irresistible urge to move the legs, especially at rest and at night.",
+            severity: "low", contagious: false, icd11_code: "7A80.0",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("urge to move legs",0.9,true), s("uncomfortable leg sensations",0.9,true), s("symptoms worse at rest",0.8,true), s("symptoms worse at night",0.7,false), s("relief with movement",0.7,false), s("insomnia",0.5,false), s("daytime fatigue",0.4,false)],
+            treatment: "Iron supplementation if ferritin <75. Dopamine agonists (pramipexole, ropinirole). Alpha-2-delta ligands (gabapentin enacarbil, pregabalin). Avoid augmentation triggers.",
+            first_aid: "Walk or stretch. Massage legs. Hot or cold compresses. Reduce caffeine and alcohol.",
+            prevention: "Maintain iron levels. Regular exercise. Good sleep hygiene. Limit caffeine.",
+            risk_factors: vec![("iron deficiency", "high"), ("pregnancy", "moderate"), ("chronic kidney disease", "moderate"), ("family history", "high"), ("peripheral neuropathy", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Orbital Cellulitis",
+            description: "Serious infection of the orbital tissues posterior to the orbital septum. Ophthalmologic emergency requiring IV antibiotics.",
+            severity: "high", contagious: false, icd11_code: "9A08.1",
+            age_group: "all", category: "ophthalmological",
+            symptoms: vec![s("eye swelling",0.9,true), s("eye pain",0.8,true), s("proptosis",0.8,true), s("restricted eye movement",0.7,true), s("fever",0.7,false), s("decreased vision",0.6,false), s("eye redness",0.5,false), s("headache",0.3,false)],
+            treatment: "IV broad-spectrum antibiotics (vancomycin + ceftriaxone or piperacillin-tazobactam). CT scan for abscess. Surgical drainage if subperiosteal or orbital abscess. Ophthalmology + ENT consultation.",
+            first_aid: "Recognize as emergency — proptosis with fever needs urgent hospital care. Do NOT delay treatment.",
+            prevention: "Prompt treatment of sinusitis. Early treatment of preseptal cellulitis. Dental hygiene.",
+            risk_factors: vec![("sinusitis", "high"), ("dental infection", "moderate"), ("trauma", "moderate"), ("immunosuppression", "high")],
+        },
+        DiseaseEntry {
+            name: "Vocal Cord Dysfunction",
+            description: "Paradoxical vocal cord movement causing breathing difficulty, often misdiagnosed as asthma. Vocal cords close during inhalation instead of opening.",
+            severity: "low", contagious: false, icd11_code: "CA0E",
+            age_group: "all", category: "ENT",
+            symptoms: vec![s("difficulty breathing in",0.9,true), s("throat tightness",0.8,true), s("stridor",0.7,true), s("hoarseness",0.5,false), s("cough",0.4,false), s("chest tightness",0.4,false), s("voice changes",0.3,false)],
+            treatment: "Speech therapy (laryngeal control techniques). Respiratory retraining. Treat underlying triggers (GERD, post-nasal drip). Heliox for acute episodes. Avoid unnecessary intubation.",
+            first_aid: "Pursed lip breathing. Panting breaths. Reassure patient — not life-threatening. Distraction techniques.",
+            prevention: "Speech therapy maintenance. GERD management. Stress reduction. Avoid known irritant triggers.",
+            risk_factors: vec![("GERD", "moderate"), ("anxiety", "moderate"), ("post-nasal drip", "moderate"), ("exercise", "moderate"), ("female sex", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Erythema Nodosum",
+            description: "Inflammatory condition causing tender red nodules on the shins. Often a reaction to infections, medications, or systemic diseases.",
+            severity: "low", contagious: false, icd11_code: "EB40",
+            age_group: "adults", category: "dermatological",
+            symptoms: vec![s("tender red nodules on shins",0.9,true), s("shin pain",0.7,true), s("fever",0.5,false), s("joint pain",0.5,false), s("fatigue",0.4,false), s("malaise",0.3,false)],
+            treatment: "NSAIDs (ibuprofen, naproxen). Rest and leg elevation. Potassium iodide for persistent cases. Treat underlying cause (streptococcal infection, sarcoidosis, IBD).",
+            first_aid: "Rest with leg elevation. Cool compresses. Over-the-counter anti-inflammatories.",
+            prevention: "Treat underlying infections promptly. Medication review if drug-induced.",
+            risk_factors: vec![("streptococcal infection", "high"), ("sarcoidosis", "moderate"), ("inflammatory bowel disease", "moderate"), ("oral contraceptives", "moderate"), ("pregnancy", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Normal Pressure Hydrocephalus",
+            description: "Treatable cause of dementia in elderly. Classic triad: gait disturbance, urinary incontinence, and cognitive decline (wet, wacky, wobbly).",
+            severity: "medium", contagious: false, icd11_code: "8D60.2",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("gait disturbance",0.9,true), s("urinary incontinence",0.8,true), s("cognitive decline",0.8,true), s("difficulty walking",0.7,false), s("memory problems",0.6,false), s("slow movements",0.5,false)],
+            treatment: "VP shunt (ventriculoperitoneal shunt) placement. Lumbar puncture tap test (30-50 mL CSF removal) as diagnostic/therapeutic trial. Endoscopic third ventriculostomy (ETV).",
+            first_aid: "Ensure safety — fall prevention. Seek neurological evaluation for treatable dementia.",
+            prevention: "No known prevention. Early diagnosis critical as one of few reversible dementias.",
+            risk_factors: vec![("age over 60", "high"), ("history of meningitis", "moderate"), ("head trauma", "moderate"), ("subarachnoid hemorrhage", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Mastoiditis",
+            description: "Serious bacterial infection of the mastoid bone behind the ear, usually complicating acute otitis media. Requires urgent treatment to prevent intracranial complications.",
+            severity: "high", contagious: false, icd11_code: "AB30",
+            age_group: "children", category: "otolaryngological",
+            symptoms: vec![s("ear pain",0.8,true), s("swelling behind ear",0.9,true), s("fever",0.8,true), s("ear discharge",0.7,false), s("protruding ear",0.6,false), s("headache",0.4,false), s("hearing loss",0.4,false), s("irritability",0.3,false)],
+            treatment: "IV antibiotics (ceftriaxone + metronidazole or piperacillin-tazobactam). Myringotomy with tube placement. Mastoidectomy for abscess or failed medical therapy. CT temporal bones.",
+            first_aid: "Recognize swelling behind ear with fever as emergency. Urgent hospital transfer. Pain management.",
+            prevention: "Prompt treatment of acute otitis media. Complete antibiotic courses. Pneumococcal vaccination.",
+            risk_factors: vec![("acute otitis media", "high"), ("recurrent ear infections", "high"), ("immunosuppression", "moderate"), ("incomplete antibiotic course", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Thoracic Outlet Syndrome",
+            description: "Compression of nerves or blood vessels between the collarbone and first rib, causing shoulder, arm, and hand symptoms.",
+            severity: "medium", contagious: false, icd11_code: "8B81",
+            age_group: "adults", category: "vascular",
+            symptoms: vec![s("arm numbness and tingling",0.9,true), s("arm weakness",0.7,true), s("shoulder pain",0.7,false), s("hand coldness",0.6,false), s("finger discoloration",0.5,false), s("arm swelling",0.4,false), s("weak grip",0.5,false)],
+            treatment: "Physical therapy (postural exercises, nerve gliding). NSAIDs. First rib resection for vascular TOS. Thrombolysis for acute venous TOS. Scalene muscle botulinum injection.",
+            first_aid: "Avoid overhead arm positions. Shoulder shrugs and posture correction. Seek vascular evaluation.",
+            prevention: "Ergonomic workspace. Postural exercises. Avoid heavy shoulder bags. Stretching routine.",
+            risk_factors: vec![("repetitive overhead arm movements", "high"), ("poor posture", "moderate"), ("cervical rib (anatomic variant)", "high"), ("trauma", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hyperemesis Gravidarum",
+            description: "Severe nausea and vomiting during pregnancy causing dehydration, weight loss, and electrolyte imbalances. Goes beyond typical morning sickness.",
+            severity: "medium", contagious: false, icd11_code: "JA60.0",
+            age_group: "adults", category: "obstetric",
+            symptoms: vec![s("severe persistent vomiting",0.9,true), s("nausea",0.8,true), s("weight loss",0.8,true), s("dehydration",0.7,false), s("inability to keep food down",0.7,false), s("dizziness",0.4,false), s("excessive salivation",0.4,false)],
+            treatment: "IV fluid rehydration. Ondansetron, metoclopramide, or promethazine for antiemesis. Thiamine supplementation (to prevent Wernicke encephalopathy). Pyridoxine + doxylamine first-line.",
+            first_aid: "Small frequent meals. Ginger tea. Avoid triggers (strong smells). Seek care if unable to keep fluids down for 24+ hours.",
+            prevention: "Early antiemetic therapy at onset of symptoms. Multivitamin with B6 before conception.",
+            risk_factors: vec![("first pregnancy", "moderate"), ("multiple gestation", "high"), ("molar pregnancy", "high"), ("previous HG", "high"), ("family history", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Peripheral Artery Disease",
+            description: "Narrowing of peripheral arteries reducing blood flow to limbs. Most commonly affects legs, causing claudication.",
+            severity: "medium", contagious: false, icd11_code: "BD40",
+            age_group: "adults", category: "cardiovascular",
+            symptoms: vec![s("leg pain when walking",0.9,true), s("leg cramping",0.7,true), s("cold feet",0.6,false), s("leg numbness",0.5,false), s("non-healing leg wounds",0.6,false), s("weak pulse in legs",0.7,false), s("hair loss on legs",0.4,false), s("skin color changes on legs",0.4,false)],
+            treatment: "Supervised exercise therapy. Antiplatelet agents (aspirin, clopidogrel). Statins. Cilostazol for claudication. Angioplasty/stenting for severe disease. Bypass surgery for critical limb ischemia.",
+            first_aid: "Walking program (walk until pain, rest, repeat). Foot care — inspect daily. Seek vascular evaluation.",
+            prevention: "Smoking cessation. Regular exercise. Blood pressure and cholesterol control. Diabetes management.",
+            risk_factors: vec![("smoking", "high"), ("diabetes", "high"), ("hypertension", "high"), ("hyperlipidemia", "high"), ("age over 50", "moderate")],
+        },
     ]
 }
 
@@ -4136,7 +4302,34 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("frozen fingers", "numbness"),
         ("mood changes", "mood swings"),
         ("emotional ups and downs", "mood swings"),
-
+        // v21 synonyms
+        ("can't swallow", "difficulty swallowing"),
+        ("food getting stuck", "difficulty swallowing"),
+        ("swallowing problems", "difficulty swallowing"),
+        ("restless legs", "urge to move legs"),
+        ("legs won't stop moving", "urge to move legs"),
+        ("creepy crawly legs", "uncomfortable leg sensations"),
+        ("leg cramps at night", "uncomfortable leg sensations"),
+        ("eye bulging", "proptosis"),
+        ("bulging eye", "proptosis"),
+        ("leg cramps when walking", "leg pain when walking"),
+        ("claudication", "leg pain when walking"),
+        ("morning sickness severe", "severe persistent vomiting"),
+        ("can't stop throwing up", "severe persistent vomiting"),
+        ("behind ear swelling", "swelling behind ear"),
+        ("bumps on shins", "tender red nodules on shins"),
+        ("cold hands and feet", "hand coldness"),
+        ("pins and needles in arm", "arm numbness and tingling"),
+        ("wobbly walking", "gait disturbance"),
+        ("unsteady gait", "gait disturbance"),
+        ("shuffling walk", "gait disturbance"),
+        ("wetting myself", "urinary incontinence"),
+        ("peeing problems", "urinary incontinence"),
+        ("stiff shoulder", "shoulder pain and stiffness"),
+        ("frozen shoulder", "shoulder pain and stiffness"),
+        ("bladder pain", "bladder pressure"),
+        ("need to pee urgently", "urinary urgency"),
+        ("always needing to pee", "frequent urination"),
     ]
 }
 
@@ -4149,7 +4342,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 316, "Expected at least 316 diseases, got {count}");
+        assert!(count >= 320, "Expected at least 320 diseases, got {count}");
     }
 
     #[test]
@@ -4199,7 +4392,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "20.0");
+        assert_eq!(ver, "21.0");
     }
 
     #[test]
@@ -4229,3 +4422,5 @@ mod tests {
 // Additional v17 diseases appended via seed extension
 
 // Additional v18 diseases appended via seed extension
+
+// Additional v21 diseases appended via seed extension
