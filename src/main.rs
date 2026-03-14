@@ -261,6 +261,14 @@ pub enum Commands {
         #[arg(long)]
         factors: Option<String>,
     },
+    /// Nutritional deficiency reference and symptom-based assessment
+    Nutrition {
+        /// Search by nutrient name, symptom, or disease (omit to list all)
+        query: Option<String>,
+        /// Assess symptoms for possible nutritional deficiencies
+        #[arg(long)]
+        assess: Option<String>,
+    },
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -411,6 +419,13 @@ fn main() {
         }
         Commands::Alert { symptoms } => {
             commands::alert::run(&conn, &symptoms, cli.json);
+        }
+        Commands::Nutrition { query, assess } => {
+            if let Some(symptoms) = assess {
+                commands::nutrition::assess(&symptoms, cli.json);
+            } else {
+                commands::nutrition::run(query.as_deref(), cli.json);
+            }
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);

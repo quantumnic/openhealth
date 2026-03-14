@@ -538,6 +538,22 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Hyperaldosteronism (Conn's Syndrome)", vec!["rash", "fever", "cough"]);
     map.insert("Mesenteric Ischemia (Acute)", vec!["rash", "cough", "chronic gradual onset"]);
     map.insert("Thoracic Aortic Aneurysm", vec!["rash", "fever", "diarrhea"]);
+    // v0.29.0 negative evidence
+    map.insert("Inguinal Hernia", vec!["fever", "rash", "diarrhea"]);
+    map.insert("Hemorrhoids", vec!["fever", "weight loss", "abdominal mass"]);
+    map.insert("Viral Conjunctivitis", vec!["vision loss", "severe eye pain", "fever"]);
+    map.insert("Acute Bronchitis", vec!["high fever", "rash", "chest pain"]);
+    map.insert("Viral Gastroenteritis", vec!["rash", "chest pain", "joint pain"]);
+    map.insert("Tonsillitis", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Measles", vec!["diarrhea", "joint pain", "chest pain"]);
+    map.insert("Chickenpox (Varicella)", vec!["joint pain", "cough", "diarrhea"]);
+    map.insert("Mumps", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Chronic Hepatitis C", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Tetanus", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Yellow Fever", vec!["rash", "cough", "joint pain"]);
+    map.insert("Chronic Urticaria", vec!["fever", "joint pain", "weight loss"]);
+    map.insert("Varicose Veins", vec!["fever", "rash", "cough"]);
+    map.insert("Benign Prostatic Hyperplasia", vec!["fever", "rash", "weight loss"]);
     map
 }
 
@@ -2636,6 +2652,201 @@ mod tests_v28 {
         if let (Some(cw), Some(cwo)) = (ck_with, ck_without) {
             assert!(cwo.probability >= cw.probability,
                 "Chikungunya should score same or lower with cough (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_score_inguinal_hernia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["groin bulge", "groin pain", "pain with coughing or straining"]);
+        let ih = results.iter().find(|r| r.disease_name == "Inguinal Hernia");
+        assert!(ih.is_some(), "Inguinal Hernia should appear");
+        assert!(ih.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_hemorrhoids() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["rectal bleeding", "anal itching", "pain during bowel movements"]);
+        let hm = results.iter().find(|r| r.disease_name == "Hemorrhoids");
+        assert!(hm.is_some(), "Hemorrhoids should appear");
+        assert!(hm.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_viral_conjunctivitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["red eye", "watery eye discharge", "gritty feeling in eye"]);
+        let vc = results.iter().find(|r| r.disease_name == "Viral Conjunctivitis");
+        assert!(vc.is_some(), "Viral Conjunctivitis should appear");
+        assert!(vc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_acute_bronchitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["persistent cough", "mucus production", "chest discomfort"]);
+        let ab = results.iter().find(|r| r.disease_name == "Acute Bronchitis");
+        assert!(ab.is_some(), "Acute Bronchitis should appear");
+        assert!(ab.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_viral_gastroenteritis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["watery diarrhea", "nausea", "vomiting", "abdominal cramps"]);
+        let vg = results.iter().find(|r| r.disease_name == "Viral Gastroenteritis");
+        assert!(vg.is_some(), "Viral Gastroenteritis should appear");
+        assert!(vg.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_tonsillitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sore throat", "difficulty swallowing", "swollen tonsils", "fever"]);
+        let tn = results.iter().find(|r| r.disease_name == "Tonsillitis");
+        assert!(tn.is_some(), "Tonsillitis should appear");
+        assert!(tn.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_measles() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(5), sex: None };
+        let results = score_symptoms_with_context(&conn, &["high fever", "maculopapular rash spreading head to toe", "Koplik spots"], &child_ctx);
+        let ms = results.iter().find(|r| r.disease_name == "Measles");
+        assert!(ms.is_some(), "Measles should appear");
+        assert!(ms.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_chickenpox() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["itchy rash progressing to blisters", "vesicular rash in different stages", "fever"]);
+        let cp = results.iter().find(|r| r.disease_name == "Chickenpox (Varicella)");
+        assert!(cp.is_some(), "Chickenpox should appear");
+        assert!(cp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_mumps() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["parotid gland swelling", "jaw pain", "fever"]);
+        let mp = results.iter().find(|r| r.disease_name == "Mumps");
+        assert!(mp.is_some(), "Mumps should appear");
+        assert!(mp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_tetanus() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["jaw stiffness (lockjaw)", "muscle spasms", "difficulty swallowing"]);
+        let tt = results.iter().find(|r| r.disease_name == "Tetanus");
+        assert!(tt.is_some(), "Tetanus should appear");
+        assert!(tt.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_yellow_fever() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["high fever", "jaundice", "bleeding from gums or nose"]);
+        let yf = results.iter().find(|r| r.disease_name == "Yellow Fever");
+        assert!(yf.is_some(), "Yellow Fever should appear");
+        assert!(yf.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_chronic_urticaria() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["recurrent raised itchy welts", "hives lasting less than 24 hours each"]);
+        let cu = results.iter().find(|r| r.disease_name == "Chronic Urticaria");
+        assert!(cu.is_some(), "Chronic Urticaria should appear");
+        assert!(cu.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_varicose_veins() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["visible enlarged twisted veins in legs", "leg heaviness", "leg aching"]);
+        let vv = results.iter().find(|r| r.disease_name == "Varicose Veins");
+        assert!(vv.is_some(), "Varicose Veins should appear");
+        assert!(vv.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_bph() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["frequent urination", "weak urine stream", "nocturia"]);
+        let bph = results.iter().find(|r| r.disease_name == "Benign Prostatic Hyperplasia");
+        assert!(bph.is_some(), "BPH should appear");
+        assert!(bph.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_pink_eye() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["pink eye", "watery eyes"]);
+        assert!(!results.is_empty(), "pink eye should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_stomach_bug() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["stomach bug", "vomiting"]);
+        assert!(!results.is_empty(), "stomach bug should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_lockjaw() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["lockjaw", "muscle spasms"]);
+        assert!(!results.is_empty(), "lockjaw should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_hives() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["hives", "itchy"]);
+        assert!(!results.is_empty(), "hives should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_heavy_legs() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["heavy legs", "bulging veins"]);
+        assert!(!results.is_empty(), "heavy legs + bulging veins should expand via synonyms");
+    }
+
+    #[test]
+    fn test_synonym_weak_pee_stream() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["weak pee stream", "peeing a lot at night"]);
+        assert!(!results.is_empty(), "BPH synonyms should expand");
+    }
+
+    #[test]
+    fn test_negative_evidence_hemorrhoids() {
+        let conn = db::init_memory_database().unwrap();
+        let with_fever = score_symptoms(&conn, &["rectal bleeding", "anal itching", "fever"]);
+        let without_fever = score_symptoms(&conn, &["rectal bleeding", "anal itching"]);
+        let hm_with = with_fever.iter().find(|r| r.disease_name == "Hemorrhoids");
+        let hm_without = without_fever.iter().find(|r| r.disease_name == "Hemorrhoids");
+        if let (Some(hw), Some(hwo)) = (hm_with, hm_without) {
+            assert!(hwo.probability >= hw.probability,
+                "Hemorrhoids should score same or lower with fever (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_negative_evidence_conjunctivitis() {
+        let conn = db::init_memory_database().unwrap();
+        let with_vision_loss = score_symptoms(&conn, &["red eye", "watery eye discharge", "vision loss"]);
+        let without_vision_loss = score_symptoms(&conn, &["red eye", "watery eye discharge"]);
+        let vc_with = with_vision_loss.iter().find(|r| r.disease_name == "Viral Conjunctivitis");
+        let vc_without = without_vision_loss.iter().find(|r| r.disease_name == "Viral Conjunctivitis");
+        if let (Some(vw), Some(vwo)) = (vc_with, vc_without) {
+            assert!(vwo.probability >= vw.probability,
+                "Conjunctivitis should score same or lower with vision loss (negative evidence)");
         }
     }
 

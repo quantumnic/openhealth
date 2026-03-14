@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '28.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '29.0')",
         [],
     )?;
     tx.commit()?;
@@ -4896,6 +4896,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Blood pressure control. Smoking cessation. Regular screening for Marfan/familial cases. Avoid heavy lifting with known aneurysm.",
             risk_factors: vec![("hypertension", "high"), ("smoking", "high"), ("Marfan syndrome", "high"), ("bicuspid aortic valve", "moderate"), ("family history", "moderate"), ("age > 65", "moderate")],
         },
+        // ── v0.29.0 diseases ──────────────────────────────────────────
+        DiseaseEntry {
+            name: "Inguinal Hernia",
+            description: "Protrusion of abdominal contents through the inguinal canal. Most common type of hernia, predominantly in males.",
+            severity: "medium", contagious: false, icd11_code: "LB00",
+            age_group: "all", category: "surgical",
+            symptoms: vec![s("groin bulge",0.9,true), s("groin pain",0.8,true), s("pain with coughing or straining",0.7,false), s("heaviness in groin",0.6,false), s("burning sensation at bulge",0.5,false), s("swelling around testicle",0.4,false)],
+            treatment: "Watchful waiting for small asymptomatic hernias. Surgical repair (open or laparoscopic herniorrhaphy) for symptomatic or enlarging hernias. Mesh reinforcement standard.",
+            first_aid: "If sudden severe pain with irreducible bulge: suspect strangulation — seek emergency care. Lie down, gentle pressure may reduce hernia. Apply ice for pain.",
+            prevention: "Avoid heavy lifting with improper form. Treat chronic cough and constipation. Maintain healthy weight. Use proper lifting techniques.",
+            risk_factors: vec![("male sex", "high"), ("family history", "moderate"), ("chronic cough", "moderate"), ("constipation", "moderate"), ("heavy lifting", "moderate"), ("obesity", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hemorrhoids",
+            description: "Swollen, inflamed veins in the rectum and anus causing discomfort, bleeding, and itching. Extremely common condition.",
+            severity: "low", contagious: false, icd11_code: "DB60",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("rectal bleeding",0.9,true), s("anal itching",0.7,true), s("pain during bowel movements",0.7,false), s("anal swelling",0.6,false), s("lump near anus",0.6,false), s("mucus discharge from anus",0.4,false)],
+            treatment: "Conservative: high-fiber diet, adequate fluids, sitz baths, topical treatments (hydrocortisone, witch hazel). Procedural: rubber band ligation, sclerotherapy. Surgical: hemorrhoidectomy for severe cases.",
+            first_aid: "Sitz bath in warm water for 10-15 minutes. Apply cold compress. Avoid straining. Over-the-counter pain relief.",
+            prevention: "High-fiber diet (25-35g/day). Stay hydrated. Avoid prolonged sitting on toilet. Exercise regularly. Don't strain during bowel movements.",
+            risk_factors: vec![("chronic constipation", "high"), ("pregnancy", "high"), ("prolonged sitting", "moderate"), ("low-fiber diet", "moderate"), ("obesity", "moderate"), ("age > 50", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Viral Conjunctivitis",
+            description: "Inflammation of the conjunctiva caused by viruses, commonly adenovirus. Highly contagious. Most common cause of 'pink eye'.",
+            severity: "low", contagious: true, icd11_code: "9A60",
+            age_group: "all", category: "ophthalmological",
+            symptoms: vec![s("red eye",0.9,true), s("watery eye discharge",0.8,true), s("eye itching",0.6,false), s("gritty feeling in eye",0.6,false), s("light sensitivity",0.5,false), s("swollen eyelids",0.5,false), s("tearing",0.6,false)],
+            treatment: "Usually self-limiting (1-3 weeks). Supportive: cold compresses, artificial tears. No antibiotics for viral cause. Antihistamine drops if allergic component.",
+            first_aid: "Cold compress over eyes. Artificial tears for comfort. Avoid touching or rubbing eyes. Wash hands frequently to prevent spread.",
+            prevention: "Frequent handwashing. Avoid touching eyes. Don't share towels/pillowcases. Replace eye cosmetics after infection. Stay home while contagious.",
+            risk_factors: vec![("contact with infected person", "high"), ("daycare/school attendance", "moderate"), ("crowded environments", "moderate"), ("contact lens use", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Acute Bronchitis",
+            description: "Inflammation of the bronchial tubes, usually caused by viral infection. Characterized by cough lasting 1-3 weeks. Very common condition.",
+            severity: "low", contagious: true, icd11_code: "CA20",
+            age_group: "all", category: "respiratory",
+            symptoms: vec![s("persistent cough",0.9,true), s("mucus production",0.7,true), s("chest discomfort",0.6,false), s("fatigue",0.5,false), s("mild fever",0.4,false), s("sore throat",0.4,false), s("wheezing",0.5,false), s("body aches",0.4,false)],
+            treatment: "Supportive: rest, fluids, honey for cough. Bronchodilators if wheezing. Antibiotics NOT recommended for viral bronchitis. Cough suppressants for nighttime relief.",
+            first_aid: "Rest and drink warm fluids. Honey and lemon for cough. Humidifier may help. Avoid irritants and smoke.",
+            prevention: "Wash hands frequently. Avoid close contact with sick individuals. Annual flu vaccine. Quit smoking.",
+            risk_factors: vec![("smoking", "high"), ("viral upper respiratory infection", "high"), ("weakened immune system", "moderate"), ("air pollution exposure", "moderate"), ("GERD", "low")],
+        },
+        DiseaseEntry {
+            name: "Viral Gastroenteritis",
+            description: "Inflammation of the stomach and intestines caused by viruses (norovirus, rotavirus). Common 'stomach flu'. Major cause of diarrheal illness worldwide.",
+            severity: "medium", contagious: true, icd11_code: "1A23",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("watery diarrhea",0.9,true), s("nausea",0.8,true), s("vomiting",0.8,true), s("abdominal cramps",0.7,false), s("low-grade fever",0.5,false), s("body aches",0.4,false), s("headache",0.3,false)],
+            treatment: "Rehydration (ORS — oral rehydration salts). Clear fluids. BRAT diet (bananas, rice, applesauce, toast). Anti-emetics if severe vomiting. IV fluids for severe dehydration.",
+            first_aid: "Small frequent sips of clear fluids. ORS solution. Avoid dairy and fatty foods. Monitor for dehydration signs (dry mouth, decreased urination).",
+            prevention: "Hand hygiene. Food safety practices. Rotavirus vaccine for infants. Disinfect contaminated surfaces with bleach.",
+            risk_factors: vec![("contact with infected person", "high"), ("contaminated food/water", "high"), ("young children", "moderate"), ("elderly", "moderate"), ("institutional living", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Tonsillitis",
+            description: "Inflammation of the palatine tonsils, usually due to viral or bacterial (Group A Streptococcus) infection. Very common in children and adolescents.",
+            severity: "low", contagious: true, icd11_code: "CA03",
+            age_group: "children", category: "ENT",
+            symptoms: vec![s("sore throat",0.9,true), s("difficulty swallowing",0.8,true), s("swollen tonsils",0.8,true), s("fever",0.7,false), s("enlarged neck lymph nodes",0.6,false), s("bad breath",0.4,false), s("headache",0.3,false), s("stiff neck",0.3,false)],
+            treatment: "Viral: supportive (fluids, rest, analgesics). Bacterial (strep): penicillin or amoxicillin 10 days. Tonsillectomy for recurrent infections (≥7 episodes/year or ≥5/year for 2 years).",
+            first_aid: "Warm salt water gargle. Cold foods (ice pops) for pain. Adequate fluids. Over-the-counter analgesics (paracetamol/ibuprofen).",
+            prevention: "Handwashing. Avoid sharing utensils. Replace toothbrush after infection. Avoid close contact with infected individuals.",
+            risk_factors: vec![("age 5-15", "high"), ("school attendance", "moderate"), ("crowded environments", "moderate"), ("season (fall/winter)", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Measles",
+            description: "Highly contagious viral infection (paramyxovirus) causing fever, rash, and potentially fatal complications. Vaccine-preventable. A leading cause of child mortality in unvaccinated populations.",
+            severity: "high", contagious: true, icd11_code: "1F03",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("high fever",0.9,true), s("maculopapular rash spreading head to toe",0.9,true), s("cough",0.7,false), s("runny nose",0.6,false), s("conjunctivitis",0.6,false), s("Koplik spots",0.8,true), s("photophobia",0.4,false), s("malaise",0.5,false)],
+            treatment: "Supportive: fluids, antipyretics, vitamin A supplementation (WHO-recommended, reduces mortality). Treat complications (pneumonia, encephalitis). No specific antiviral.",
+            first_aid: "Isolate patient. Keep hydrated. Vitamin A if available. Monitor for complications (pneumonia, encephalitis). Seek medical care.",
+            prevention: "MMR vaccine (2 doses). Post-exposure prophylaxis: vaccine within 72h or immunoglobulin within 6 days. Isolation of cases.",
+            risk_factors: vec![("unvaccinated", "high"), ("malnutrition", "high"), ("vitamin A deficiency", "high"), ("immunocompromised", "high"), ("travel to endemic areas", "moderate"), ("crowded living", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Chickenpox (Varicella)",
+            description: "Highly contagious infection caused by varicella-zoster virus. Causes itchy blister rash. Usually mild in children, can be severe in adults and immunocompromised.",
+            severity: "low", contagious: true, icd11_code: "1E90",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("itchy rash progressing to blisters",0.9,true), s("vesicular rash in different stages",0.9,true), s("fever",0.7,false), s("fatigue",0.5,false), s("headache",0.4,false), s("loss of appetite",0.4,false)],
+            treatment: "Supportive: calamine lotion, oatmeal baths, antihistamines for itch. Acyclovir for high-risk patients (adults, immunocompromised, neonates). Paracetamol for fever (avoid aspirin — Reye syndrome risk).",
+            first_aid: "Trim fingernails to prevent scratching. Calamine lotion for itch. Cool baths. Avoid aspirin in children. Keep sores clean to prevent secondary infection.",
+            prevention: "Varicella vaccine (2 doses). Post-exposure: vaccine within 3-5 days or VZIG for high-risk. Isolate until all lesions crusted.",
+            risk_factors: vec![("unvaccinated", "high"), ("immunocompromised", "high"), ("pregnancy (unvaccinated)", "high"), ("newborns of infected mothers", "high"), ("household contact", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Mumps",
+            description: "Viral infection (paramyxovirus) primarily affecting parotid salivary glands. Vaccine-preventable. Can cause orchitis, meningitis, and deafness.",
+            severity: "medium", contagious: true, icd11_code: "1F04",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("parotid gland swelling",0.9,true), s("jaw pain",0.7,true), s("pain with chewing",0.7,false), s("fever",0.6,false), s("headache",0.5,false), s("muscle aches",0.4,false), s("fatigue",0.4,false), s("loss of appetite",0.3,false)],
+            treatment: "Supportive: rest, fluids, soft diet, analgesics. Cold or warm compresses on swollen glands. Monitor for complications (orchitis, meningitis, pancreatitis).",
+            first_aid: "Warm or cold compress on swollen glands. Soft foods that don't require much chewing. Adequate fluids. Avoid sour foods that stimulate saliva.",
+            prevention: "MMR vaccine (2 doses). Isolation of infected individuals for 5 days after parotid swelling onset.",
+            risk_factors: vec![("unvaccinated", "high"), ("age 5-14", "moderate"), ("crowded settings", "moderate"), ("season (winter/spring)", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Chronic Hepatitis C",
+            description: "Chronic liver infection by hepatitis C virus. Major cause of cirrhosis and hepatocellular carcinoma worldwide. Often asymptomatic for decades. Now curable with DAA therapy.",
+            severity: "high", contagious: true, icd11_code: "1E51.1",
+            age_group: "adults", category: "hepatic",
+            symptoms: vec![s("fatigue",0.7,true), s("right upper quadrant pain",0.5,false), s("nausea",0.4,false), s("jaundice",0.6,true), s("dark urine",0.5,false), s("joint pain",0.4,false), s("loss of appetite",0.4,false), s("unexplained weight loss",0.3,false)],
+            treatment: "Direct-acting antivirals (DAAs): sofosbuvir/velpatasvir or glecaprevir/pibrentasvir. Cure rates >95%. Treatment 8-12 weeks. Monitor for cirrhosis. Hepatocellular carcinoma screening if cirrhotic.",
+            first_aid: "Not applicable for chronic condition. If acute jaundice: rest, avoid alcohol, seek medical care promptly.",
+            prevention: "Screen high-risk populations (IVDU, blood transfusion pre-1992, born 1945-1965). No vaccine available. Harm reduction for IVDU. Safe medical practices.",
+            risk_factors: vec![("injection drug use", "high"), ("blood transfusion pre-1992", "high"), ("needlestick injury", "moderate"), ("born 1945-1965", "moderate"), ("HIV coinfection", "moderate"), ("hemodialysis", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Tetanus",
+            description: "Serious bacterial infection (Clostridium tetani) causing painful muscle spasms and rigidity. Enters through wounds. Vaccine-preventable but still kills ~35,000/year globally.",
+            severity: "high", contagious: false, icd11_code: "1C13",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("jaw stiffness (lockjaw)",0.9,true), s("muscle spasms",0.9,true), s("difficulty swallowing",0.7,false), s("neck stiffness",0.7,false), s("abdominal rigidity",0.6,false), s("fever",0.5,false), s("sweating",0.5,false), s("elevated blood pressure",0.4,false)],
+            treatment: "Human tetanus immunoglobulin (HTIG). Wound debridement. Metronidazole or penicillin. Benzodiazepines for spasms. ICU support for severe cases. Tetanus toxoid vaccine.",
+            first_aid: "Clean wound thoroughly with soap and water. Seek immediate medical care if unvaccinated or unsure of vaccination status. Do not close wound before debridement.",
+            prevention: "Tetanus toxoid vaccine (DTaP childhood series, Td/Tdap boosters every 10 years). Proper wound care. Post-exposure prophylaxis for dirty wounds.",
+            risk_factors: vec![("unvaccinated", "high"), ("dirty wound", "high"), ("puncture wound", "high"), ("lack of booster >10 years", "moderate"), ("injection drug use", "moderate"), ("neonatal (unsterile cord cutting)", "high")],
+        },
+        DiseaseEntry {
+            name: "Yellow Fever",
+            description: "Mosquito-borne viral hemorrhagic disease (flavivirus). Endemic in tropical Africa and South America. Can cause severe hepatitis, hemorrhage, and death.",
+            severity: "high", contagious: false, icd11_code: "1D47",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("high fever",0.9,true), s("jaundice",0.8,true), s("headache",0.7,false), s("muscle pain",0.6,false), s("nausea",0.5,false), s("vomiting",0.5,false), s("bleeding from gums or nose",0.6,false), s("fatigue",0.5,false), s("abdominal pain",0.4,false)],
+            treatment: "No specific antiviral. Supportive: IV fluids, blood products for hemorrhage, antipyretics (avoid aspirin/NSAIDs). ICU for severe cases. Treat DIC, renal failure, hepatic failure.",
+            first_aid: "Rest. Keep hydrated. Seek immediate medical care if jaundice develops. Avoid aspirin and NSAIDs (bleeding risk).",
+            prevention: "Yellow fever vaccine (single dose, lifelong protection). Mosquito bite prevention. International certificate of vaccination for travel to endemic areas.",
+            risk_factors: vec![("travel to endemic areas", "high"), ("unvaccinated", "high"), ("outdoor occupation in endemic area", "moderate"), ("lack of mosquito protection", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Chronic Urticaria",
+            description: "Recurrent hives (wheals) lasting more than 6 weeks. Often idiopathic. Affects quality of life significantly. Not typically dangerous but very distressing.",
+            severity: "low", contagious: false, icd11_code: "EB05",
+            age_group: "adults", category: "dermatological",
+            symptoms: vec![s("recurrent raised itchy welts",0.9,true), s("hives lasting less than 24 hours each",0.8,true), s("skin swelling",0.6,false), s("burning or stinging sensation",0.5,false), s("worsening with heat or stress",0.5,false), s("angioedema",0.4,false)],
+            treatment: "Non-sedating antihistamines (cetirizine, loratadine) — may increase to 4x standard dose. Omalizumab for refractory cases. Short-course corticosteroids for severe flares. Avoid known triggers.",
+            first_aid: "Cool compress on affected areas. Antihistamine (cetirizine or loratadine). Loose clothing. If lip/tongue swelling or breathing difficulty: use epinephrine and call emergency.",
+            prevention: "Identify and avoid triggers. Stress management. Avoid tight clothing. Keep a symptom diary. Avoid aspirin/NSAIDs if they worsen symptoms.",
+            risk_factors: vec![("autoimmune conditions", "moderate"), ("stress", "moderate"), ("thyroid disease", "moderate"), ("female sex", "moderate"), ("age 20-40", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Varicose Veins",
+            description: "Enlarged, twisted veins usually in the legs due to venous valve incompetence. Very common condition affecting up to 35% of adults. Can lead to complications if untreated.",
+            severity: "low", contagious: false, icd11_code: "BD72",
+            age_group: "adults", category: "vascular",
+            symptoms: vec![s("visible enlarged twisted veins in legs",0.9,true), s("leg heaviness",0.7,true), s("leg aching",0.7,false), s("leg swelling after standing",0.6,false), s("leg cramps at night",0.5,false), s("itching around veins",0.4,false), s("skin discoloration near ankles",0.4,false)],
+            treatment: "Conservative: compression stockings, leg elevation, exercise. Interventional: endovenous laser ablation, radiofrequency ablation, sclerotherapy. Surgical stripping for severe cases.",
+            first_aid: "Elevate legs above heart level. Compression stockings. Walk regularly. If bleeding from varicose vein: apply pressure and elevate leg.",
+            prevention: "Regular exercise (walking, swimming). Avoid prolonged standing or sitting. Elevate legs when resting. Maintain healthy weight. Compression stockings for high-risk.",
+            risk_factors: vec![("family history", "high"), ("female sex", "moderate"), ("pregnancy", "high"), ("obesity", "moderate"), ("prolonged standing", "moderate"), ("age > 50", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Benign Prostatic Hyperplasia",
+            description: "Non-cancerous enlargement of the prostate gland causing lower urinary tract symptoms. Extremely common in older men (50% by age 60, 90% by age 85).",
+            severity: "low", contagious: false, icd11_code: "GA90",
+            age_group: "adults", category: "urological",
+            symptoms: vec![s("frequent urination",0.8,true), s("urgency to urinate",0.7,true), s("weak urine stream",0.8,true), s("difficulty starting urination",0.7,false), s("nocturia",0.7,false), s("incomplete bladder emptying",0.6,false), s("dribbling after urination",0.5,false)],
+            treatment: "Watchful waiting for mild symptoms. Alpha-blockers (tamsulosin, alfuzosin). 5-alpha reductase inhibitors (finasteride, dutasteride). Combination therapy. Surgical: TURP, laser prostatectomy for severe cases.",
+            first_aid: "If unable to urinate (acute retention): seek emergency care for catheterization. Limit fluids before bedtime. Avoid alcohol and caffeine.",
+            prevention: "Regular exercise. Healthy diet (limit red meat, increase vegetables). Limit caffeine and alcohol. Maintain healthy weight. Regular prostate screening after 50.",
+            risk_factors: vec![("age > 50", "high"), ("family history", "moderate"), ("obesity", "moderate"), ("diabetes", "moderate"), ("sedentary lifestyle", "moderate")],
+        },
     ]
 }
 
@@ -5724,6 +5890,45 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("belly pain way worse than it looks", "severe abdominal pain out of proportion to exam"),
         ("gut pain severe", "severe abdominal pain out of proportion to exam"),
         ("back pain between shoulders", "back pain between shoulder blades"),
+        // v0.29.0 synonyms
+        ("hernia", "groin bulge"),
+        ("lump in groin", "groin bulge"),
+        ("groin lump", "groin bulge"),
+        ("piles", "rectal bleeding"),
+        ("bleeding from bottom", "rectal bleeding"),
+        ("itchy bum", "anal itching"),
+        ("itchy bottom", "anal itching"),
+        ("pink eye", "red eye"),
+        ("red eyes", "red eye"),
+        ("watery eyes", "watery eye discharge"),
+        ("eye goop", "watery eye discharge"),
+        ("chest cold", "persistent cough"),
+        ("cough won't go away", "persistent cough"),
+        ("phlegm", "mucus production"),
+        ("stomach bug", "watery diarrhea"),
+        ("stomach flu", "watery diarrhea"),
+        ("food poisoning", "watery diarrhea"),
+        ("sore tonsils", "swollen tonsils"),
+        ("swollen glands in neck", "enlarged neck lymph nodes"),
+        ("measles rash", "maculopapular rash spreading head to toe"),
+        ("pox", "itchy rash progressing to blisters"),
+        ("chicken pox", "itchy rash progressing to blisters"),
+        ("blisters all over", "vesicular rash in different stages"),
+        ("swollen cheeks", "parotid gland swelling"),
+        ("swollen jaw glands", "parotid gland swelling"),
+        ("lockjaw", "jaw stiffness (lockjaw)"),
+        ("stiff jaw", "jaw stiffness (lockjaw)"),
+        ("hives", "recurrent raised itchy welts"),
+        ("wheals", "recurrent raised itchy welts"),
+        ("swollen veins in legs", "visible enlarged twisted veins in legs"),
+        ("bulging veins", "visible enlarged twisted veins in legs"),
+        ("heavy legs", "leg heaviness"),
+        ("peeing a lot at night", "nocturia"),
+        ("getting up to pee at night", "nocturia"),
+        ("weak pee stream", "weak urine stream"),
+        ("trouble starting to pee", "difficulty starting urination"),
+        ("can't empty bladder", "incomplete bladder emptying"),
+        ("dribbling pee", "dribbling after urination"),
     ]
 }
 
@@ -5736,7 +5941,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 371, "Expected at least 371 diseases, got {count}");
+        assert!(count >= 381, "Expected at least 381 diseases, got {count}");
     }
 
     #[test]
@@ -5786,7 +5991,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "28.0");
+        assert_eq!(ver, "29.0");
     }
 
     #[test]
@@ -5828,3 +6033,5 @@ mod tests {
 // Additional v26 diseases appended via seed extension
 
 // Additional v27 diseases appended via seed extension
+
+// Additional v29 diseases appended via seed extension

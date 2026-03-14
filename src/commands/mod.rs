@@ -40,3 +40,4 @@ pub mod first_aid;
 pub mod lifestyle;
 pub mod vaccine;
 pub mod onset;
+pub mod nutrition;
