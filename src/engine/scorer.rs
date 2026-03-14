@@ -478,6 +478,21 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Cholesteatoma", vec!["rash", "cough", "joint pain"]);
     map.insert("Toxic Epidermal Necrolysis", vec!["cough", "diarrhea", "joint pain"]);
     map.insert("Organophosphate Poisoning", vec!["rash", "joint pain"]);
+    // v0.25.0 negative evidence
+    map.insert("Bruxism", vec!["fever", "rash", "weight loss"]);
+    map.insert("Temporomandibular Joint Disorder", vec!["fever", "rash", "weight loss"]);
+    map.insert("Generalized Anxiety Disorder", vec!["fever", "rash", "cough", "weight loss"]);
+    map.insert("Eating Disorder (Anorexia Nervosa)", vec!["weight gain", "rash", "cough"]);
+    map.insert("Rickets", vec!["rash", "cough", "fever"]);
+    map.insert("Febrile Seizure", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Phenylketonuria (PKU)", vec!["fever", "rash", "acute onset"]);
+    map.insert("Bulimia Nervosa", vec!["fever", "rash", "cough"]);
+    map.insert("Impetigo", vec!["fever", "joint pain", "weight loss"]);
+    map.insert("Tinea Corporis (Ringworm)", vec!["fever", "joint pain", "weight loss"]);
+    map.insert("Metabolic Syndrome", vec!["rash", "cough", "fever"]);
+    map.insert("Gallstones (Cholelithiasis)", vec!["rash", "cough", "fever"]);
+    map.insert("Chronic Fatigue Syndrome", vec!["fever", "rash", "weight gain"]);
+    map.insert("Peritonsillar Abscess", vec!["rash", "diarrhea", "joint pain"]);
     map
 }
 
@@ -2026,6 +2041,193 @@ mod tests_v24 {
         if let (Some(hw), Some(hwo)) = (he_with, he_without) {
             assert!(hwo.probability >= hw.probability,
                 "Heat Exhaustion should score same or lower with cough (negative evidence)");
+        }
+    }
+}
+
+// ── v0.25.0 scorer tests ──────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_v25 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_bruxism() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["teeth grinding", "jaw pain", "headache"]);
+        let br = results.iter().find(|r| r.disease_name == "Bruxism");
+        assert!(br.is_some(), "Bruxism should appear");
+        assert!(br.unwrap().probability > 20.0);
+    }
+
+    #[test]
+    fn test_score_tmj() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["jaw pain", "clicking or popping jaw", "difficulty chewing"]);
+        let tmj = results.iter().find(|r| r.disease_name == "Temporomandibular Joint Disorder");
+        assert!(tmj.is_some(), "TMJ should appear");
+        assert!(tmj.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_gad() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["persistent worry", "restlessness", "insomnia", "muscle tension"]);
+        let gad = results.iter().find(|r| r.disease_name == "Generalized Anxiety Disorder");
+        assert!(gad.is_some(), "GAD should appear");
+        assert!(gad.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_anorexia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["extreme weight loss", "fear of gaining weight", "restricted food intake"]);
+        let an = results.iter().find(|r| r.disease_name == "Eating Disorder (Anorexia Nervosa)");
+        assert!(an.is_some(), "Anorexia should appear");
+        assert!(an.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_rickets() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(3), sex: None };
+        let results = score_symptoms_with_context(&conn, &["bowed legs", "bone pain", "delayed growth"], &child_ctx);
+        let rick = results.iter().find(|r| r.disease_name == "Rickets");
+        assert!(rick.is_some(), "Rickets should appear");
+    }
+
+    #[test]
+    fn test_score_febrile_seizure() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(2), sex: None };
+        let results = score_symptoms_with_context(&conn, &["seizure with fever", "high fever", "loss of consciousness"], &child_ctx);
+        let fs = results.iter().find(|r| r.disease_name == "Febrile Seizure");
+        assert!(fs.is_some(), "Febrile Seizure should appear");
+    }
+
+    #[test]
+    fn test_score_pku() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["intellectual disability", "musty body odor", "seizures"]);
+        let pku = results.iter().find(|r| r.disease_name == "Phenylketonuria (PKU)");
+        assert!(pku.is_some(), "PKU should appear");
+    }
+
+    #[test]
+    fn test_score_bulimia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["binge eating episodes", "self-induced vomiting", "dental erosion"]);
+        let bul = results.iter().find(|r| r.disease_name == "Bulimia Nervosa");
+        assert!(bul.is_some(), "Bulimia should appear");
+        assert!(bul.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_impetigo() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["honey-colored crusted sores", "red sores around mouth and nose", "itching"]);
+        let imp = results.iter().find(|r| r.disease_name == "Impetigo");
+        assert!(imp.is_some(), "Impetigo should appear");
+        assert!(imp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_ringworm() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["ring-shaped rash", "itchy red patches", "scaly skin"]);
+        let rw = results.iter().find(|r| r.disease_name == "Tinea Corporis (Ringworm)");
+        assert!(rw.is_some(), "Ringworm should appear");
+        assert!(rw.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_metabolic_syndrome() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["large waist circumference", "high blood pressure", "high blood sugar"]);
+        let ms = results.iter().find(|r| r.disease_name == "Metabolic Syndrome");
+        assert!(ms.is_some(), "Metabolic Syndrome should appear");
+        assert!(ms.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_gallstones() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden right upper abdominal pain", "pain after fatty meals", "nausea"]);
+        let gs = results.iter().find(|r| r.disease_name == "Gallstones (Cholelithiasis)");
+        assert!(gs.is_some(), "Gallstones should appear");
+        assert!(gs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_chronic_fatigue() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe persistent fatigue", "post-exertional malaise", "unrefreshing sleep"]);
+        let cfs = results.iter().find(|r| r.disease_name == "Chronic Fatigue Syndrome");
+        assert!(cfs.is_some(), "CFS should appear");
+        assert!(cfs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_peritonsillar_abscess() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe sore throat usually one-sided", "difficulty swallowing", "trismus", "high fever"]);
+        let pta = results.iter().find(|r| r.disease_name == "Peritonsillar Abscess");
+        assert!(pta.is_some(), "Peritonsillar Abscess should appear");
+        assert!(pta.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_grinding_teeth() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["grinding teeth", "jaw pain"]);
+        assert!(!results.is_empty(), "grinding teeth should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_anxious() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["anxious", "insomnia", "restlessness"]);
+        assert!(!results.is_empty(), "anxious should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_always_tired() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["always tired", "crash after activity"]);
+        assert!(!results.is_empty(), "always tired + crash after activity should match CFS via synonyms");
+    }
+
+    #[test]
+    fn test_synonym_circular_rash() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["circular rash", "itchy"]);
+        assert!(!results.is_empty(), "circular rash should expand to ring-shaped rash");
+    }
+
+    #[test]
+    fn test_negative_evidence_bruxism() {
+        let conn = db::init_memory_database().unwrap();
+        let with_fever = score_symptoms(&conn, &["teeth grinding", "jaw pain", "fever"]);
+        let without_fever = score_symptoms(&conn, &["teeth grinding", "jaw pain"]);
+        let br_with = with_fever.iter().find(|r| r.disease_name == "Bruxism");
+        let br_without = without_fever.iter().find(|r| r.disease_name == "Bruxism");
+        if let (Some(bw), Some(bwo)) = (br_with, br_without) {
+            assert!(bwo.probability >= bw.probability,
+                "Bruxism should score same or lower with fever (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_negative_evidence_gad() {
+        let conn = db::init_memory_database().unwrap();
+        let with_cough = score_symptoms(&conn, &["persistent worry", "restlessness", "cough"]);
+        let without_cough = score_symptoms(&conn, &["persistent worry", "restlessness"]);
+        let gad_with = with_cough.iter().find(|r| r.disease_name == "Generalized Anxiety Disorder");
+        let gad_without = without_cough.iter().find(|r| r.disease_name == "Generalized Anxiety Disorder");
+        if let (Some(gw), Some(gwo)) = (gad_with, gad_without) {
+            assert!(gwo.probability >= gw.probability,
+                "GAD should score same or lower with cough (negative evidence)");
         }
     }
 }

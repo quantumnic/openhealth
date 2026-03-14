@@ -229,6 +229,24 @@ pub enum Commands {
         /// Drug name or class to look up (omit to list all)
         name: Option<String>,
     },
+    /// First-aid quick reference — step-by-step emergency protocols
+    #[command(name = "first-aid")]
+    FirstAid {
+        /// Situation to look up (e.g. "choking", "burn", "CPR"). Omit to list all.
+        situation: Option<String>,
+    },
+    /// Personalized lifestyle and health recommendations
+    Lifestyle {
+        /// Age in years
+        #[arg(long)]
+        age: Option<u8>,
+        /// Sex: male or female
+        #[arg(long)]
+        sex: Option<String>,
+        /// Comma-separated risk factors, e.g. "smoking, obesity, diabetes"
+        #[arg(long)]
+        factors: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -359,6 +377,12 @@ fn main() {
             } else {
                 commands::drug_info::run_list(cli.json);
             }
+        }
+        Commands::FirstAid { situation } => {
+            commands::first_aid::run(situation.as_deref(), cli.json);
+        }
+        Commands::Lifestyle { age, sex, factors } => {
+            commands::lifestyle::run(&conn, age, sex.as_deref(), factors.as_deref(), cli.json);
         }
     }
 }

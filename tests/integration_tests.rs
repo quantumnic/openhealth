@@ -1612,3 +1612,110 @@ fn test_cli_disease_cholesteatoma() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Cholesteatoma") || stdout.contains("middle ear"));
 }
+
+// ── v0.25.0 integration tests ──────────────────────────────────────────
+
+#[test]
+fn test_cli_first_aid_list() {
+    let output = cargo_bin()
+        .args(["first-aid"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Choking") || stdout.contains("protocols"));
+}
+
+#[test]
+fn test_cli_first_aid_choking() {
+    let output = cargo_bin()
+        .args(["first-aid", "choking"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Heimlich") || stdout.contains("back blows"));
+}
+
+#[test]
+fn test_cli_first_aid_json() {
+    let output = cargo_bin()
+        .args(["--json", "first-aid", "burn"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"situation\""));
+}
+
+#[test]
+fn test_cli_lifestyle_basic() {
+    let output = cargo_bin()
+        .args(["lifestyle"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Lifestyle") || stdout.contains("exercise"));
+}
+
+#[test]
+fn test_cli_lifestyle_with_factors() {
+    let output = cargo_bin()
+        .args(["lifestyle", "--age", "55", "--sex", "male", "--factors", "smoking,diabetes"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("smoking") || stdout.contains("Quit") || stdout.contains("Tobacco"));
+}
+
+#[test]
+fn test_cli_lifestyle_json() {
+    let output = cargo_bin()
+        .args(["--json", "lifestyle", "--age", "30"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"category\""));
+}
+
+#[test]
+fn test_cli_symptoms_bruxism_v25() {
+    let output = cargo_bin()
+        .args(["symptoms", "teeth grinding jaw pain headache"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Bruxism") || stdout.contains("jaw"));
+}
+
+#[test]
+fn test_cli_symptoms_gallstones_v25() {
+    let output = cargo_bin()
+        .args(["symptoms", "right upper abdominal pain nausea vomiting"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_cli_disease_impetigo() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_v25_imp.db", "disease", "impetigo"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Impetigo") || stdout.contains("skin"));
+}
+
+#[test]
+fn test_cli_synonym_grinding_teeth_v25() {
+    let output = cargo_bin()
+        .args(["symptoms", "grinding teeth"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+}

@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '24.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '25.0')",
         [],
     )?;
     tx.commit()?;
@@ -4232,6 +4232,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Prompt treatment of chronic ear infections, avoid ear trauma, pressure equalization tubes if recurrent otitis.",
             risk_factors: vec![("chronic ear infections", "high"), ("eustachian tube dysfunction", "high"), ("cleft palate", "moderate"), ("previous ear surgery", "moderate")],
         },
+        // ── v0.25.0 new diseases ──────────────────────────────────────────
+        DiseaseEntry {
+            name: "Bruxism",
+            description: "Involuntary teeth grinding or jaw clenching, often during sleep. Can cause tooth damage, jaw pain, and headaches.",
+            severity: "low", contagious: false, icd11_code: "DA0C.2",
+            age_group: "all", category: "dental",
+            symptoms: vec![s("teeth grinding",0.9,true), s("jaw pain",0.8,true), s("headache",0.6,false), s("tooth sensitivity",0.6,false), s("ear pain",0.4,false), s("disrupted sleep",0.5,false), s("worn tooth enamel",0.7,false)],
+            treatment: "Dental night guard (occlusal splint). Stress management, relaxation techniques. Botox injections for severe cases. Address underlying anxiety or sleep disorders.",
+            first_aid: "Apply warm compress to jaw. Gentle jaw stretches. Avoid chewing gum or hard foods. Over-the-counter pain relief.",
+            prevention: "Stress reduction, avoid caffeine before bed, maintain good sleep hygiene, regular dental check-ups.",
+            risk_factors: vec![("stress and anxiety", "high"), ("sleep disorders", "high"), ("caffeine use", "moderate"), ("alcohol use", "moderate"), ("SSRI medications", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Temporomandibular Joint Disorder",
+            description: "Disorders of the jaw joint and surrounding muscles causing pain and restricted jaw movement. Common cause of facial pain.",
+            severity: "low", contagious: false, icd11_code: "DA0E",
+            age_group: "adults", category: "musculoskeletal",
+            symptoms: vec![s("jaw pain",0.9,true), s("clicking or popping jaw",0.8,true), s("difficulty chewing",0.7,false), s("jaw locking",0.6,false), s("facial pain",0.6,false), s("ear pain",0.5,false), s("headache",0.5,false)],
+            treatment: "Conservative: soft diet, jaw exercises, NSAIDs, muscle relaxants. Oral splints/night guards. Physical therapy. Corticosteroid injections. Surgery only for refractory cases.",
+            first_aid: "Apply ice or warm compress to jaw. Eat soft foods. Avoid wide mouth opening. OTC pain relief.",
+            prevention: "Avoid excessive jaw clenching, manage stress, maintain good posture, avoid chewing gum excessively.",
+            risk_factors: vec![("bruxism", "high"), ("stress", "high"), ("jaw injury", "moderate"), ("arthritis", "moderate"), ("female sex", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Generalized Anxiety Disorder",
+            description: "Persistent excessive worry about everyday matters for at least 6 months, with difficulty controlling the worry. Affects daily functioning.",
+            severity: "medium", contagious: false, icd11_code: "6B00",
+            age_group: "adults", category: "mental_health",
+            symptoms: vec![s("persistent worry",0.9,true), s("restlessness",0.8,true), s("difficulty concentrating",0.7,false), s("muscle tension",0.7,false), s("insomnia",0.7,false), s("irritability",0.6,false), s("fatigue",0.6,false), s("rapid heartbeat",0.4,false)],
+            treatment: "CBT (Cognitive Behavioral Therapy) is first-line. SSRIs or SNRIs for pharmacotherapy. Buspirone as alternative. Relaxation training, mindfulness-based stress reduction.",
+            first_aid: "Deep breathing exercises (4-7-8 technique). Grounding techniques (5-4-3-2-1 method). Remove from stressful situation. Reassure the person.",
+            prevention: "Regular exercise, adequate sleep, limit caffeine and alcohol, stress management techniques, social support.",
+            risk_factors: vec![("family history of anxiety", "high"), ("childhood trauma", "high"), ("chronic stress", "high"), ("female sex", "moderate"), ("other mental health conditions", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Eating Disorder (Anorexia Nervosa)",
+            description: "Serious mental health condition characterized by severely restricted food intake, intense fear of gaining weight, and distorted body image. Life-threatening if untreated.",
+            severity: "high", contagious: false, icd11_code: "6B80",
+            age_group: "all", category: "psychiatric",
+            symptoms: vec![s("extreme weight loss",0.9,true), s("fear of gaining weight",0.9,true), s("restricted food intake",0.8,true), s("distorted body image",0.8,false), s("amenorrhea",0.6,false), s("fatigue",0.6,false), s("brittle nails",0.4,false), s("hair thinning",0.5,false), s("cold intolerance",0.5,false), s("dizziness",0.4,false)],
+            treatment: "Multidisciplinary: nutritional rehabilitation, psychotherapy (CBT, family-based treatment for adolescents), medical monitoring. Hospitalization for severe malnutrition or cardiac instability.",
+            first_aid: "Do not force food. Seek professional help urgently. Monitor for signs of cardiac distress. Provide emotional support without judgment.",
+            prevention: "Promote healthy body image, avoid diet culture, early intervention for disordered eating patterns, mental health education.",
+            risk_factors: vec![("family history", "high"), ("perfectionism", "high"), ("history of dieting", "moderate"), ("female sex", "moderate"), ("anxiety or depression", "high"), ("social pressure", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Rickets",
+            description: "Childhood bone disorder caused by vitamin D, calcium, or phosphate deficiency leading to soft, weak bones. Can cause skeletal deformities.",
+            severity: "medium", contagious: false, icd11_code: "5B57",
+            age_group: "children", category: "nutritional",
+            symptoms: vec![s("bowed legs",0.9,true), s("delayed growth",0.8,true), s("bone pain",0.7,true), s("muscle weakness",0.6,false), s("dental problems",0.5,false), s("widened wrists",0.6,false), s("soft skull bones",0.5,false), s("irritability",0.4,false)],
+            treatment: "Vitamin D supplementation (ergocalciferol or cholecalciferol). Calcium and phosphate supplementation. Sunlight exposure. Treat underlying malabsorption if present. Bracing or surgery for severe deformities.",
+            first_aid: "Not an emergency. Ensure adequate nutrition, sun exposure. Seek pediatrician evaluation for suspected cases.",
+            prevention: "Adequate vitamin D through sunlight, diet, or supplements. Breastfed infants: 400 IU vitamin D daily. Calcium-rich diet.",
+            risk_factors: vec![("vitamin D deficiency", "high"), ("limited sun exposure", "high"), ("dark skin pigmentation", "moderate"), ("exclusive breastfeeding without vitamin D", "high"), ("malabsorption disorders", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Febrile Seizure",
+            description: "Convulsions in young children triggered by fever, typically ages 6 months to 5 years. Usually benign and self-limiting but frightening for caregivers.",
+            severity: "medium", contagious: false, icd11_code: "8A65",
+            age_group: "children", category: "neurological",
+            symptoms: vec![s("seizure with fever",0.9,true), s("high fever",0.8,true), s("loss of consciousness",0.7,true), s("body stiffening",0.7,false), s("jerking limbs",0.7,false), s("eyes rolling back",0.6,false), s("post-ictal drowsiness",0.6,false)],
+            treatment: "Most resolve spontaneously within minutes. Treat underlying fever cause. Antipyretics for comfort (not prevention). Benzodiazepines if prolonged (>5 min). Rarely need antiepileptic medication.",
+            first_aid: "Place child on side (recovery position). Do NOT put anything in mouth. Time the seizure. Remove nearby hazards. Call emergency if >5 minutes. Cool with tepid sponging after seizure.",
+            prevention: "No reliable prevention. Antipyretics do not prevent febrile seizures. Educate caregivers on management. Most children outgrow them.",
+            risk_factors: vec![("age 6 months to 5 years", "high"), ("family history of febrile seizures", "high"), ("recent vaccination", "low"), ("viral infections", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Croup",
+            description: "Viral upper airway infection causing a characteristic barking cough, hoarseness, and stridor. Most common in children 6 months to 3 years.",
+            severity: "medium", contagious: true, icd11_code: "CA04",
+            age_group: "children", category: "respiratory",
+            symptoms: vec![s("barking cough",0.9,true), s("stridor",0.9,true), s("hoarseness",0.7,true), s("fever",0.5,false), s("difficulty breathing",0.6,false), s("runny nose",0.4,false)],
+            treatment: "Mild: cool night air, steam. Moderate: single dose oral dexamethasone (0.6mg/kg). Severe: nebulized epinephrine + dexamethasone. Hospitalize if stridor at rest persists after treatment.",
+            first_aid: "Keep child calm (crying worsens stridor). Sit upright. Cool mist humidifier. Go outside into cool night air. Seek emergency care if struggling to breathe or lips turn blue.",
+            prevention: "Hand hygiene, avoid contact with respiratory infections. Parainfluenza vaccine not widely available.",
+            risk_factors: vec![("age 6 months to 3 years", "high"), ("fall/winter season", "moderate"), ("daycare attendance", "moderate"), ("previous croup episodes", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Phenylketonuria (PKU)",
+            description: "Inherited metabolic disorder where the body cannot break down phenylalanine. Untreated, causes intellectual disability. Detected by newborn screening.",
+            severity: "high", contagious: false, icd11_code: "5C50.0",
+            age_group: "neonates", category: "metabolic",
+            symptoms: vec![s("intellectual disability",0.9,true), s("musty body odor",0.8,true), s("fair skin and hair",0.6,false), s("seizures",0.6,false), s("behavioral problems",0.5,false), s("eczema",0.4,false), s("microcephaly",0.5,false)],
+            treatment: "Lifelong phenylalanine-restricted diet. Medical formula providing essential amino acids. Regular blood phenylalanine monitoring. Sapropterin (BH4) for responsive patients. Pegvaliase enzyme therapy for adults.",
+            first_aid: "Not an acute emergency. If suspected in unscreened infant, seek immediate metabolic specialist referral.",
+            prevention: "Newborn screening (Guthrie test). Strict dietary management from birth prevents all complications. Maternal PKU management during pregnancy.",
+            risk_factors: vec![("autosomal recessive inheritance", "high"), ("both parents carriers", "high"), ("consanguinity", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Bulimia Nervosa",
+            description: "Eating disorder characterized by recurrent binge eating followed by compensatory purging (vomiting, laxatives, excessive exercise). Causes electrolyte imbalances and dental erosion.",
+            severity: "high", contagious: false, icd11_code: "6B81",
+            age_group: "adults", category: "psychiatric",
+            symptoms: vec![s("binge eating episodes",0.9,true), s("self-induced vomiting",0.9,true), s("dental erosion",0.7,false), s("swollen parotid glands",0.6,false), s("calluses on knuckles",0.5,false), s("electrolyte imbalance",0.6,false), s("irregular periods",0.4,false), s("sore throat",0.4,false), s("fatigue",0.4,false)],
+            treatment: "CBT specifically adapted for bulimia (CBT-BN) is first-line. SSRIs (fluoxetine 60mg). Nutritional counseling. Address comorbid depression/anxiety. Group therapy.",
+            first_aid: "Do not confront aggressively. Express concern without judgment. Seek professional help. Monitor for signs of severe dehydration or cardiac arrhythmia.",
+            prevention: "Promote healthy eating behaviors, address body image issues early, mental health education, reduce stigma around seeking help.",
+            risk_factors: vec![("history of dieting", "high"), ("depression or anxiety", "high"), ("low self-esteem", "high"), ("family history", "moderate"), ("history of trauma", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Impetigo",
+            description: "Highly contagious superficial bacterial skin infection common in children. Caused by Staphylococcus aureus or Streptococcus pyogenes.",
+            severity: "low", contagious: true, icd11_code: "1B72",
+            age_group: "children", category: "dermatological",
+            symptoms: vec![s("honey-colored crusted sores",0.9,true), s("red sores around mouth and nose",0.8,true), s("itching",0.6,false), s("fluid-filled blisters",0.6,false), s("skin redness",0.5,false), s("swollen lymph nodes",0.4,false)],
+            treatment: "Topical antibiotics (mupirocin or fusidic acid) for localized cases. Oral antibiotics (cephalexin, amoxicillin-clavulanate) for widespread infection. Keep lesions clean. Remove crusts with warm soapy water.",
+            first_aid: "Clean affected areas gently with soap and water. Cover with loose bandage. Prevent scratching. Wash hands frequently to prevent spread.",
+            prevention: "Good hand hygiene, keep cuts and scrapes clean, avoid sharing towels/personal items, prompt treatment of skin injuries.",
+            risk_factors: vec![("close contact with infected person", "high"), ("warm humid climate", "moderate"), ("skin injuries", "moderate"), ("crowded living conditions", "moderate"), ("age 2-5 years", "high")],
+        },
+        DiseaseEntry {
+            name: "Tinea Corporis (Ringworm)",
+            description: "Fungal infection of the skin causing ring-shaped, scaly, itchy patches. Common and highly treatable. Not caused by a worm despite the name.",
+            severity: "low", contagious: true, icd11_code: "1F28.1",
+            age_group: "all", category: "dermatological",
+            symptoms: vec![s("ring-shaped rash",0.9,true), s("itchy red patches",0.8,true), s("scaly skin",0.7,false), s("raised border of rash",0.6,false), s("clear center of rash",0.6,false), s("multiple rings",0.4,false)],
+            treatment: "Topical antifungals (clotrimazole, miconazole, terbinafine) for 2-4 weeks. Oral antifungals (terbinafine, itraconazole) for widespread or resistant cases. Keep skin dry.",
+            first_aid: "Keep area clean and dry. Apply OTC antifungal cream. Avoid scratching. Do not share towels or clothing.",
+            prevention: "Good hygiene, keep skin dry, avoid sharing personal items, treat infected pets, wear sandals in communal showers.",
+            risk_factors: vec![("contact with infected person/animal", "high"), ("warm humid environment", "high"), ("weakened immune system", "moderate"), ("contact sports", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Metabolic Syndrome",
+            description: "Cluster of conditions (high blood pressure, high blood sugar, excess body fat around waist, abnormal cholesterol) that increase risk of heart disease, stroke, and type 2 diabetes.",
+            severity: "medium", contagious: false, icd11_code: "5A40",
+            age_group: "adults", category: "metabolic",
+            symptoms: vec![s("large waist circumference",0.9,true), s("high blood pressure",0.8,true), s("high blood sugar",0.8,true), s("high triglycerides",0.7,false), s("low HDL cholesterol",0.7,false), s("fatigue",0.5,false), s("increased thirst",0.4,false)],
+            treatment: "Lifestyle modification is cornerstone: weight loss (5-10%), regular exercise (150 min/week), Mediterranean or DASH diet. Metformin for insulin resistance. Statins for dyslipidemia. ACE inhibitors for hypertension.",
+            first_aid: "Not an acute condition. If experiencing chest pain or stroke symptoms, call emergency services immediately.",
+            prevention: "Maintain healthy weight, regular physical activity, balanced diet rich in fruits/vegetables/whole grains, limit processed foods and sugar, regular health screenings.",
+            risk_factors: vec![("obesity", "high"), ("sedentary lifestyle", "high"), ("insulin resistance", "high"), ("age > 40", "moderate"), ("family history of diabetes", "moderate"), ("polycystic ovary syndrome", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Gallstones (Cholelithiasis)",
+            description: "Hardened deposits of bile in the gallbladder. May be asymptomatic or cause biliary colic — sudden intense pain in the upper right abdomen.",
+            severity: "medium", contagious: false, icd11_code: "DC10",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("sudden right upper abdominal pain",0.9,true), s("pain after fatty meals",0.8,true), s("nausea",0.7,false), s("vomiting",0.6,false), s("right shoulder pain",0.5,false), s("bloating",0.4,false), s("indigestion",0.4,false)],
+            treatment: "Asymptomatic: watchful waiting. Symptomatic: laparoscopic cholecystectomy (gold standard). ERCP for bile duct stones. Ursodeoxycholic acid for non-surgical candidates. Low-fat diet for symptom management.",
+            first_aid: "Lie on right side with knees drawn up. Apply warm compress to abdomen. Avoid eating. Take OTC pain relief. Seek emergency care if fever, jaundice, or persistent vomiting develops.",
+            prevention: "Maintain healthy weight, avoid rapid weight loss, high-fiber diet, regular meals, limit refined carbohydrates and saturated fats.",
+            risk_factors: vec![("female sex", "high"), ("age > 40", "moderate"), ("obesity", "high"), ("rapid weight loss", "high"), ("pregnancy", "moderate"), ("family history", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Chronic Fatigue Syndrome",
+            description: "Debilitating disorder characterized by extreme fatigue that doesn't improve with rest and worsens with physical or mental activity. Also known as ME/CFS.",
+            severity: "medium", contagious: false, icd11_code: "8E49",
+            age_group: "adults", category: "immunological",
+            symptoms: vec![s("severe persistent fatigue",0.9,true), s("post-exertional malaise",0.9,true), s("unrefreshing sleep",0.8,true), s("cognitive difficulties",0.7,false), s("orthostatic intolerance",0.6,false), s("muscle pain",0.5,false), s("joint pain",0.5,false), s("headache",0.5,false), s("sore throat",0.4,false), s("swollen lymph nodes",0.3,false)],
+            treatment: "No cure — management focused. Pacing (activity management to avoid crashes). CBT for coping skills. Graded exercise therapy (controversial — must be patient-led). Treat sleep disorders. Low-dose naltrexone experimental.",
+            first_aid: "Not an emergency. During crash: complete rest, dark quiet room, hydration. Do NOT push through fatigue. Seek specialist evaluation for diagnosis.",
+            prevention: "No known prevention. Early rest during viral illness may reduce risk. Avoid overexertion during recovery from infections.",
+            risk_factors: vec![("viral infection trigger", "high"), ("female sex", "moderate"), ("age 40-60", "moderate"), ("genetic predisposition", "moderate"), ("high stress levels", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Peritonsillar Abscess",
+            description: "Collection of pus behind the tonsils, usually as a complication of tonsillitis. Causes severe throat pain and difficulty swallowing. Requires drainage.",
+            severity: "high", contagious: false, icd11_code: "CA03.1",
+            age_group: "all", category: "ENT",
+            symptoms: vec![s("severe sore throat usually one-sided",0.9,true), s("difficulty swallowing",0.8,true), s("trismus",0.8,true), s("muffled voice",0.7,false), s("high fever",0.7,false), s("drooling",0.6,false), s("swollen uvula deviated",0.6,false), s("ear pain",0.5,false), s("neck swelling",0.5,false)],
+            treatment: "Needle aspiration or incision and drainage. IV antibiotics (amoxicillin-clavulanate or clindamycin). Corticosteroids for inflammation. Tonsillectomy if recurrent. Analgesics and hydration.",
+            first_aid: "Do NOT attempt to drain. Keep hydrated with cold fluids. OTC pain relief. Seek emergency care — this requires urgent drainage.",
+            prevention: "Prompt treatment of tonsillitis/pharyngitis. Complete antibiotic courses. Early ENT referral for recurrent tonsillitis.",
+            risk_factors: vec![("recurrent tonsillitis", "high"), ("poor dental hygiene", "moderate"), ("smoking", "moderate"), ("immunocompromised", "moderate")],
+        },
     ]
 }
 
@@ -4925,6 +5091,43 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("sweating a lot", "heavy sweating"),
         ("overheated", "heavy sweating"),
         ("heat cramps", "muscle cramps"),
+        // v0.25.0 synonyms
+        ("grinding teeth", "teeth grinding"),
+        ("clenching jaw", "jaw pain"),
+        ("jaw clicking", "clicking or popping jaw"),
+        ("TMJ", "jaw pain"),
+        ("lockjaw", "jaw locking"),
+        ("anxious", "persistent worry"),
+        ("worried all the time", "persistent worry"),
+        ("nervous wreck", "restlessness"),
+        ("on edge", "restlessness"),
+        ("anorexic", "restricted food intake"),
+        ("not eating", "restricted food intake"),
+        ("starving myself", "restricted food intake"),
+        ("bowing legs", "bowed legs"),
+        ("bow legged", "bowed legs"),
+        ("soft bones", "bone pain"),
+        ("fits", "seizure with fever"),
+        ("convulsions", "seizure with fever"),
+        ("barking cough", "barking cough"),
+        ("seal-like cough", "barking cough"),
+        ("binge and purge", "self-induced vomiting"),
+        ("making myself sick", "self-induced vomiting"),
+        ("crusty sores", "honey-colored crusted sores"),
+        ("ring shaped rash", "ring-shaped rash"),
+        ("circular rash", "ring-shaped rash"),
+        ("big belly", "large waist circumference"),
+        ("pot belly", "large waist circumference"),
+        ("gallbladder pain", "sudden right upper abdominal pain"),
+        ("pain after eating", "pain after fatty meals"),
+        ("always tired", "severe persistent fatigue"),
+        ("exhausted all the time", "severe persistent fatigue"),
+        ("crash after activity", "post-exertional malaise"),
+        ("PEM", "post-exertional malaise"),
+        ("can't open mouth", "trismus"),
+        ("jaw won't open", "trismus"),
+        ("muffled voice", "muffled voice"),
+        ("hot potato voice", "muffled voice"),
     ]
 }
 
@@ -4937,7 +5140,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 335, "Expected at least 335 diseases, got {count}");
+        assert!(count >= 346, "Expected at least 346 diseases, got {count}");
     }
 
     #[test]
@@ -4987,7 +5190,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "24.0");
+        assert_eq!(ver, "25.0");
     }
 
     #[test]
@@ -5023,3 +5226,5 @@ mod tests {
 // Additional v23 diseases appended via seed extension
 
 // Additional v24 diseases appended via seed extension
+
+// Additional v25 diseases appended via seed extension
