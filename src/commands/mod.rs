@@ -34,3 +34,4 @@ pub mod validate;
 pub mod screen;
 pub mod vitals;
 pub mod symptom_map;
+pub mod drug_info;

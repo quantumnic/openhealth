@@ -223,6 +223,12 @@ pub enum Commands {
         /// Filter symptoms by name (partial match)
         filter: Option<String>,
     },
+    /// Drug reference — dosage, side effects, warnings, contraindications
+    #[command(name = "drug-info")]
+    DrugInfo {
+        /// Drug name or class to look up (omit to list all)
+        name: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -346,6 +352,13 @@ fn main() {
         }
         Commands::SymptomMap { filter } => {
             commands::symptom_map::run(&conn, filter.as_deref(), cli.json);
+        }
+        Commands::DrugInfo { name } => {
+            if let Some(name) = name {
+                commands::drug_info::run(&name, cli.json);
+            } else {
+                commands::drug_info::run_list(cli.json);
+            }
         }
     }
 }

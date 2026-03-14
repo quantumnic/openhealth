@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '23.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '24.0')",
         [],
     )?;
     tx.commit()?;
@@ -4121,6 +4121,117 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Strict glucose control. Avoid excessive alcohol. Adequate B vitamins. Avoid neurotoxic medications when possible.",
             risk_factors: vec![("diabetes", "high"), ("alcohol abuse", "high"), ("B12 deficiency", "moderate"), ("chemotherapy", "moderate"), ("autoimmune disease", "moderate")],
         },
+        // ── v0.24.0 new diseases ──────────────────────────────────────────
+        DiseaseEntry {
+            name: "Toxic Epidermal Necrolysis",
+            description: "Life-threatening skin reaction usually triggered by medications. Widespread skin detachment resembling severe burns.",
+            severity: "high", contagious: false, icd11_code: "EH60",
+            age_group: "all", category: "dermatological",
+            symptoms: vec![s("widespread skin peeling",0.95,true), s("painful red skin",0.9,true), s("fever",0.7,true), s("mucous membrane erosions",0.8,false), s("difficulty swallowing",0.5,false), s("eye pain",0.5,false), s("malaise",0.6,false)],
+            treatment: "EMERGENCY: Stop offending drug immediately. Burn-unit or ICU care. IV fluids, wound care, pain management. Cyclosporine or IVIG may be considered. Ophthalmology consult.",
+            first_aid: "Stop suspect medication. Call emergency services. Do not peel or debride skin. Keep warm.",
+            prevention: "Pharmacogenomic testing (HLA-B*5801 for allopurinol, HLA-B*1502 for carbamazepine). Avoid re-exposure to causative drugs.",
+            risk_factors: vec![("recent medication change", "high"), ("HIV infection", "high"), ("HLA genetic susceptibility", "high"), ("autoimmune disease", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Heat Exhaustion",
+            description: "Heat-related illness from prolonged exposure to high temperatures and dehydration. Precursor to heatstroke.",
+            severity: "medium", contagious: false, icd11_code: "NF01",
+            age_group: "all", category: "environmental",
+            symptoms: vec![s("heavy sweating",0.9,true), s("weakness",0.7,true), s("dizziness",0.7,true), s("nausea",0.6,false), s("headache",0.6,false), s("muscle cramps",0.6,false), s("cool clammy skin",0.7,false), s("rapid weak pulse",0.5,false)],
+            treatment: "Move to cool environment. Remove excess clothing. Cool with wet cloths, fans. Oral rehydration with electrolytes. IV fluids if unable to drink. Monitor for progression to heatstroke.",
+            first_aid: "Move to shade/cool area. Lie down with legs elevated. Sip cool water with electrolytes. Apply cool wet cloths to neck, armpits, groin.",
+            prevention: "Stay hydrated, avoid strenuous activity in extreme heat, wear light clothing, acclimatize gradually, take breaks in shade.",
+            risk_factors: vec![("extreme heat exposure", "high"), ("dehydration", "high"), ("strenuous exercise in heat", "high"), ("age > 65", "moderate"), ("obesity", "moderate"), ("certain medications (diuretics, beta-blockers)", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Organophosphate Poisoning",
+            description: "Toxicity from organophosphate pesticides or nerve agents. Inhibits acetylcholinesterase causing cholinergic crisis.",
+            severity: "high", contagious: false, icd11_code: "NE60",
+            age_group: "all", category: "toxicological",
+            symptoms: vec![s("excessive salivation",0.8,true), s("tearing",0.7,false), s("urinary incontinence",0.6,false), s("diarrhea",0.7,true), s("vomiting",0.6,false), s("miosis",0.8,true), s("muscle twitching",0.7,false), s("difficulty breathing",0.8,false), s("confusion",0.5,false), s("bradycardia",0.6,false)],
+            treatment: "EMERGENCY: Decontaminate (remove clothing, wash skin). Atropine IV (titrate to dry secretions). Pralidoxime (2-PAM) within 24h. Intubation if respiratory failure. Seizures: benzodiazepines.",
+            first_aid: "Remove from exposure. Remove contaminated clothing. Wash skin with soap and water. Ensure airway. Call poison control/emergency.",
+            prevention: "Proper PPE when handling pesticides, safe storage, integrated pest management, education on safe handling.",
+            risk_factors: vec![("agricultural work", "high"), ("pesticide exposure without PPE", "high"), ("intentional ingestion", "high"), ("military/terrorism exposure", "high")],
+        },
+        DiseaseEntry {
+            name: "Infantile Spasms",
+            description: "Severe epilepsy syndrome (West syndrome) in infants with characteristic spasms, developmental regression, and hypsarrhythmia on EEG.",
+            severity: "high", contagious: false, icd11_code: "8A61.1",
+            age_group: "neonates", category: "neurological",
+            symptoms: vec![s("sudden body flexion spasms",0.95,true), s("clusters of spasms",0.9,true), s("developmental regression",0.8,true), s("irritability",0.5,false), s("poor feeding",0.4,false), s("loss of social smile",0.6,false)],
+            treatment: "ACTH (adrenocorticotropic hormone) or vigabatrin (first-line for tuberous sclerosis). Prednisolone as alternative. Urgent EEG and treatment initiation — delays worsen outcome.",
+            first_aid: "Video-record the episode for doctors. Seek pediatric neurology urgently. Do not restrain.",
+            prevention: "No known prevention. Early recognition and treatment improve neurodevelopmental outcomes.",
+            risk_factors: vec![("tuberous sclerosis", "high"), ("perinatal brain injury", "high"), ("Down syndrome", "moderate"), ("brain malformations", "high")],
+        },
+        DiseaseEntry {
+            name: "Retinal Detachment",
+            description: "Separation of the retina from underlying tissue. Painless vision loss — ophthalmologic emergency.",
+            severity: "high", contagious: false, icd11_code: "9B70",
+            age_group: "adults", category: "ophthalmological",
+            symptoms: vec![s("sudden floaters",0.8,true), s("flashes of light",0.8,true), s("shadow or curtain over vision",0.9,true), s("sudden vision loss",0.7,false), s("blurred vision",0.5,false)],
+            treatment: "EMERGENCY: Ophthalmology referral within 24h. Pneumatic retinopexy, scleral buckle, or vitrectomy depending on type and extent. Laser photocoagulation for tears without detachment.",
+            first_aid: "Avoid sudden head movements, heavy lifting, or straining. Seek emergency eye care immediately.",
+            prevention: "Regular eye exams (especially if myopic), prompt treatment of retinal tears, protective eyewear for sports.",
+            risk_factors: vec![("high myopia", "high"), ("previous retinal detachment", "high"), ("eye surgery (cataract)", "moderate"), ("eye trauma", "moderate"), ("family history", "moderate"), ("age > 50", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Periorbital Cellulitis",
+            description: "Infection of the eyelid and skin around the eye, anterior to the orbital septum. Common in children. Must distinguish from orbital cellulitis.",
+            severity: "medium", contagious: false, icd11_code: "9A00",
+            age_group: "children", category: "ophthalmological",
+            symptoms: vec![s("eyelid swelling",0.9,true), s("eyelid redness",0.8,true), s("warmth around eye",0.6,false), s("fever",0.5,false), s("eye pain",0.5,false), s("tenderness around eye",0.6,false)],
+            treatment: "Oral antibiotics: amoxicillin-clavulanate. If not improving in 24-48h or signs of orbital cellulitis (proptosis, pain with eye movement, vision loss): IV antibiotics and CT scan.",
+            first_aid: "Warm compresses, seek medical care. Watch for worsening — if eye bulges or vision changes, go to ER.",
+            prevention: "Prompt treatment of sinusitis, insect bites, and skin wounds around eyes.",
+            risk_factors: vec![("recent sinusitis", "high"), ("insect bite near eye", "moderate"), ("skin wound near eye", "moderate"), ("age < 5 years", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Henoch-Schönlein Purpura",
+            description: "IgA vasculitis primarily in children causing purpura, joint pain, abdominal pain, and kidney involvement.",
+            severity: "medium", contagious: false, icd11_code: "4A44.1",
+            age_group: "children", category: "immunological",
+            symptoms: vec![s("palpable purpura on legs and buttocks",0.95,true), s("joint pain",0.7,true), s("abdominal pain",0.7,true), s("blood in urine",0.5,false), s("swollen joints",0.5,false), s("nausea",0.3,false), s("vomiting",0.3,false)],
+            treatment: "Mostly self-limiting. NSAIDs for joint pain. Corticosteroids for severe abdominal or renal involvement. Monitor urinalysis for 6 months for nephritis.",
+            first_aid: "Rest, pain relief with ibuprofen or paracetamol. Seek medical care for diagnosis and monitoring.",
+            prevention: "No known prevention. Prompt treatment of preceding infections may reduce risk.",
+            risk_factors: vec![("age 3-10 years", "high"), ("recent upper respiratory infection", "high"), ("male sex", "moderate"), ("autumn/winter season", "low")],
+        },
+        DiseaseEntry {
+            name: "Subdural Hematoma",
+            description: "Blood collection between brain and dura mater. Acute form is a neurosurgical emergency. Chronic form common in elderly.",
+            severity: "high", contagious: false, icd11_code: "8B01",
+            age_group: "all", category: "neurological",
+            symptoms: vec![s("headache",0.8,true), s("confusion",0.8,true), s("drowsiness",0.7,false), s("weakness on one side",0.7,true), s("speech difficulty",0.5,false), s("seizures",0.4,false), s("nausea",0.4,false), s("unequal pupils",0.6,false)],
+            treatment: "Acute/large: surgical evacuation (craniotomy or burr holes). Small/chronic: observation, serial imaging. Manage anticoagulation. ICP monitoring if needed.",
+            first_aid: "Call emergency services. Keep head elevated 30°. Monitor consciousness. Do not give blood thinners.",
+            prevention: "Fall prevention in elderly, helmet use, careful anticoagulation management, avoid head injuries.",
+            risk_factors: vec![("anticoagulant use", "high"), ("age > 65", "high"), ("head trauma", "high"), ("chronic alcohol use", "high"), ("falls risk", "high")],
+        },
+        DiseaseEntry {
+            name: "Thyroid Nodule",
+            description: "Lump in the thyroid gland. Very common — most are benign. Requires evaluation to exclude malignancy.",
+            severity: "low", contagious: false, icd11_code: "5A00.1",
+            age_group: "adults", category: "endocrine",
+            symptoms: vec![s("neck lump",0.9,true), s("difficulty swallowing",0.5,false), s("hoarse voice",0.4,false), s("neck fullness",0.5,true), s("thyroid enlargement",0.6,false)],
+            treatment: "Benign: monitoring with serial ultrasound. Suspicious/malignant: fine-needle aspiration biopsy, then surgery (lobectomy or thyroidectomy). Radioactive iodine for certain cancers.",
+            first_aid: "Not an emergency unless causing airway compromise. Schedule thyroid ultrasound and endocrinology evaluation.",
+            prevention: "Adequate iodine intake, avoid unnecessary radiation exposure to neck, regular thyroid checks if family history.",
+            risk_factors: vec![("female sex", "moderate"), ("age > 40", "moderate"), ("radiation exposure to head/neck", "high"), ("family history of thyroid cancer", "high"), ("iodine deficiency", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Cholesteatoma",
+            description: "Abnormal skin growth in the middle ear behind the eardrum. Destructive, can erode bone and cause hearing loss.",
+            severity: "medium", contagious: false, icd11_code: "AB01",
+            age_group: "all", category: "ENT",
+            symptoms: vec![s("foul-smelling ear discharge",0.9,true), s("hearing loss",0.8,true), s("ear fullness",0.6,false), s("ear pain",0.5,false), s("dizziness",0.4,false), s("facial weakness",0.3,false)],
+            treatment: "Surgery (mastoidectomy/tympanoplasty) is definitive. Regular ear cleaning pre-op. Antibiotics for acute infections. Long-term follow-up for recurrence.",
+            first_aid: "Keep ear dry, avoid water entry. Seek ENT specialist evaluation.",
+            prevention: "Prompt treatment of chronic ear infections, avoid ear trauma, pressure equalization tubes if recurrent otitis.",
+            risk_factors: vec![("chronic ear infections", "high"), ("eustachian tube dysfunction", "high"), ("cleft palate", "moderate"), ("previous ear surgery", "moderate")],
+        },
     ]
 }
 
@@ -4790,6 +4901,30 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("irregular cycle", "irregular periods"),
         ("excess body hair", "excess hair growth"),
         ("hirsutism", "excess hair growth"),
+        // v0.24.0 synonyms
+        ("skin coming off", "widespread skin peeling"),
+        ("skin sloughing", "widespread skin peeling"),
+        ("drooling excessively", "excessive salivation"),
+        ("too much saliva", "excessive salivation"),
+        ("pinpoint pupils", "miosis"),
+        ("small pupils", "miosis"),
+        ("baby spasms", "sudden body flexion spasms"),
+        ("seeing flashes", "flashes of light"),
+        ("curtain in vision", "shadow or curtain over vision"),
+        ("eye floaters", "sudden floaters"),
+        ("puffy eye", "eyelid swelling"),
+        ("swollen eye", "eyelid swelling"),
+        ("bruise-like rash", "palpable purpura on legs and buttocks"),
+        ("purple spots on legs", "palpable purpura on legs and buttocks"),
+        ("one-sided weakness", "weakness on one side"),
+        ("lump in neck", "neck lump"),
+        ("lump in throat", "neck fullness"),
+        ("smelly ear discharge", "foul-smelling ear discharge"),
+        ("stinky ear", "foul-smelling ear discharge"),
+        ("profuse sweating", "heavy sweating"),
+        ("sweating a lot", "heavy sweating"),
+        ("overheated", "heavy sweating"),
+        ("heat cramps", "muscle cramps"),
     ]
 }
 
@@ -4802,7 +4937,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 330, "Expected at least 330 diseases, got {count}");
+        assert!(count >= 335, "Expected at least 335 diseases, got {count}");
     }
 
     #[test]
@@ -4852,7 +4987,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "23.0");
+        assert_eq!(ver, "24.0");
     }
 
     #[test]
@@ -4886,3 +5021,5 @@ mod tests {
 // Additional v21 diseases appended via seed extension
 
 // Additional v23 diseases appended via seed extension
+
+// Additional v24 diseases appended via seed extension

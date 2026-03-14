@@ -1536,3 +1536,79 @@ fn test_cli_disease_preeclampsia() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Preeclampsia") || stdout.contains("hypertensive"));
 }
+
+// ── v0.24.0 CLI tests ──────────────────────────────────────────────
+
+#[test]
+fn test_cli_drug_info_list() {
+    let output = cargo_bin()
+        .args(["drug-info"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Drug Information Reference"));
+}
+
+#[test]
+fn test_cli_drug_info_ibuprofen() {
+    let output = cargo_bin()
+        .args(["drug-info", "ibuprofen"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Ibuprofen"));
+    assert!(stdout.contains("NSAID"));
+}
+
+#[test]
+fn test_cli_drug_info_json() {
+    let output = cargo_bin()
+        .args(["--json", "drug-info", "metformin"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"name\""));
+    assert!(stdout.contains("Metformin"));
+}
+
+#[test]
+fn test_cli_drug_info_not_found() {
+    let output = cargo_bin()
+        .args(["drug-info", "xyznonexistent"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("No drug found"));
+}
+
+#[test]
+fn test_cli_symptoms_retinal_detachment_v24() {
+    let output = cargo_bin()
+        .args(["symptoms", "eye floaters flashes of light"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_cli_symptoms_heat_exhaustion_v24() {
+    let output = cargo_bin()
+        .args(["symptoms", "heavy sweating weakness dizziness muscle cramps"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_cli_disease_cholesteatoma() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_v24_chol.db", "disease", "cholesteatoma"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Cholesteatoma") || stdout.contains("middle ear"));
+}

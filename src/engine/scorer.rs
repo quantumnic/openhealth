@@ -470,6 +470,14 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Thyroid Storm", vec!["rash", "chronic onset", "weight gain"]);
     map.insert("Anaphylactic Shock", vec!["gradual onset", "fever", "chronic"]);
     map.insert("Preeclampsia", vec!["rash", "diarrhea", "cough"]);
+    // v0.24.0 negative evidence
+    map.insert("Heat Exhaustion", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Retinal Detachment", vec!["fever", "rash", "pain"]);
+    map.insert("Thyroid Nodule", vec!["fever", "rash", "cough", "diarrhea"]);
+    map.insert("Subdural Hematoma", vec!["rash", "cough", "diarrhea", "fever"]);
+    map.insert("Cholesteatoma", vec!["rash", "cough", "joint pain"]);
+    map.insert("Toxic Epidermal Necrolysis", vec!["cough", "diarrhea", "joint pain"]);
+    map.insert("Organophosphate Poisoning", vec!["rash", "joint pain"]);
     map
 }
 
@@ -1890,6 +1898,134 @@ mod tests_v22 {
         if let (Some(aw), Some(awo)) = (afib_with, afib_without) {
             assert!(awo.probability >= aw.probability,
                 "AFib should score same or lower with fever (negative evidence)");
+        }
+    }
+}
+
+// ── v0.24.0 scorer tests ──────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_v24 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_toxic_epidermal_necrolysis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["widespread skin peeling", "painful red skin", "fever"]);
+        let ten = results.iter().find(|r| r.disease_name == "Toxic Epidermal Necrolysis");
+        assert!(ten.is_some(), "TEN should appear");
+        assert!(ten.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_heat_exhaustion() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["heavy sweating", "weakness", "dizziness", "nausea"]);
+        let he = results.iter().find(|r| r.disease_name == "Heat Exhaustion");
+        assert!(he.is_some(), "Heat Exhaustion should appear");
+    }
+
+    #[test]
+    fn test_score_organophosphate_poisoning() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["excessive salivation", "miosis", "diarrhea", "muscle twitching"]);
+        let op = results.iter().find(|r| r.disease_name == "Organophosphate Poisoning");
+        assert!(op.is_some(), "Organophosphate Poisoning should appear");
+        assert!(op.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_infantile_spasms() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(0), sex: None };
+        let results = score_symptoms_with_context(&conn, &["sudden body flexion spasms", "developmental regression"], &child_ctx);
+        let is = results.iter().find(|r| r.disease_name == "Infantile Spasms");
+        assert!(is.is_some(), "Infantile Spasms should appear");
+    }
+
+    #[test]
+    fn test_score_retinal_detachment() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden floaters", "flashes of light", "shadow or curtain over vision"]);
+        let rd = results.iter().find(|r| r.disease_name == "Retinal Detachment");
+        assert!(rd.is_some(), "Retinal Detachment should appear");
+        assert!(rd.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_periorbital_cellulitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["eyelid swelling", "eyelid redness", "fever"]);
+        let pc = results.iter().find(|r| r.disease_name == "Periorbital Cellulitis");
+        assert!(pc.is_some(), "Periorbital Cellulitis should appear");
+    }
+
+    #[test]
+    fn test_score_henoch_schonlein_purpura() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(6), sex: None };
+        let results = score_symptoms_with_context(&conn, &["palpable purpura on legs and buttocks", "joint pain", "abdominal pain"], &child_ctx);
+        let hsp = results.iter().find(|r| r.disease_name == "Henoch-Schönlein Purpura");
+        assert!(hsp.is_some(), "HSP should appear");
+        assert!(hsp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_subdural_hematoma() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["headache", "confusion", "weakness on one side"]);
+        let sdh = results.iter().find(|r| r.disease_name == "Subdural Hematoma");
+        assert!(sdh.is_some(), "Subdural Hematoma should appear");
+    }
+
+    #[test]
+    fn test_score_thyroid_nodule() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["neck lump", "difficulty swallowing"]);
+        let tn = results.iter().find(|r| r.disease_name == "Thyroid Nodule");
+        assert!(tn.is_some(), "Thyroid Nodule should appear");
+    }
+
+    #[test]
+    fn test_score_cholesteatoma() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["foul-smelling ear discharge", "hearing loss"]);
+        let ch = results.iter().find(|r| r.disease_name == "Cholesteatoma");
+        assert!(ch.is_some(), "Cholesteatoma should appear");
+    }
+
+    #[test]
+    fn test_synonym_eye_floaters() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["eye floaters", "seeing flashes"]);
+        assert!(!results.is_empty(), "eye floaters + seeing flashes should match via synonyms");
+    }
+
+    #[test]
+    fn test_synonym_lump_in_neck() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["lump in neck"]);
+        assert!(!results.is_empty(), "lump in neck should match via synonym");
+    }
+
+    #[test]
+    fn test_synonym_smelly_ear() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["smelly ear discharge", "hearing loss"]);
+        assert!(!results.is_empty(), "smelly ear discharge should expand via synonym");
+    }
+
+    #[test]
+    fn test_negative_evidence_heat_exhaustion() {
+        let conn = db::init_memory_database().unwrap();
+        let with_cough = score_symptoms(&conn, &["heavy sweating", "weakness", "cough"]);
+        let without_cough = score_symptoms(&conn, &["heavy sweating", "weakness"]);
+        let he_with = with_cough.iter().find(|r| r.disease_name == "Heat Exhaustion");
+        let he_without = without_cough.iter().find(|r| r.disease_name == "Heat Exhaustion");
+        if let (Some(hw), Some(hwo)) = (he_with, he_without) {
+            assert!(hwo.probability >= hw.probability,
+                "Heat Exhaustion should score same or lower with cough (negative evidence)");
         }
     }
 }
