@@ -37,3 +37,4 @@ pub mod symptom_map;
 pub mod drug_info;
 pub mod first_aid;
 pub mod lifestyle;
+pub mod vaccine;

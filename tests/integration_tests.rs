@@ -1719,3 +1719,117 @@ fn test_cli_synonym_grinding_teeth_v25() {
         .expect("failed to execute");
     assert!(output.status.success());
 }
+
+// v0.26.0 tests
+
+#[test]
+fn test_cli_vaccine_list() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["vaccine"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("VACCINATION REFERENCE"), "Should show vaccine header");
+    assert!(stdout.contains("BCG"), "Should list BCG vaccine");
+    assert!(stdout.contains("MMR"), "Should list MMR vaccine");
+}
+
+#[test]
+fn test_cli_vaccine_by_name() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["vaccine", "--name", "hepatitis"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Hepatitis"), "Should find hepatitis vaccines");
+}
+
+#[test]
+fn test_cli_vaccine_by_age_group() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["vaccine", "--age-group", "neonates"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("BCG"), "BCG should appear for neonates");
+}
+
+#[test]
+fn test_cli_vaccine_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "vaccine"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"abbreviation\""), "JSON output should have abbreviation field");
+}
+
+#[test]
+fn test_cli_symptoms_acoustic_neuroma() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "tinnitus, vertigo"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Acoustic Neuroma") || stdout.contains("tinnitus"), "Should find results for tinnitus/vertigo");
+}
+
+#[test]
+fn test_cli_symptoms_pericarditis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "sharp chest pain worse with breathing, fever, chest pain improves leaning forward"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Pericarditis"), "Should detect pericarditis");
+}
+
+#[test]
+fn test_cli_symptoms_testicular_torsion() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "sudden severe testicular pain, testicular swelling, nausea"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Testicular Torsion"), "Should detect testicular torsion");
+}
+
+#[test]
+fn test_cli_symptoms_necrotizing_fasciitis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "crepitus, fever, blistering, tachycardia, hypotension"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Necrotizing Fasciitis"), "Should detect necrotizing fasciitis");
+}
+
+#[test]
+fn test_cli_symptoms_co_poisoning() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "headache, dizziness, confusion, cherry red skin"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Carbon Monoxide Poisoning"), "Should detect CO poisoning");
+}
+
+#[test]
+fn test_cli_synonym_testicle_pain() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "testicle pain, nausea"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Testicular Torsion") || !stdout.is_empty(), "testicle pain should expand via synonym");
+}

@@ -493,6 +493,22 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Gallstones (Cholelithiasis)", vec!["rash", "cough", "fever"]);
     map.insert("Chronic Fatigue Syndrome", vec!["fever", "rash", "weight gain"]);
     map.insert("Peritonsillar Abscess", vec!["rash", "diarrhea", "joint pain"]);
+    // v0.26.0 negative evidence
+    map.insert("Acoustic Neuroma (Vestibular Schwannoma)", vec!["fever", "rash", "bilateral hearing loss"]);
+    map.insert("Hemochromatosis", vec!["rash", "cough", "acute onset"]);
+    map.insert("Pericarditis", vec!["rash", "diarrhea", "unilateral symptoms"]);
+    map.insert("Polymyositis", vec!["rash", "cough", "sensory loss"]);
+    map.insert("Pyloric Stenosis", vec!["diarrhea", "rash", "bloody stool"]);
+    map.insert("Osteomyelitis", vec!["rash", "diarrhea", "headache"]);
+    map.insert("Placenta Previa", vec!["painful bleeding", "rash", "fever"]);
+    map.insert("Vocal Cord Polyps", vec!["fever", "rash", "difficulty breathing"]);
+    map.insert("Testicular Torsion", vec!["rash", "cough", "gradual onset"]);
+    map.insert("Henoch-Schönlein Purpura (IgA Vasculitis)", vec!["cough", "chest pain", "weight loss"]);
+    map.insert("Aortic Stenosis", vec!["rash", "cough", "fever"]);
+    map.insert("Necrotizing Fasciitis", vec!["gradual onset", "painless", "joint stiffness"]);
+    map.insert("Sjogren's Syndrome", vec!["fever", "diarrhea", "weight gain"]);
+    map.insert("Carbon Monoxide Poisoning", vec!["rash", "cough", "gradual onset over weeks"]);
+    map.insert("Pilonidal Cyst", vec!["cough", "nausea", "headache"]);
     map
 }
 
@@ -2216,6 +2232,60 @@ mod tests_v25 {
             assert!(bwo.probability >= bw.probability,
                 "Bruxism should score same or lower with fever (negative evidence)");
         }
+    }
+
+    #[test]
+    fn test_score_acoustic_neuroma() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["unilateral hearing loss", "tinnitus", "balance problems"]);
+        let an = results.iter().find(|r| r.disease_name == "Acoustic Neuroma (Vestibular Schwannoma)");
+        assert!(an.is_some(), "Acoustic Neuroma should appear");
+        assert!(an.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_pericarditis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sharp chest pain worse with breathing", "chest pain improves leaning forward", "fever"]);
+        let pc = results.iter().find(|r| r.disease_name == "Pericarditis");
+        assert!(pc.is_some(), "Pericarditis should appear");
+        assert!(pc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_testicular_torsion() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden severe testicular pain", "testicular swelling", "nausea"]);
+        let tt = results.iter().find(|r| r.disease_name == "Testicular Torsion");
+        assert!(tt.is_some(), "Testicular Torsion should appear");
+        assert!(tt.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_necrotizing_fasciitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["pain out of proportion to exam findings", "rapidly spreading erythema", "crepitus"]);
+        let nf = results.iter().find(|r| r.disease_name == "Necrotizing Fasciitis");
+        assert!(nf.is_some(), "Necrotizing Fasciitis should appear");
+        assert!(nf.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_carbon_monoxide() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["headache", "dizziness", "confusion", "cherry red skin"]);
+        let co = results.iter().find(|r| r.disease_name == "Carbon Monoxide Poisoning");
+        assert!(co.is_some(), "CO Poisoning should appear");
+        assert!(co.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_aortic_stenosis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["exertional dyspnea", "syncope with exertion", "systolic ejection murmur"]);
+        let as_result = results.iter().find(|r| r.disease_name == "Aortic Stenosis");
+        assert!(as_result.is_some(), "Aortic Stenosis should appear");
+        assert!(as_result.unwrap().probability > 30.0);
     }
 
     #[test]

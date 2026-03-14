@@ -235,6 +235,15 @@ pub enum Commands {
         /// Situation to look up (e.g. "choking", "burn", "CPR"). Omit to list all.
         situation: Option<String>,
     },
+    /// Vaccination reference — WHO schedules, doses, contraindications
+    Vaccine {
+        /// Filter by age group: neonates, infants, children, adults, elderly, all
+        #[arg(long)]
+        age_group: Option<String>,
+        /// Search by vaccine name, abbreviation, or disease prevented
+        #[arg(long)]
+        name: Option<String>,
+    },
     /// Personalized lifestyle and health recommendations
     Lifestyle {
         /// Age in years
@@ -380,6 +389,9 @@ fn main() {
         }
         Commands::FirstAid { situation } => {
             commands::first_aid::run(situation.as_deref(), cli.json);
+        }
+        Commands::Vaccine { age_group, name } => {
+            commands::vaccine::run(age_group.as_deref(), name.as_deref(), cli.json);
         }
         Commands::Lifestyle { age, sex, factors } => {
             commands::lifestyle::run(&conn, age, sex.as_deref(), factors.as_deref(), cli.json);
