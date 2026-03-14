@@ -456,6 +456,20 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Pyelonephritis", vec!["rash", "cough", "joint pain"]);
     map.insert("Primary Biliary Cholangitis", vec!["fever", "diarrhea", "joint swelling"]);
     map.insert("Actinic Keratosis", vec!["fever", "joint pain", "cough"]);
+    // v0.23.0 negative evidence
+    map.insert("Atrial Fibrillation", vec!["rash", "fever", "cough", "diarrhea"]);
+    map.insert("Allergic Rhinitis", vec!["fever", "chest pain", "weight loss"]);
+    map.insert("Obstructive Sleep Apnea", vec!["fever", "rash", "weight loss", "diarrhea"]);
+    map.insert("Osteoarthritis", vec!["fever", "rash", "weight loss"]);
+    map.insert("Irritable Bowel Syndrome", vec!["fever", "bloody stool", "weight loss"]);
+    map.insert("Peripheral Neuropathy", vec!["fever", "rash", "cough"]);
+    map.insert("Polycystic Ovary Syndrome (PCOS)", vec!["fever", "rash", "cough", "diarrhea"]);
+    map.insert("Psoriatic Arthritis", vec!["fever", "cough", "diarrhea"]);
+    map.insert("Chronic Kidney Disease", vec!["rash", "cough", "fever"]);
+    map.insert("Sepsis", vec!["rash", "chronic onset", "well-appearing"]);
+    map.insert("Thyroid Storm", vec!["rash", "chronic onset", "weight gain"]);
+    map.insert("Anaphylactic Shock", vec!["gradual onset", "fever", "chronic"]);
+    map.insert("Preeclampsia", vec!["rash", "diarrhea", "cough"]);
     map
 }
 
@@ -1748,6 +1762,134 @@ mod tests_v22 {
         if let (Some(cw), Some(cwo)) = (copd_with, copd_without) {
             assert!(cwo.probability >= cw.probability,
                 "COPD should score same or lower with rash (negative evidence)");
+        }
+    }
+
+    // ── v0.23.0 tests ──────────────────────────────────────────────────
+
+    #[test]
+    fn test_score_sepsis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["high fever", "rapid heart rate", "confusion", "rapid breathing"]);
+        let sepsis = results.iter().find(|r| r.disease_name == "Sepsis");
+        assert!(sepsis.is_some(), "Sepsis should appear for fever+tachycardia+confusion+tachypnea");
+        assert!(sepsis.unwrap().probability > 0.3);
+    }
+
+    #[test]
+    fn test_score_atrial_fibrillation() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["irregular heartbeat", "palpitations", "fatigue"]);
+        let afib = results.iter().find(|r| r.disease_name == "Atrial Fibrillation");
+        assert!(afib.is_some(), "AFib should appear for irregular heartbeat+palpitations");
+        assert!(afib.unwrap().probability > 0.2);
+    }
+
+    #[test]
+    fn test_score_whooping_cough() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe coughing fits", "whoop sound on inspiration", "vomiting"]);
+        let pertussis = results.iter().find(|r| r.disease_name == "Whooping Cough (Pertussis)");
+        assert!(pertussis.is_some(), "Pertussis should match coughing fits + whoop");
+    }
+
+    #[test]
+    fn test_score_allergic_rhinitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sneezing", "runny nose", "itchy eyes", "nasal congestion"]);
+        let rhinitis = results.iter().find(|r| r.disease_name == "Allergic Rhinitis");
+        assert!(rhinitis.is_some(), "Allergic rhinitis should match sneezing+runny nose+itchy eyes");
+    }
+
+    #[test]
+    fn test_score_osteoarthritis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["joint pain", "joint stiffness", "crepitus"]);
+        let oa = results.iter().find(|r| r.disease_name == "Osteoarthritis");
+        assert!(oa.is_some(), "OA should appear for joint pain + stiffness + crepitus");
+    }
+
+    #[test]
+    fn test_score_sleep_apnea() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["loud snoring", "excessive daytime sleepiness", "gasping during sleep"]);
+        let osa = results.iter().find(|r| r.disease_name == "Obstructive Sleep Apnea");
+        assert!(osa.is_some(), "OSA should match snoring+sleepiness+gasping");
+    }
+
+    #[test]
+    fn test_score_peripheral_neuropathy() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["numbness in hands and feet", "tingling", "burning pain"]);
+        let pn = results.iter().find(|r| r.disease_name == "Peripheral Neuropathy");
+        assert!(pn.is_some(), "Peripheral neuropathy should match numbness+tingling+burning");
+    }
+
+    #[test]
+    fn test_score_thyroid_storm() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["high fever", "rapid heart rate", "agitation", "tremor", "sweating"]);
+        let ts = results.iter().find(|r| r.disease_name == "Thyroid Storm");
+        assert!(ts.is_some(), "Thyroid storm should match fever+tachycardia+agitation");
+    }
+
+    #[test]
+    fn test_score_pcos() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["irregular periods", "excess hair growth", "acne", "weight gain"]);
+        let pcos = results.iter().find(|r| r.disease_name == "Polycystic Ovary Syndrome (PCOS)");
+        assert!(pcos.is_some(), "PCOS should match irregular periods+hirsutism+acne");
+    }
+
+    #[test]
+    fn test_score_stemi() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe chest pain", "chest pain radiating to left arm", "sweating", "shortness of breath"]);
+        let stemi = results.iter().find(|r| r.disease_name == "Myocardial Infarction (STEMI)");
+        assert!(stemi.is_some(), "STEMI should match severe chest pain + radiation + diaphoresis");
+        assert!(stemi.unwrap().probability > 0.3);
+    }
+
+    #[test]
+    fn test_score_preeclampsia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["high blood pressure", "proteinuria", "headache", "visual disturbances"]);
+        let pe = results.iter().find(|r| r.disease_name == "Preeclampsia");
+        assert!(pe.is_some(), "Preeclampsia should match hypertension+proteinuria+headache");
+    }
+
+    #[test]
+    fn test_score_chronic_kidney_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fatigue", "decreased urine output", "swelling in legs", "nausea"]);
+        let ckd = results.iter().find(|r| r.disease_name == "Chronic Kidney Disease");
+        assert!(ckd.is_some(), "CKD should match fatigue+oliguria+edema");
+    }
+
+    #[test]
+    fn test_synonym_snoring() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["snoring", "always sleepy"]);
+        assert!(!results.is_empty(), "snoring synonym should expand");
+    }
+
+    #[test]
+    fn test_synonym_numb_hands() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["numb hands", "burning feet"]);
+        assert!(!results.is_empty(), "numb hands synonym should expand");
+    }
+
+    #[test]
+    fn test_negative_evidence_afib() {
+        let conn = db::init_memory_database().unwrap();
+        let with_fever = score_symptoms(&conn, &["irregular heartbeat", "palpitations", "fever"]);
+        let without_fever = score_symptoms(&conn, &["irregular heartbeat", "palpitations"]);
+        let afib_with = with_fever.iter().find(|r| r.disease_name == "Atrial Fibrillation");
+        let afib_without = without_fever.iter().find(|r| r.disease_name == "Atrial Fibrillation");
+        if let (Some(aw), Some(awo)) = (afib_with, afib_without) {
+            assert!(awo.probability >= aw.probability,
+                "AFib should score same or lower with fever (negative evidence)");
         }
     }
 }

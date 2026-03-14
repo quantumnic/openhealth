@@ -217,6 +217,12 @@ pub enum Commands {
         /// Medication name or class to look up (omit to list all)
         name: Option<String>,
     },
+    /// Show symptom specificity — how many diseases share each symptom
+    #[command(name = "symptom-map")]
+    SymptomMap {
+        /// Filter symptoms by name (partial match)
+        filter: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -337,6 +343,9 @@ fn main() {
             } else {
                 commands::medication::run_list(cli.json);
             }
+        }
+        Commands::SymptomMap { filter } => {
+            commands::symptom_map::run(&conn, filter.as_deref(), cli.json);
         }
     }
 }

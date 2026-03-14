@@ -33,3 +33,4 @@ pub mod triage;
 pub mod validate;
 pub mod screen;
 pub mod vitals;
+pub mod symptom_map;
