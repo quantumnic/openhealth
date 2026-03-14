@@ -14,6 +14,7 @@ pub mod history;
 pub mod hydration;
 pub mod interact;
 pub mod list;
+pub mod medication;
 pub mod predict;
 pub mod quiz;
 pub mod prevalence;

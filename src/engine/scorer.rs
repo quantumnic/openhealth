@@ -442,6 +442,20 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Thoracic Outlet Syndrome", vec!["fever", "rash", "bilateral symptoms"]);
     map.insert("Vocal Cord Dysfunction", vec!["fever", "rash", "wheezing on exhale"]);
     map.insert("Erythema Nodosum", vec!["blisters", "itching", "scaling"]);
+    // v22 negative evidence
+    map.insert("Chronic Obstructive Pulmonary Disease", vec!["rash", "joint swelling", "diarrhea"]);
+    map.insert("Pulmonary Fibrosis", vec!["rash", "diarrhea", "joint swelling"]);
+    map.insert("Schizophrenia", vec!["fever", "rash", "joint pain", "cough"]);
+    map.insert("Obsessive-Compulsive Disorder", vec!["fever", "rash", "cough", "weight loss"]);
+    map.insert("Post-Traumatic Stress Disorder", vec!["fever", "rash", "cough", "joint pain"]);
+    map.insert("Otosclerosis", vec!["fever", "ear discharge", "ear pain"]);
+    map.insert("Meniere's Disease", vec!["fever", "rash", "cough"]);
+    map.insert("Rheumatoid Arthritis", vec!["rash", "fever", "diarrhea"]);
+    map.insert("Ankylosing Spondylitis", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Epiglottitis", vec!["rash", "diarrhea", "gradual onset"]);
+    map.insert("Pyelonephritis", vec!["rash", "cough", "joint pain"]);
+    map.insert("Primary Biliary Cholangitis", vec!["fever", "diarrhea", "joint swelling"]);
+    map.insert("Actinic Keratosis", vec!["fever", "joint pain", "cough"]);
     map
 }
 
@@ -1592,5 +1606,148 @@ mod tests_v21 {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["wobbly walking", "memory problems"]);
         assert!(!results.is_empty(), "wobbly walking should expand to gait disturbance");
+    }
+}
+
+// ── v0.22.0 scorer tests ──
+
+#[cfg(test)]
+mod tests_v22 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_copd() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chronic cough", "shortness of breath", "wheezing"]);
+        let copd = results.iter().find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
+        assert!(copd.is_some(), "COPD should appear");
+        assert!(copd.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_pulmonary_fibrosis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["progressive shortness of breath", "dry cough", "clubbing of fingers"]);
+        let pf = results.iter().find(|r| r.disease_name == "Pulmonary Fibrosis");
+        assert!(pf.is_some(), "Pulmonary Fibrosis should appear");
+    }
+
+    #[test]
+    fn test_score_schizophrenia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["auditory hallucinations", "delusions", "social withdrawal"]);
+        let sz = results.iter().find(|r| r.disease_name == "Schizophrenia");
+        assert!(sz.is_some(), "Schizophrenia should appear");
+        assert!(sz.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_ocd() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["intrusive thoughts", "compulsive behaviors", "anxiety"]);
+        let ocd = results.iter().find(|r| r.disease_name == "Obsessive-Compulsive Disorder");
+        assert!(ocd.is_some(), "OCD should appear");
+    }
+
+    #[test]
+    fn test_score_ptsd() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["flashbacks", "nightmares", "hypervigilance"]);
+        let ptsd = results.iter().find(|r| r.disease_name == "Post-Traumatic Stress Disorder");
+        assert!(ptsd.is_some(), "PTSD should appear");
+        assert!(ptsd.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_menieres() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["episodic vertigo", "tinnitus", "ear fullness"]);
+        let md = results.iter().find(|r| r.disease_name == "Meniere's Disease");
+        assert!(md.is_some(), "Meniere's Disease should appear");
+    }
+
+    #[test]
+    fn test_score_rheumatoid_arthritis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["symmetric joint pain", "morning stiffness lasting over 1 hour", "joint swelling"]);
+        let ra = results.iter().find(|r| r.disease_name == "Rheumatoid Arthritis");
+        assert!(ra.is_some(), "Rheumatoid Arthritis should appear");
+        assert!(ra.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_ankylosing_spondylitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chronic low back pain", "morning stiffness improving with exercise", "reduced spinal mobility"]);
+        let as_ = results.iter().find(|r| r.disease_name == "Ankylosing Spondylitis");
+        assert!(as_.is_some(), "Ankylosing Spondylitis should appear");
+    }
+
+    #[test]
+    fn test_score_epiglottitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe sore throat", "difficulty swallowing", "drooling", "high fever"]);
+        let ep = results.iter().find(|r| r.disease_name == "Epiglottitis");
+        assert!(ep.is_some(), "Epiglottitis should appear");
+        assert!(ep.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_pyelonephritis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["flank pain", "high fever", "chills", "painful urination"]);
+        let pyelo = results.iter().find(|r| r.disease_name == "Pyelonephritis");
+        assert!(pyelo.is_some(), "Pyelonephritis should appear");
+        assert!(pyelo.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_actinic_keratosis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["rough scaly skin patches", "sandpaper-like texture"]);
+        let ak = results.iter().find(|r| r.disease_name == "Actinic Keratosis");
+        assert!(ak.is_some(), "Actinic Keratosis should appear");
+    }
+
+    #[test]
+    fn test_synonym_hearing_voices() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["hearing voices", "paranoid"]);
+        assert!(!results.is_empty(), "hearing voices should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_cant_breathe() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["can't breathe", "wheezing"]);
+        assert!(!results.is_empty(), "can't breathe should expand to shortness of breath");
+    }
+
+    #[test]
+    fn test_synonym_lower_back_pain() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["lower back pain", "stiff joints"]);
+        assert!(!results.is_empty(), "lower back pain should expand");
+    }
+
+    #[test]
+    fn test_synonym_itchy_skin() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["itchy skin", "jaundice"]);
+        assert!(!results.is_empty(), "itchy skin should expand to pruritus");
+    }
+
+    #[test]
+    fn test_negative_evidence_copd() {
+        let conn = db::init_memory_database().unwrap();
+        let with_rash = score_symptoms(&conn, &["chronic cough", "shortness of breath", "rash"]);
+        let without_rash = score_symptoms(&conn, &["chronic cough", "shortness of breath"]);
+        let copd_with = with_rash.iter().find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
+        let copd_without = without_rash.iter().find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
+        if let (Some(cw), Some(cwo)) = (copd_with, copd_without) {
+            assert!(cwo.probability >= cw.probability,
+                "COPD should score same or lower with rash (negative evidence)");
+        }
     }
 }

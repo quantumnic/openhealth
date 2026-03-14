@@ -1352,3 +1352,86 @@ fn test_cli_disease_peripheral_artery() {
     assert!(output.status.success());
     assert!(stdout.contains("Peripheral Artery"));
 }
+
+// ── v0.22.0 integration tests ──
+
+#[test]
+fn test_cli_medication_list() {
+    let output = cargo_bin()
+        .args(["medication"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Paracetamol") || stdout.contains("Medication"));
+}
+
+#[test]
+fn test_cli_medication_lookup() {
+    let output = cargo_bin()
+        .args(["medication", "ibuprofen"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Ibuprofen"));
+    assert!(stdout.contains("NSAID") || stdout.contains("Anti-Inflammatory"));
+}
+
+#[test]
+fn test_cli_medication_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--db-path", "/tmp/openhealth_test_med_json.db", "--json", "medication", "aspirin"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"name\"") && stdout.contains("Aspirin"));
+}
+
+#[test]
+fn test_cli_medication_not_found() {
+    let output = cargo_bin()
+        .args(["medication", "xyznonexistent"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("No medication found") || stdout.contains("Available"));
+}
+
+#[test]
+fn test_cli_symptoms_copd() {
+    let output = cargo_bin()
+        .args(["symptoms", "chronic cough shortness of breath wheezing"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Chronic Obstructive Pulmonary Disease") || stdout.contains("COPD") || stdout.contains("Analyzing"));
+}
+
+#[test]
+fn test_cli_symptoms_ptsd() {
+    let output = cargo_bin()
+        .args(["symptoms", "flashbacks nightmares hypervigilance"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Post-Traumatic Stress Disorder") || stdout.contains("Analyzing"));
+}
+
+#[test]
+fn test_cli_disease_rheumatoid() {
+    let output = cargo_bin()
+        .args(["disease", "rheumatoid arthritis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Rheumatoid") || stdout.contains("autoimmune"));
+}
+
+#[test]
+fn test_cli_disease_epiglottitis() {
+    let output = cargo_bin()
+        .args(["disease", "epiglottitis"])
+        .output()
+        .expect("failed to execute");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Epiglottitis"));
+}

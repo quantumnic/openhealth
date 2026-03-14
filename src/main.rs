@@ -212,6 +212,11 @@ pub enum Commands {
     /// Severity classification guide with database statistics
     #[command(name = "severity-guide")]
     SeverityGuide,
+    /// Medication reference — dosage, side effects, interactions, and contraindications
+    Medication {
+        /// Medication name or class to look up (omit to list all)
+        name: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -325,6 +330,13 @@ fn main() {
         }
         Commands::SeverityGuide => {
             commands::severity_guide::run(&conn, cli.json);
+        }
+        Commands::Medication { name } => {
+            if let Some(name) = name {
+                commands::medication::run(&name, cli.json);
+            } else {
+                commands::medication::run_list(cli.json);
+            }
         }
     }
 }
