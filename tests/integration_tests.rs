@@ -1833,3 +1833,74 @@ fn test_cli_synonym_testicle_pain() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Testicular Torsion") || !stdout.is_empty(), "testicle pain should expand via synonym");
 }
+
+// ── v0.27.0 CLI tests ──────────────────────────────────────
+
+#[test]
+fn test_cli_alert_emergency() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["alert", "chest pain, left arm pain, cold sweat"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("EMERGENCY") || stdout.contains("Heart Attack"),
+        "Alert should detect heart attack pattern");
+}
+
+#[test]
+fn test_cli_alert_no_emergency() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["alert", "headache"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("No emergency") || !stdout.contains("EMERGENCY ALERT"),
+        "Single mild symptom should not trigger emergency");
+}
+
+#[test]
+fn test_cli_alert_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "alert", "confusion, stiff neck, high fever"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid JSON");
+    assert!(json.get("emergency_detected").is_some());
+}
+
+#[test]
+fn test_cli_symptoms_wernicke() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "confusion, balance problems, nystagmus"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Wernicke Encephalopathy"), "Should detect Wernicke");
+}
+
+#[test]
+fn test_cli_symptoms_acromegaly() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "enlarged hands, enlarged feet, coarsened facial features"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Acromegaly"), "Should detect Acromegaly");
+}
+
+#[test]
+fn test_cli_symptoms_pellagra() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "symptoms", "skin rash in sun-exposed areas, diarrhea, confusion"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Pellagra"), "Should detect Pellagra in JSON results");
+}

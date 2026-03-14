@@ -1,3 +1,4 @@
+pub mod alert;
 pub mod almanac;
 pub mod bmi;
 pub mod body_system;

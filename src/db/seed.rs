@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '26.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '27.0')",
         [],
     )?;
     tx.commit()?;
@@ -4564,6 +4564,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Keep area clean and hair-free (shaving or laser). Avoid prolonged sitting. Maintain good hygiene. Weight management.",
             risk_factors: vec![("male sex", "high"), ("excessive body hair", "high"), ("prolonged sitting", "high"), ("obesity", "moderate"), ("family history", "moderate")],
         },
+        // ──────── NEW DISEASES v27.0 ────────
+        DiseaseEntry {
+            name: "Peripartum Cardiomyopathy",
+            description: "Heart failure developing in the last month of pregnancy or within 5 months postpartum. Rare but life-threatening.",
+            severity: "high", contagious: false, icd11_code: "JA80",
+            age_group: "adults", category: "obstetric",
+            symptoms: vec![s("shortness of breath",0.9,true), s("fatigue",0.8,true), s("swelling in legs",0.8,true), s("rapid heartbeat",0.7,false), s("cough",0.4,false), s("chest pain",0.5,false), s("difficulty breathing when lying down",0.7,true), s("dizziness",0.4,false)],
+            treatment: "Heart failure therapy: diuretics, beta-blockers (post-delivery), ACE inhibitors (post-delivery only — teratogenic). Bromocriptine shows promise. Anticoagulation if EF < 35%. Mechanical support or transplant for refractory cases.",
+            first_aid: "Seek emergency care for new shortness of breath in late pregnancy or postpartum. Sit upright.",
+            prevention: "No proven prevention. Avoid subsequent pregnancies if EF remains low. Early detection via echocardiography.",
+            risk_factors: vec![("age > 30", "moderate"), ("multiple pregnancies", "high"), ("African descent", "high"), ("preeclampsia", "high"), ("gestational hypertension", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Dengue Shock Syndrome",
+            description: "Most severe form of dengue with circulatory failure. Often fatal without aggressive fluid management.",
+            severity: "high", contagious: false, icd11_code: "1D20.2",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("severe abdominal pain",0.8,true), s("persistent vomiting",0.8,true), s("cold clammy skin",0.9,true), s("rapid weak pulse",0.9,true), s("restlessness",0.6,false), s("bleeding",0.6,false), s("decreased urination",0.7,false), s("altered consciousness",0.6,false)],
+            treatment: "EMERGENCY: Aggressive IV crystalloid bolus (10-20 mL/kg over 1 hour). Monitor hematocrit every 1-2h. Colloids if refractory. Blood products for severe hemorrhage. ICU mandatory.",
+            first_aid: "Call emergency immediately. Keep patient lying down with legs elevated. Oral fluids if conscious.",
+            prevention: "Same as dengue: mosquito control, eliminate breeding sites. Early hospital admission during dengue fever phase.",
+            risk_factors: vec![("previous dengue infection", "high"), ("age < 15", "high"), ("delayed medical care during dengue fever", "high")],
+        },
+        DiseaseEntry {
+            name: "Wernicke Encephalopathy",
+            description: "Acute neurological emergency from thiamine (vitamin B1) deficiency. Classic triad: confusion, ataxia, eye movement abnormalities.",
+            severity: "high", contagious: false, icd11_code: "6D72",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("confusion",0.9,true), s("balance problems",0.8,true), s("nystagmus",0.8,true), s("double vision",0.6,false), s("memory loss",0.5,false), s("hypothermia",0.4,false), s("apathy",0.5,false), s("difficulty walking",0.7,false)],
+            treatment: "EMERGENCY: IV thiamine 500mg TID for 3 days, then 250mg daily. Give thiamine BEFORE glucose to prevent worsening. Magnesium supplementation. Treat underlying cause.",
+            first_aid: "Do not give sugar/glucose drinks before medical assessment. Seek emergency care for any confused alcoholic patient.",
+            prevention: "Thiamine supplementation for alcohol-dependent individuals, proper nutrition, IV thiamine before glucose in at-risk patients.",
+            risk_factors: vec![("chronic alcohol use", "high"), ("malnutrition", "high"), ("prolonged vomiting", "high"), ("bariatric surgery", "moderate"), ("anorexia nervosa", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Acute Compartment Syndrome",
+            description: "Elevated pressure within a closed muscle compartment compromising blood flow. Surgical emergency — permanent damage within hours.",
+            severity: "high", contagious: false, icd11_code: "FB56",
+            age_group: "all", category: "surgical",
+            symptoms: vec![s("severe pain disproportionate to injury",0.95,true), s("pain with passive stretch",0.9,true), s("swelling",0.7,false), s("tense compartment",0.8,true), s("numbness",0.6,false), s("weakness",0.5,false), s("decreased pulse",0.4,false)],
+            treatment: "SURGICAL EMERGENCY: Fasciotomy within 6 hours. Remove all circumferential dressings/casts. Do NOT elevate above heart level. Monitor compartment pressure (>30 mmHg or delta P <30 mmHg → fasciotomy).",
+            first_aid: "Remove any constricting bandages/casts. Keep limb at heart level. Seek emergency surgical care IMMEDIATELY.",
+            prevention: "Careful cast/splint application, vigilant monitoring after fractures or crush injuries, early recognition of warning signs.",
+            risk_factors: vec![("tibial fracture", "high"), ("forearm fracture", "high"), ("crush injury", "high"), ("tight cast/bandage", "high"), ("anticoagulation", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hemolytic Disease of the Newborn",
+            description: "Destruction of fetal red blood cells by maternal antibodies (usually Rh incompatibility). Preventable with RhoGAM.",
+            severity: "high", contagious: false, icd11_code: "KA83",
+            age_group: "neonates", category: "neonatal",
+            symptoms: vec![s("jaundice",0.9,true), s("anemia",0.8,true), s("swollen belly",0.6,false), s("poor feeding",0.6,false), s("lethargy",0.6,false), s("edema",0.5,false), s("rapid breathing",0.5,false)],
+            treatment: "Phototherapy for hyperbilirubinemia. Exchange transfusion for severe cases. IVIG may reduce need for exchange transfusion. Intrauterine transfusion for severe fetal anemia.",
+            first_aid: "Monitor for jaundice in first 24 hours of life. Seek neonatal care if yellow skin appears early.",
+            prevention: "RhoGAM (anti-D immunoglobulin) at 28 weeks and within 72 hours after delivery for Rh-negative mothers. Antibody screening in pregnancy.",
+            risk_factors: vec![("Rh-negative mother with Rh-positive fetus", "high"), ("previous sensitization", "high"), ("no RhoGAM prophylaxis", "high")],
+        },
+        DiseaseEntry {
+            name: "Pelvic Inflammatory Disease",
+            description: "Infection of female upper genital tract (uterus, tubes, ovaries). Usually from STIs. Can cause infertility.",
+            severity: "medium", contagious: false, icd11_code: "GA08",
+            age_group: "adults", category: "gynecological",
+            symptoms: vec![s("lower abdominal pain",0.9,true), s("abnormal vaginal discharge",0.8,true), s("fever",0.6,false), s("painful intercourse",0.7,true), s("irregular menstrual bleeding",0.5,false), s("painful urination",0.4,false), s("cervical motion tenderness",0.8,false)],
+            treatment: "Outpatient: ceftriaxone 500mg IM single dose + doxycycline 100mg BID 14 days + metronidazole 500mg BID 14 days. Inpatient: IV cefotetan + doxycycline. Treat sexual partners.",
+            first_aid: "Seek medical care for lower abdominal pain with abnormal discharge. Do not delay treatment.",
+            prevention: "STI screening and treatment, condom use, limit sexual partners, prompt treatment of cervicitis.",
+            risk_factors: vec![("chlamydia/gonorrhea infection", "high"), ("multiple sexual partners", "high"), ("age < 25", "moderate"), ("previous PID", "high"), ("IUD insertion (first 3 weeks)", "low")],
+        },
+        DiseaseEntry {
+            name: "Lichen Planus",
+            description: "Inflammatory condition affecting skin, mucous membranes, nails, and hair. Causes itchy, purple, flat-topped bumps.",
+            severity: "low", contagious: false, icd11_code: "EA93",
+            age_group: "adults", category: "dermatological",
+            symptoms: vec![s("purple flat-topped bumps",0.9,true), s("itchy skin",0.7,true), s("white lacy patches in mouth",0.8,true), s("nail ridging",0.4,false), s("hair loss",0.3,false), s("painful mouth sores",0.6,false), s("skin thickening",0.4,false)],
+            treatment: "Topical corticosteroids (first-line). Oral lesions: triamcinolone paste. Severe: oral prednisone taper, retinoids, phototherapy. Calcineurin inhibitors for mucosal disease.",
+            first_aid: "Avoid scratching, use emollients, cool compresses for itch relief.",
+            prevention: "No known prevention. Avoid triggers: hepatitis C treatment, certain medications, dental materials.",
+            risk_factors: vec![("hepatitis C infection", "high"), ("age 30-60", "moderate"), ("certain medications", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Adhesive Capsulitis (Frozen Shoulder)",
+            description: "Progressive stiffness and pain in the shoulder joint with loss of range of motion. Self-limiting but can last 1-3 years.",
+            severity: "low", contagious: false, icd11_code: "FA70",
+            age_group: "adults", category: "musculoskeletal",
+            symptoms: vec![s("shoulder pain",0.9,true), s("shoulder stiffness",0.9,true), s("limited range of motion",0.8,true), s("pain worse at night",0.7,false), s("difficulty reaching overhead",0.6,false), s("difficulty reaching behind back",0.6,false)],
+            treatment: "Physical therapy (cornerstone). NSAIDs for pain. Corticosteroid injections for acute pain. Hydrodilatation. Manipulation under anesthesia for refractory cases. Arthroscopic capsular release.",
+            first_aid: "Gentle stretching exercises, heat application, OTC pain relief. Avoid immobilization.",
+            prevention: "Early range-of-motion exercises after shoulder injury/surgery, physical therapy for diabetic patients.",
+            risk_factors: vec![("diabetes", "high"), ("thyroid disease", "moderate"), ("age 40-60", "high"), ("previous shoulder injury/surgery", "high"), ("prolonged immobilization", "high")],
+        },
+        DiseaseEntry {
+            name: "Osteomyelitis (Acute)",
+            description: "Bone infection, usually bacterial (Staphylococcus aureus). Can cause bone destruction if untreated.",
+            severity: "high", contagious: false, icd11_code: "FB80",
+            age_group: "all", category: "musculoskeletal",
+            symptoms: vec![s("bone pain",0.9,true), s("fever",0.7,true), s("swelling over bone",0.8,true), s("redness",0.6,false), s("warmth over affected area",0.6,false), s("limited use of affected limb",0.7,false), s("fatigue",0.4,false), s("drainage from wound near bone",0.5,false)],
+            treatment: "IV antibiotics 4-6 weeks (nafcillin/cefazolin for MSSA, vancomycin for MRSA). Surgical debridement if abscess or necrotic bone. Culture-directed therapy.",
+            first_aid: "Immobilize affected area, seek medical care urgently for bone pain with fever.",
+            prevention: "Prompt wound care, manage diabetes, proper surgical technique, prophylactic antibiotics for open fractures.",
+            risk_factors: vec![("diabetes", "high"), ("peripheral vascular disease", "high"), ("recent surgery/trauma", "high"), ("IV drug use", "high"), ("immunosuppression", "high")],
+        },
+        DiseaseEntry {
+            name: "Placental Abruption",
+            description: "Premature separation of placenta from uterine wall before delivery. Causes hemorrhage and fetal distress.",
+            severity: "high", contagious: false, icd11_code: "JA63",
+            age_group: "adults", category: "obstetric",
+            symptoms: vec![s("vaginal bleeding",0.8,true), s("severe abdominal pain",0.9,true), s("uterine tenderness",0.8,true), s("back pain",0.6,false), s("rigid uterus",0.7,false), s("rapid heart rate",0.5,false), s("fetal distress",0.7,false)],
+            treatment: "EMERGENCY: Depends on severity and gestational age. Mild: close monitoring, corticosteroids if preterm. Severe: emergency cesarean delivery, massive transfusion protocol, IV fluids.",
+            first_aid: "Call emergency immediately. Lie on left side. Do NOT delay — life-threatening for mother and baby.",
+            prevention: "Avoid cocaine/smoking, manage hypertension, seatbelt use, avoid abdominal trauma.",
+            risk_factors: vec![("hypertension/preeclampsia", "high"), ("previous abruption", "high"), ("cocaine use", "high"), ("trauma", "high"), ("smoking", "moderate"), ("advanced maternal age", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Acromegaly",
+            description: "Excess growth hormone in adults, usually from pituitary adenoma. Causes enlarged hands, feet, and facial features.",
+            severity: "medium", contagious: false, icd11_code: "5A61",
+            age_group: "adults", category: "endocrine",
+            symptoms: vec![s("enlarged hands",0.8,true), s("enlarged feet",0.8,true), s("coarsened facial features",0.8,true), s("joint pain",0.6,false), s("excessive sweating",0.6,false), s("headache",0.5,false), s("vision problems",0.5,false), s("deepened voice",0.4,false), s("fatigue",0.4,false)],
+            treatment: "Surgery: transsphenoidal adenomectomy (first-line). Medications: somatostatin analogs (octreotide, lanreotide), GH receptor antagonist (pegvisomant). Radiation for refractory cases.",
+            first_aid: "Seek endocrine evaluation for gradual enlargement of hands, feet, or facial features.",
+            prevention: "No prevention. Early diagnosis reduces complications (cardiomyopathy, diabetes, joint destruction).",
+            risk_factors: vec![("pituitary adenoma", "high"), ("MEN1 syndrome", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Pellagra",
+            description: "Niacin (vitamin B3) deficiency causing the classic '3 Ds': dermatitis, diarrhea, dementia. Fatal if untreated (4th D: death).",
+            severity: "medium", contagious: false, icd11_code: "5B55",
+            age_group: "all", category: "nutritional",
+            symptoms: vec![s("skin rash in sun-exposed areas",0.9,true), s("diarrhea",0.7,true), s("confusion",0.8,true), s("glossitis",0.6,false), s("fatigue",0.5,false), s("depression",0.5,false), s("aggression",0.4,false), s("scaling dermatitis",0.7,false)],
+            treatment: "Nicotinamide 100mg TID orally for 3-4 weeks. Or niacin 300-500mg/day. Balanced diet supplementation. Treat underlying cause (alcoholism, malabsorption).",
+            first_aid: "Eat niacin-rich foods (meat, fish, legumes, fortified grains). Seek medical care for skin + GI + mental symptoms.",
+            prevention: "Balanced diet with adequate niacin, food fortification programs, alcohol cessation.",
+            risk_factors: vec![("alcoholism", "high"), ("corn-predominant diet without processing", "high"), ("malabsorption", "moderate"), ("carcinoid syndrome", "moderate"), ("poverty", "high")],
+        },
+        DiseaseEntry {
+            name: "Toxic Megacolon",
+            description: "Life-threatening dilation of the colon with systemic toxicity. Complication of colitis. Risk of perforation.",
+            severity: "high", contagious: false, icd11_code: "DD93",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("severe abdominal distension",0.9,true), s("abdominal pain",0.8,true), s("fever",0.8,true), s("rapid heart rate",0.7,false), s("dehydration",0.6,false), s("bloody diarrhea",0.6,false), s("decreased bowel sounds",0.5,false), s("confusion",0.4,false)],
+            treatment: "EMERGENCY: NPO, NG tube decompression, IV fluids, IV antibiotics, IV corticosteroids. Surgical colectomy if no improvement in 24-72h or perforation. Stop anti-motility agents.",
+            first_aid: "Seek emergency care for severe abdominal distension with fever during a colitis flare.",
+            prevention: "Proper management of IBD, avoid anti-motility drugs during acute colitis flares, early treatment of C. diff.",
+            risk_factors: vec![("ulcerative colitis", "high"), ("Clostridioides difficile infection", "high"), ("Crohn's disease", "moderate"), ("anti-motility drug use during colitis", "high")],
+        },
+        DiseaseEntry {
+            name: "Mastitis",
+            description: "Breast tissue infection, most common in breastfeeding women. Causes painful, red, swollen breast area.",
+            severity: "low", contagious: false, icd11_code: "GA21",
+            age_group: "adults", category: "gynecological",
+            symptoms: vec![s("breast pain",0.9,true), s("breast redness",0.8,true), s("breast swelling",0.7,true), s("fever",0.6,false), s("chills",0.5,false), s("flu-like symptoms",0.5,false), s("warm area on breast",0.6,false), s("breast lump",0.4,false)],
+            treatment: "Continue breastfeeding (important!). Antibiotics: dicloxacillin or cephalexin 10-14 days. NSAIDs for pain. Warm compresses before feeding. Abscess: ultrasound-guided aspiration or I&D.",
+            first_aid: "Continue breastfeeding or pumping, warm compresses, massage toward nipple, pain relievers.",
+            prevention: "Proper latch technique, frequent feeding, avoid tight bras, treat cracked nipples promptly, gradual weaning.",
+            risk_factors: vec![("breastfeeding (especially first 3 months)", "high"), ("cracked/damaged nipples", "high"), ("missed feedings", "moderate"), ("previous mastitis", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Tic Douloureux",
+            description: "Classic trigeminal neuralgia with sudden, severe, electric shock-like facial pain triggered by light touch. Also known as tic douloureux. One of the most painful conditions known.",
+            severity: "medium", contagious: false, icd11_code: "8B82",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("sudden severe facial pain",0.95,true), s("electric shock-like pain",0.9,true), s("pain triggered by touch",0.8,true), s("pain when chewing",0.7,false), s("pain when talking",0.6,false), s("unilateral face pain",0.7,false), s("facial spasms",0.5,false)],
+            treatment: "Carbamazepine (first-line, 200-1200mg/day). Oxcarbazepine alternative. Baclofen as adjunct. Surgery: microvascular decompression for refractory cases. Gamma knife radiosurgery.",
+            first_aid: "Avoid known triggers (cold wind, touching face, chewing). Seek neurological evaluation.",
+            prevention: "No proven prevention. Early treatment with carbamazepine prevents progression.",
+            risk_factors: vec![("age > 50", "high"), ("multiple sclerosis", "high"), ("female sex", "moderate"), ("vascular compression of trigeminal nerve", "high")],
+        },
     ]
 }
 
@@ -5324,6 +5490,35 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("CO poisoning", "cherry red skin"),
         ("purple spots on legs", "palpable purpura on legs and buttocks"),
         ("bruise-like rash", "palpable purpura on legs and buttocks"),
+        // v0.27.0 synonyms
+        ("frozen shoulder", "shoulder stiffness"),
+        ("shoulder locked", "limited range of motion"),
+        ("cant raise arm", "difficulty reaching overhead"),
+        ("shock-like face pain", "electric shock-like pain"),
+        ("face zaps", "electric shock-like pain"),
+        ("face electricity", "electric shock-like pain"),
+        ("big hands", "enlarged hands"),
+        ("big feet", "enlarged feet"),
+        ("face growing", "coarsened facial features"),
+        ("sun rash", "skin rash in sun-exposed areas"),
+        ("sunburn rash", "skin rash in sun-exposed areas"),
+        ("confused and drunk", "confusion"),
+        ("wobbly and confused", "balance problems"),
+        ("eye jerking", "nystagmus"),
+        ("breast infection", "breast pain"),
+        ("sore breast", "breast pain"),
+        ("nursing pain", "breast pain"),
+        ("purple bumps", "purple flat-topped bumps"),
+        ("flat bumps", "purple flat-topped bumps"),
+        ("white lines in mouth", "white lacy patches in mouth"),
+        ("belly growing big", "severe abdominal distension"),
+        ("pregnant belly not pregnant", "severe abdominal distension"),
+        ("bone infection", "bone pain"),
+        ("limping child", "limited use of affected limb"),
+        ("wont move arm", "limited use of affected limb"),
+        ("abdominal cramping in pregnancy", "uterine tenderness"),
+        ("bleeding in pregnancy", "vaginal bleeding"),
+        ("blood when pregnant", "vaginal bleeding"),
     ]
 }
 
@@ -5336,7 +5531,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 346, "Expected at least 346 diseases, got {count}");
+        assert!(count >= 361, "Expected at least 361 diseases, got {count}");
     }
 
     #[test]
@@ -5386,7 +5581,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "26.0");
+        assert_eq!(ver, "27.0");
     }
 
     #[test]
@@ -5426,3 +5621,5 @@ mod tests {
 // Additional v25 diseases appended via seed extension
 
 // Additional v26 diseases appended via seed extension
+
+// Additional v27 diseases appended via seed extension

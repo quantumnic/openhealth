@@ -244,6 +244,11 @@ pub enum Commands {
         #[arg(long)]
         name: Option<String>,
     },
+    /// Emergency alert — check symptoms against critical emergency patterns
+    Alert {
+        /// Comma-separated symptoms, e.g. "chest pain, left arm pain, cold sweat"
+        symptoms: String,
+    },
     /// Personalized lifestyle and health recommendations
     Lifestyle {
         /// Age in years
@@ -395,6 +400,9 @@ fn main() {
         }
         Commands::Lifestyle { age, sex, factors } => {
             commands::lifestyle::run(&conn, age, sex.as_deref(), factors.as_deref(), cli.json);
+        }
+        Commands::Alert { symptoms } => {
+            commands::alert::run(&conn, &symptoms, cli.json);
         }
     }
 }

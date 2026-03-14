@@ -509,6 +509,19 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Sjogren's Syndrome", vec!["fever", "diarrhea", "weight gain"]);
     map.insert("Carbon Monoxide Poisoning", vec!["rash", "cough", "gradual onset over weeks"]);
     map.insert("Pilonidal Cyst", vec!["cough", "nausea", "headache"]);
+    // v0.27.0 negative evidence
+    map.insert("Peripartum Cardiomyopathy", vec!["rash", "joint pain", "cough"]);
+    map.insert("Wernicke Encephalopathy", vec!["rash", "diarrhea", "joint pain"]);
+    map.insert("Acute Compartment Syndrome", vec!["fever", "rash", "cough"]);
+    map.insert("Lichen Planus", vec!["fever", "cough", "weight loss"]);
+    map.insert("Adhesive Capsulitis (Frozen Shoulder)", vec!["fever", "rash", "cough"]);
+    map.insert("Acromegaly", vec!["rash", "diarrhea", "weight loss"]);
+    map.insert("Pellagra", vec!["joint swelling", "cough", "chest pain"]);
+    map.insert("Toxic Megacolon", vec!["rash", "cough", "joint pain"]);
+    map.insert("Mastitis", vec!["cough", "diarrhea", "joint pain"]);
+    map.insert("Pelvic Inflammatory Disease", vec!["rash", "cough", "headache"]);
+    map.insert("Placental Abruption", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Dengue Shock Syndrome", vec!["cough", "sore throat", "rash"]);
     map
 }
 
@@ -2299,5 +2312,151 @@ mod tests_v25 {
             assert!(gwo.probability >= gw.probability,
                 "GAD should score same or lower with cough (negative evidence)");
         }
+    }
+}
+
+// ── v0.27.0 scorer tests ──────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_v27 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_wernicke_encephalopathy() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["confusion", "balance problems", "nystagmus"]);
+        let we = results.iter().find(|r| r.disease_name == "Wernicke Encephalopathy");
+        assert!(we.is_some(), "Wernicke Encephalopathy should appear");
+        assert!(we.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_compartment_syndrome() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe pain disproportionate to injury", "pain with passive stretch", "tense compartment"]);
+        let cs = results.iter().find(|r| r.disease_name == "Acute Compartment Syndrome");
+        assert!(cs.is_some(), "Acute Compartment Syndrome should appear");
+        assert!(cs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_frozen_shoulder() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["shoulder pain", "shoulder stiffness", "limited range of motion"]);
+        let fs = results.iter().find(|r| r.disease_name == "Adhesive Capsulitis (Frozen Shoulder)");
+        assert!(fs.is_some(), "Frozen Shoulder should appear");
+        assert!(fs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_pellagra() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["skin rash in sun-exposed areas", "diarrhea", "confusion"]);
+        let pl = results.iter().find(|r| r.disease_name == "Pellagra");
+        assert!(pl.is_some(), "Pellagra should appear");
+        assert!(pl.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_acromegaly() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["enlarged hands", "enlarged feet", "coarsened facial features"]);
+        let ac = results.iter().find(|r| r.disease_name == "Acromegaly");
+        assert!(ac.is_some(), "Acromegaly should appear");
+        assert!(ac.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_pelvic_inflammatory_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["lower abdominal pain", "abnormal vaginal discharge", "painful intercourse"]);
+        let pid = results.iter().find(|r| r.disease_name == "Pelvic Inflammatory Disease");
+        assert!(pid.is_some(), "PID should appear");
+    }
+
+    #[test]
+    fn test_score_toxic_megacolon() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe abdominal distension", "abdominal pain", "fever"]);
+        let tm = results.iter().find(|r| r.disease_name == "Toxic Megacolon");
+        assert!(tm.is_some(), "Toxic Megacolon should appear");
+    }
+
+    #[test]
+    fn test_score_mastitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["breast pain", "breast redness", "breast swelling"]);
+        let mast = results.iter().find(|r| r.disease_name == "Mastitis");
+        assert!(mast.is_some(), "Mastitis should appear");
+        assert!(mast.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_lichen_planus() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["purple flat-topped bumps", "itchy skin", "white lacy patches in mouth"]);
+        let lp = results.iter().find(|r| r.disease_name == "Lichen Planus");
+        assert!(lp.is_some(), "Lichen Planus should appear");
+        assert!(lp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_dengue_shock() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe abdominal pain", "persistent vomiting", "cold clammy skin", "rapid weak pulse"]);
+        let ds = results.iter().find(|r| r.disease_name == "Dengue Shock Syndrome");
+        assert!(ds.is_some(), "Dengue Shock Syndrome should appear");
+        assert!(ds.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_placental_abruption() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["vaginal bleeding", "severe abdominal pain", "uterine tenderness"]);
+        let pa = results.iter().find(|r| r.disease_name == "Placental Abruption");
+        assert!(pa.is_some(), "Placental Abruption should appear");
+    }
+
+    #[test]
+    fn test_synonym_frozen_shoulder() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["frozen shoulder", "pain worse at night"]);
+        assert!(!results.is_empty(), "frozen shoulder should match via synonym");
+    }
+
+    #[test]
+    fn test_synonym_big_hands() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["big hands", "big feet", "headache"]);
+        assert!(!results.is_empty(), "big hands/feet should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_breast_infection() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["breast infection", "fever"]);
+        assert!(!results.is_empty(), "breast infection should expand via synonym");
+    }
+
+    #[test]
+    fn test_negative_evidence_wernicke() {
+        let conn = db::init_memory_database().unwrap();
+        let with_rash = score_symptoms(&conn, &["confusion", "balance problems", "rash"]);
+        let without_rash = score_symptoms(&conn, &["confusion", "balance problems"]);
+        let we_with = with_rash.iter().find(|r| r.disease_name == "Wernicke Encephalopathy");
+        let we_without = without_rash.iter().find(|r| r.disease_name == "Wernicke Encephalopathy");
+        if let (Some(ww), Some(wwo)) = (we_with, we_without) {
+            assert!(wwo.probability >= ww.probability,
+                "Wernicke should score same or lower with rash (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_score_peripartum_cardiomyopathy() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["shortness of breath", "fatigue", "swelling in legs", "difficulty breathing when lying down"]);
+        let pc = results.iter().find(|r| r.disease_name == "Peripartum Cardiomyopathy");
+        assert!(pc.is_some(), "Peripartum Cardiomyopathy should appear");
     }
 }
