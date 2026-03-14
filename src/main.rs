@@ -261,6 +261,14 @@ pub enum Commands {
         #[arg(long)]
         factors: Option<String>,
     },
+    /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
+    Onset {
+        /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
+        onset_type: String,
+        /// Optional: comma-separated symptoms to cross-reference
+        #[arg(long)]
+        symptoms: Option<String>,
+    },
 }
 
 fn default_db_path() -> PathBuf {
@@ -403,6 +411,9 @@ fn main() {
         }
         Commands::Alert { symptoms } => {
             commands::alert::run(&conn, &symptoms, cli.json);
+        }
+        Commands::Onset { onset_type, symptoms } => {
+            commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);
         }
     }
 }

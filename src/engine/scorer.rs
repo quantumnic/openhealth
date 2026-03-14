@@ -522,6 +522,22 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Pelvic Inflammatory Disease", vec!["rash", "cough", "headache"]);
     map.insert("Placental Abruption", vec!["rash", "cough", "diarrhea"]);
     map.insert("Dengue Shock Syndrome", vec!["cough", "sore throat", "rash"]);
+    // v0.28.0 negative evidence
+    map.insert("Chikungunya", vec!["cough", "sore throat", "diarrhea"]);
+    map.insert("Leishmaniasis (Visceral)", vec!["rash", "cough", "joint pain"]);
+    map.insert("Schistosomiasis", vec!["cough", "chest pain", "joint pain"]);
+    map.insert("Leptospirosis", vec!["chronic onset", "sore throat"]);
+    map.insert("Anaphylaxis (Food Allergy)", vec!["gradual onset", "fever", "chronic"]);
+    map.insert("Contact Dermatitis", vec!["fever", "joint pain", "weight loss"]);
+    map.insert("Benign Paroxysmal Positional Vertigo", vec!["hearing loss", "ear discharge", "fever"]);
+    map.insert("Chronic Hepatitis B", vec!["rash", "cough", "acute severe pain"]);
+    map.insert("Irritable Bowel Syndrome", vec!["fever", "bloody stool", "weight loss"]);
+    map.insert("Urinary Tract Infection", vec!["rash", "cough", "joint pain"]);
+    map.insert("Herpes Zoster (Shingles)", vec!["bilateral rash", "cough", "diarrhea"]);
+    map.insert("Optic Neuritis", vec!["bilateral vision loss", "rash", "joint swelling"]);
+    map.insert("Hyperaldosteronism (Conn's Syndrome)", vec!["rash", "fever", "cough"]);
+    map.insert("Mesenteric Ischemia (Acute)", vec!["rash", "cough", "chronic gradual onset"]);
+    map.insert("Thoracic Aortic Aneurysm", vec!["rash", "fever", "diarrhea"]);
     map
 }
 
@@ -2458,5 +2474,181 @@ mod tests_v27 {
         let results = score_symptoms(&conn, &["shortness of breath", "fatigue", "swelling in legs", "difficulty breathing when lying down"]);
         let pc = results.iter().find(|r| r.disease_name == "Peripartum Cardiomyopathy");
         assert!(pc.is_some(), "Peripartum Cardiomyopathy should appear");
+    }
+}
+
+// ── v0.28.0 scorer tests ──────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_v28 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_chikungunya() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["high fever", "severe joint pain", "joint swelling", "rash"]);
+        let ck = results.iter().find(|r| r.disease_name == "Chikungunya");
+        assert!(ck.is_some(), "Chikungunya should appear");
+        assert!(ck.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_visceral_leishmaniasis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["prolonged fever", "weight loss", "enlarged spleen"]);
+        let vl = results.iter().find(|r| r.disease_name == "Leishmaniasis (Visceral)");
+        assert!(vl.is_some(), "Visceral Leishmaniasis should appear");
+        assert!(vl.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_schistosomiasis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["bloody urine", "abdominal pain", "blood in stool"]);
+        let sc = results.iter().find(|r| r.disease_name == "Schistosomiasis");
+        assert!(sc.is_some(), "Schistosomiasis should appear");
+        assert!(sc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_leptospirosis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["high fever", "muscle pain", "jaundice", "red eyes"]);
+        let lp = results.iter().find(|r| r.disease_name == "Leptospirosis");
+        assert!(lp.is_some(), "Leptospirosis should appear");
+        assert!(lp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_food_anaphylaxis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["throat swelling", "difficulty breathing", "widespread hives"]);
+        let fa = results.iter().find(|r| r.disease_name == "Anaphylaxis (Food Allergy)");
+        assert!(fa.is_some(), "Food Anaphylaxis should appear");
+        assert!(fa.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_contact_dermatitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["itchy rash", "red skin", "dry cracked skin"]);
+        let cd = results.iter().find(|r| r.disease_name == "Contact Dermatitis");
+        assert!(cd.is_some(), "Contact Dermatitis should appear");
+    }
+
+    #[test]
+    fn test_score_uti() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["painful urination", "frequent urination", "urgency to urinate"]);
+        let uti = results.iter().find(|r| r.disease_name == "Urinary Tract Infection");
+        assert!(uti.is_some(), "UTI should appear");
+        assert!(uti.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_shingles() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["painful unilateral rash", "vesicular blisters in band pattern", "burning or tingling pain before rash"]);
+        let hz = results.iter().find(|r| r.disease_name == "Herpes Zoster (Shingles)");
+        assert!(hz.is_some(), "Shingles should appear");
+        assert!(hz.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_optic_neuritis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["vision loss in one eye", "pain with eye movement", "color vision impairment"]);
+        let on = results.iter().find(|r| r.disease_name == "Optic Neuritis");
+        assert!(on.is_some(), "Optic Neuritis should appear");
+        assert!(on.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_mesenteric_ischemia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe abdominal pain out of proportion to exam", "nausea", "vomiting"]);
+        let mi = results.iter().find(|r| r.disease_name == "Mesenteric Ischemia (Acute)");
+        assert!(mi.is_some(), "Mesenteric Ischemia should appear");
+    }
+
+    #[test]
+    fn test_score_hyperaldosteronism() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["resistant hypertension", "muscle weakness", "muscle cramps"]);
+        let ha = results.iter().find(|r| r.disease_name == "Hyperaldosteronism (Conn's Syndrome)");
+        assert!(ha.is_some(), "Conn's Syndrome should appear");
+    }
+
+    #[test]
+    fn test_score_thoracic_aneurysm() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["back pain between shoulder blades", "chest pain", "shortness of breath"]);
+        let ta = results.iter().find(|r| r.disease_name == "Thoracic Aortic Aneurysm");
+        assert!(ta.is_some(), "Thoracic Aortic Aneurysm should appear");
+    }
+
+    #[test]
+    fn test_score_chronic_hep_b() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fatigue", "right upper quadrant pain", "jaundice"]);
+        let hb = results.iter().find(|r| r.disease_name == "Chronic Hepatitis B");
+        assert!(hb.is_some(), "Chronic Hepatitis B should appear");
+    }
+
+    #[test]
+    fn test_score_ibs() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["recurrent abdominal pain", "bloating", "altered bowel habits"]);
+        let ibs = results.iter().find(|r| r.disease_name == "Irritable Bowel Syndrome");
+        assert!(ibs.is_some(), "IBS should appear");
+        assert!(ibs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_burning_pee() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["burning pee", "peeing a lot"]);
+        assert!(!results.is_empty(), "burning pee + peeing a lot should expand via synonyms");
+    }
+
+    #[test]
+    fn test_synonym_shingles() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["shingles", "band of blisters"]);
+        assert!(!results.is_empty(), "shingles synonym should expand");
+    }
+
+    #[test]
+    fn test_synonym_throat_closing() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["throat closing", "hives"]);
+        assert!(!results.is_empty(), "throat closing should expand via synonym");
+    }
+
+    #[test]
+    fn test_negative_evidence_chikungunya() {
+        let conn = db::init_memory_database().unwrap();
+        let with_cough = score_symptoms(&conn, &["high fever", "severe joint pain", "cough"]);
+        let without_cough = score_symptoms(&conn, &["high fever", "severe joint pain"]);
+        let ck_with = with_cough.iter().find(|r| r.disease_name == "Chikungunya");
+        let ck_without = without_cough.iter().find(|r| r.disease_name == "Chikungunya");
+        if let (Some(cw), Some(cwo)) = (ck_with, ck_without) {
+            assert!(cwo.probability >= cw.probability,
+                "Chikungunya should score same or lower with cough (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_negative_evidence_contact_dermatitis() {
+        let conn = db::init_memory_database().unwrap();
+        let with_fever = score_symptoms(&conn, &["itchy rash", "red skin", "fever"]);
+        let without_fever = score_symptoms(&conn, &["itchy rash", "red skin"]);
+        let cd_with = with_fever.iter().find(|r| r.disease_name == "Contact Dermatitis");
+        let cd_without = without_fever.iter().find(|r| r.disease_name == "Contact Dermatitis");
+        if let (Some(cw), Some(cwo)) = (cd_with, cd_without) {
+            assert!(cwo.probability >= cw.probability,
+                "Contact Dermatitis should score same or lower with fever (negative evidence)");
+        }
     }
 }

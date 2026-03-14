@@ -1904,3 +1904,111 @@ fn test_cli_symptoms_pellagra() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Pellagra"), "Should detect Pellagra in JSON results");
 }
+
+// ── v0.28.0 integration tests ────────────────────────────────────────
+
+#[test]
+fn test_cli_symptoms_chikungunya() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "high fever, severe joint pain, joint swelling, rash"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Chikungunya"), "Should detect Chikungunya");
+}
+
+#[test]
+fn test_cli_symptoms_uti() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "symptoms", "painful urination, frequent urination, cloudy urine"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Urinary Tract Infection") || stdout.contains("Interstitial Cystitis"), "Should detect urinary condition");
+}
+
+#[test]
+fn test_cli_symptoms_shingles() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "symptoms", "painful rash, blisters, sensitivity to touch"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Shingles") || stdout.contains("Herpes Zoster"), "Should detect Shingles");
+}
+
+#[test]
+fn test_cli_symptoms_leptospirosis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "symptoms", "high fever, muscle pain, jaundice, red eyes"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Leptospirosis"), "Should detect Leptospirosis");
+}
+
+#[test]
+fn test_cli_onset_sudden() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["onset", "sudden"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Hyperacute"), "Should show hyperacute onset diseases");
+}
+
+#[test]
+fn test_cli_onset_chronic_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "onset", "chronic"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Chronic"), "Should contain chronic onset in JSON");
+}
+
+#[test]
+fn test_cli_onset_with_symptoms() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["onset", "acute", "--symptoms", "fever, headache"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_cli_onset_unknown() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["onset", "blah"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_cli_synonym_burning_pee() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "burning pee, peeing a lot"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(!stdout.contains("No matches"), "burning pee should match diseases");
+}
+
+#[test]
+fn test_cli_disease_shingles() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Shingles"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("varicella") || stdout.contains("zoster") || stdout.contains("Shingles"), "Should show shingles info");
+}
