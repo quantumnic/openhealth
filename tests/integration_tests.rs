@@ -2227,3 +2227,113 @@ fn test_cli_synonym_worms_in_poop() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(!stdout.contains("No matching"), "Should find matches via synonym expansion");
 }
+
+// ── v0.32.0 integration tests ──
+
+#[test]
+fn test_cli_complication_diabetes() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["complication", "diabetes"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("retinopathy") || stdout.contains("Complications") || stdout.contains("Complication") || stdout.contains("nephropathy"), "Should show diabetes complications");
+}
+
+#[test]
+fn test_cli_complication_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "complication", "malaria"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("complication") || stdout.contains("cerebral"), "Should show malaria complications in JSON");
+}
+
+#[test]
+fn test_cli_complication_unknown() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["complication", "xyzzy_not_real"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+}
+
+#[test]
+fn test_cli_age_risk_child() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["age-risk", "5"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Age") && stdout.contains("risk"), "Should show age-specific risks");
+}
+
+#[test]
+fn test_cli_age_risk_senior_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "age-risk", "70", "--sex", "female"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("disease") || stdout.contains("Dementia"), "Should show senior risks in JSON");
+}
+
+#[test]
+fn test_cli_disease_hookworm() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Hookworm Infection"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("parasit") || stdout.contains("Hookworm"), "Should show hookworm info");
+}
+
+#[test]
+fn test_cli_disease_trachoma() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Trachoma"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("blind") || stdout.contains("Trachoma"), "Should show trachoma info");
+}
+
+#[test]
+fn test_cli_disease_sleeping_sickness() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "African Trypanosomiasis"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("tsetse") || stdout.contains("Trypanosoma") || stdout.contains("Sleeping"), "Should show sleeping sickness info");
+}
+
+#[test]
+fn test_cli_synonym_night_sweats() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "night sweats, fever, joint pain"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(!stdout.contains("No matching"), "Should find matches for night sweats via synonym");
+}
+
+#[test]
+fn test_cli_synonym_elephant_leg() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "elephant leg, thick skin on legs"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(!stdout.contains("No matching"), "Should find matches for elephant leg via synonym");
+}

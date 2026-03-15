@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '31.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '32.0')",
         [],
     )?;
     tx.commit()?;
@@ -5257,6 +5257,94 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Adequate protein and calorie intake during weaning. Breastfeeding for first 2 years. Complementary feeding education. Food security programs.",
             risk_factors: vec![("food insecurity", "high"), ("weaning period", "high"), ("famine or conflict", "high"), ("exclusive starch diet", "high")],
         },
+        DiseaseEntry {
+            name: "Hookworm Infection",
+            description: "Intestinal parasitic infection caused by Necator americanus or Ancylostoma duodenale. Transmitted through contaminated soil. Leading cause of iron-deficiency anemia in the tropics.",
+            severity: "medium", contagious: false, icd11_code: "1F64",
+            age_group: "all", category: "parasitic",
+            symptoms: vec![s("abdominal pain",0.7,true), s("diarrhea",0.6,true), s("fatigue",0.8,true), s("iron-deficiency anemia",0.9,true), s("itchy rash at entry site (ground itch)",0.7,false), s("weight loss",0.6,false), s("pale skin",0.6,false), s("protein deficiency",0.5,false), s("pica (eating non-food items)",0.4,false)],
+            treatment: "WHO protocol: Albendazole 400mg single dose OR Mebendazole 500mg single dose. Iron supplementation for anemia. Repeat deworming in endemic areas every 6-12 months.",
+            first_aid: "No emergency first aid needed. Keep itchy entry-site rash clean and dry. Seek medical care for deworming medication.",
+            prevention: "Wear shoes in endemic areas. Improve sanitation and latrine use. Periodic mass deworming in endemic communities. Avoid walking barefoot on contaminated soil.",
+            risk_factors: vec![("walking barefoot", "high"), ("poor sanitation", "high"), ("tropical climate", "moderate"), ("agricultural work", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Trachoma",
+            description: "Leading infectious cause of blindness worldwide. Caused by Chlamydia trachomatis. Spread through eye-seeking flies and close personal contact. Primarily affects children in resource-poor settings.",
+            severity: "medium", contagious: true, icd11_code: "9A60",
+            age_group: "all", category: "ophthalmological",
+            symptoms: vec![s("eye itching and irritation",0.7,true), s("eye discharge",0.7,true), s("swollen eyelids",0.6,true), s("eyelid scarring",0.8,true), s("inturned eyelashes (trichiasis)",0.9,true), s("corneal opacity",0.8,false), s("eye pain",0.6,false), s("photophobia",0.5,false), s("progressive vision loss",0.7,false)],
+            treatment: "WHO SAFE strategy: Surgery for trichiasis. Antibiotics — Azithromycin 20mg/kg single dose (mass drug administration) or tetracycline eye ointment 1% for 6 weeks. Facial cleanliness. Environmental improvement.",
+            first_aid: "Keep eyes clean with boiled, cooled water. Do not rub eyes. Wash face and hands regularly. Seek medical attention for antibiotic treatment.",
+            prevention: "Facial cleanliness — wash children's faces daily. Improve access to clean water and sanitation. Fly control. Community-wide antibiotic treatment. SAFE strategy implementation.",
+            risk_factors: vec![("poor facial hygiene", "high"), ("overcrowded living", "high"), ("lack of clean water", "high"), ("fly exposure", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Onchocerciasis (River Blindness)",
+            description: "Parasitic disease caused by Onchocerca volvulus, transmitted by blackfly bites near fast-flowing rivers. Second leading infectious cause of blindness globally.",
+            severity: "high", contagious: false, icd11_code: "1F66",
+            age_group: "all", category: "parasitic",
+            symptoms: vec![s("severe itching",0.9,true), s("skin rash with papules",0.7,true), s("subcutaneous nodules (onchocercomas)",0.8,true), s("skin depigmentation (leopard skin)",0.7,false), s("visual impairment",0.8,true), s("eye inflammation",0.7,false), s("skin thickening and wrinkling",0.6,false), s("lymphadenopathy",0.5,false)],
+            treatment: "Ivermectin 150 mcg/kg single dose, repeated every 6-12 months for 10-15 years. Part of WHO mass drug administration programs. Doxycycline targets Wolbachia endosymbiont (6 weeks). Surgical removal of nodules in some cases.",
+            first_aid: "Antihistamines and cool compresses for severe itching. Do not scratch — risk of secondary infection. Seek medical care for proper diagnosis and ivermectin.",
+            prevention: "Community-directed ivermectin treatment (CDTI). Blackfly control programs. Avoid blackfly breeding sites near fast-flowing rivers. Protective clothing and insect repellent.",
+            risk_factors: vec![("living near fast-flowing rivers", "high"), ("endemic region (Sub-Saharan Africa)", "high"), ("agricultural work near rivers", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Myocardial Bridge",
+            description: "Congenital condition where a segment of coronary artery tunnels through the heart muscle (myocardium) instead of lying on its surface. Usually benign but can cause symptoms during exercise.",
+            severity: "medium", contagious: false, icd11_code: "BC60",
+            age_group: "adults", category: "cardiovascular",
+            symptoms: vec![s("chest pain during exercise",0.9,true), s("shortness of breath during exertion",0.7,true), s("palpitations",0.6,false), s("dizziness during exercise",0.5,false), s("chest pain relieved by rest",0.7,true), s("syncope with exertion",0.4,false)],
+            treatment: "Often no treatment needed. Beta-blockers or calcium channel blockers for symptomatic relief. Avoid nitrates (may worsen symptoms). Surgical myotomy or coronary stenting in severe, refractory cases.",
+            first_aid: "Rest immediately if chest pain occurs during exercise. If pain does not resolve within 10 minutes of rest, call emergency services. Do NOT take nitroglycerin without medical advice.",
+            prevention: "Regular cardiac screening for athletes. Avoid extreme exertion if diagnosed. Stress testing to assess severity. Report exercise-related chest pain to physician.",
+            risk_factors: vec![("intense physical exercise", "moderate"), ("hypertrophic cardiomyopathy", "moderate"), ("genetic predisposition", "low")],
+        },
+        DiseaseEntry {
+            name: "Lymphatic Filariasis (Elephantiasis)",
+            description: "Parasitic disease caused by filarial worms transmitted by mosquitoes. Causes severe lymphatic damage leading to chronic swelling (elephantiasis) and disability. One of the leading causes of permanent disability globally.",
+            severity: "high", contagious: false, icd11_code: "1F66.0",
+            age_group: "all", category: "parasitic",
+            symptoms: vec![s("chronic limb swelling (lymphedema)",0.9,true), s("thickened skin on limbs",0.8,true), s("recurrent fever with chills",0.6,false), s("scrotal swelling (hydrocele)",0.7,true), s("painful lymph nodes",0.5,false), s("recurrent bacterial skin infections",0.6,false), s("limb heaviness",0.5,false)],
+            treatment: "WHO triple-drug therapy (IDA): Ivermectin + DEC + Albendazole single dose. Morbidity management: limb hygiene, elevation, compression, exercise. Hydrocele surgery. Antibiotics for acute bacterial episodes.",
+            first_aid: "Elevate swollen limbs. Keep affected skin clean and dry. Treat wounds promptly to prevent secondary infections. Seek medical care for acute episodes with fever.",
+            prevention: "Mass drug administration with IDA in endemic areas. Mosquito control (bed nets, insecticide spraying). Hygiene and skin care to prevent progression. Community-based care programs.",
+            risk_factors: vec![("mosquito exposure in endemic areas", "high"), ("tropical climate", "high"), ("poor sanitation", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Acute Rheumatic Fever",
+            description: "Inflammatory disease following untreated Group A streptococcal pharyngitis. Can cause permanent heart valve damage (rheumatic heart disease). Major cause of acquired heart disease in children in developing countries.",
+            severity: "high", contagious: false, icd11_code: "1B40",
+            age_group: "children", category: "autoimmune",
+            symptoms: vec![s("migratory joint pain (polyarthritis)",0.9,true), s("carditis (heart inflammation)",0.8,true), s("subcutaneous nodules",0.6,false), s("erythema marginatum rash",0.7,true), s("chorea (involuntary movements)",0.6,true), s("fever",0.7,false), s("chest pain",0.5,false), s("heart murmur",0.7,false), s("fatigue",0.5,false)],
+            treatment: "Penicillin V or Amoxicillin for 10 days to eradicate strep. Aspirin or naproxen for arthritis and fever. Corticosteroids for severe carditis. Long-term penicillin prophylaxis (monthly IM benzathine penicillin for 10+ years) to prevent recurrence.",
+            first_aid: "Rest — especially with carditis. Monitor for shortness of breath or chest pain. Seek immediate medical care. Do not take aspirin without medical supervision in children.",
+            prevention: "Prompt antibiotic treatment of strep throat. Penicillin prophylaxis after first episode. Throat culture or rapid strep test for sore throats. Improved living conditions to reduce strep transmission.",
+            risk_factors: vec![("untreated strep throat", "high"), ("overcrowded living conditions", "high"), ("age 5-15 years", "high"), ("poverty", "moderate")],
+        },
+        DiseaseEntry {
+            name: "African Trypanosomiasis (Sleeping Sickness)",
+            description: "Parasitic disease caused by Trypanosoma brucei, transmitted by tsetse fly bites. Progresses from hemolymphatic (Stage 1) to meningoencephalitic (Stage 2) with neurological involvement. Fatal without treatment.",
+            severity: "high", contagious: false, icd11_code: "1F51",
+            age_group: "all", category: "parasitic",
+            symptoms: vec![s("intermittent fever",0.8,true), s("chancre at bite site",0.7,true), s("cervical lymphadenopathy (Winterbottom sign)",0.8,true), s("headache",0.6,false), s("joint pain",0.5,false), s("sleep disturbance (day sleeping, night insomnia)",0.9,true), s("confusion",0.7,false), s("behavioral changes",0.6,false), s("tremor",0.5,false), s("progressive somnolence",0.8,false), s("weight loss",0.5,false)],
+            treatment: "Stage 1: Pentamidine (T.b. gambiense) or Suramin (T.b. rhodesiense). Stage 2: Fexinidazole (oral, first-line for T.b. gambiense) or NECT (nifurtimox-eflornithine combination). Melarsoprol for T.b. rhodesiense Stage 2. WHO elimination target by 2030.",
+            first_aid: "No field treatment available. Seek medical care urgently if tsetse fly bite develops chancre or fever in endemic area. Early diagnosis critical — CSF examination needed for staging.",
+            prevention: "Avoid tsetse fly bites — wear long sleeves, neutral-colored clothing. Tsetse traps and targets. Community screening programs. Report suspected cases immediately.",
+            risk_factors: vec![("tsetse fly exposure in Sub-Saharan Africa", "high"), ("rural areas near vegetation", "high"), ("outdoor occupations (farming, fishing)", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Interstitial Lung Disease",
+            description: "Group of disorders causing progressive scarring (fibrosis) of lung tissue. Affects the interstitium (tissue surrounding air sacs). Over 200 subtypes; most common is idiopathic pulmonary fibrosis.",
+            severity: "high", contagious: false, icd11_code: "CB03",
+            age_group: "adults", category: "respiratory",
+            symptoms: vec![s("progressive shortness of breath",0.9,true), s("dry persistent cough",0.8,true), s("clubbing of fingers and toes",0.7,true), s("fatigue",0.6,false), s("unintentional weight loss",0.5,false), s("velcro-like crackles on auscultation",0.8,false), s("exercise intolerance",0.7,false), s("cyanosis",0.5,false)],
+            treatment: "Antifibrotic drugs: Pirfenidone or Nintedanib (slow progression). Oxygen therapy for hypoxemia. Pulmonary rehabilitation. Lung transplantation for end-stage disease. Treat underlying cause if identifiable (e.g., avoid exposure).",
+            first_aid: "Administer supplemental oxygen if available and oxygen saturation is low. Rest in upright position. Seek medical attention for worsening breathlessness.",
+            prevention: "Avoid occupational dust exposure (asbestos, silica, coal). Smoking cessation. Avoid known triggers (bird droppings, mold). Regular monitoring with pulmonary function tests for at-risk individuals.",
+            risk_factors: vec![("occupational dust exposure", "high"), ("smoking", "high"), ("autoimmune disease", "moderate"), ("family history", "moderate"), ("age over 50", "moderate")],
+        },
     ]
 }
 
@@ -6175,6 +6263,40 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("potbelly", "distended abdomen"),
         ("orange hair", "hair discoloration (reddish-orange)"),
         ("puffy face", "moon face"),
+        // v0.32.0 synonyms
+        ("itchy eyes", "eye itching and irritation"),
+        ("eye itch", "eye itching and irritation"),
+        ("crusty eyes", "eye discharge"),
+        ("inturned lashes", "inturned eyelashes (trichiasis)"),
+        ("eyelashes poking eye", "inturned eyelashes (trichiasis)"),
+        ("going blind", "progressive vision loss"),
+        ("losing sight", "progressive vision loss"),
+        ("skin lumps under skin", "subcutaneous nodules (onchocercomas)"),
+        ("leopard skin", "skin depigmentation (leopard skin)"),
+        ("patchy skin", "skin depigmentation (leopard skin)"),
+        ("exercise chest pain", "chest pain during exercise"),
+        ("chest pain running", "chest pain during exercise"),
+        ("elephant leg", "chronic limb swelling (lymphedema)"),
+        ("swollen leg won't go down", "chronic limb swelling (lymphedema)"),
+        ("thick skin on legs", "thickened skin on limbs"),
+        ("swollen testicles", "scrotal swelling (hydrocele)"),
+        ("wandering joint pain", "migratory joint pain (polyarthritis)"),
+        ("joint pain moves around", "migratory joint pain (polyarthritis)"),
+        ("jerky movements", "chorea (involuntary movements)"),
+        ("uncontrolled movements", "chorea (involuntary movements)"),
+        ("night sweats", "profuse sweating (especially at night)"),
+        ("soaking sweats", "profuse sweating (especially at night)"),
+        ("wave fever", "undulating fever"),
+        ("coming and going fever", "undulating fever"),
+        ("velcro crackles", "velcro-like crackles on auscultation"),
+        ("lung crackles", "velcro-like crackles on auscultation"),
+        ("finger clubbing", "clubbing of fingers and toes"),
+        ("nail clubbing", "clubbing of fingers and toes"),
+        ("blue fingers", "cyanosis"),
+        ("blue lips", "cyanosis"),
+        ("worm infection", "abdominal pain"),
+        ("parasites", "visible worms in stool"),
+        ("barefoot rash", "itchy rash at entry site (ground itch)"),
     ]
 }
 
@@ -6237,7 +6359,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "31.0");
+        assert_eq!(ver, "32.0");
     }
 
     #[test]

@@ -285,6 +285,20 @@ pub enum Commands {
         /// Filter by method name (boiling, sodis, chlorination, ceramic, cloth, tablets)
         method: Option<String>,
     },
+    /// Show potential complications of a disease
+    Complication {
+        /// Disease name, e.g. "diabetes" or "malaria"
+        name: String,
+    },
+    /// Age-specific health risk profile
+    #[command(name = "age-risk")]
+    AgeRisk {
+        /// Age in years
+        age: u8,
+        /// Sex: male or female
+        #[arg(long)]
+        sex: Option<String>,
+    },
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -445,6 +459,12 @@ fn main() {
         }
         Commands::Polypharm { drugs } => {
             commands::polypharm::run(&conn, &drugs, cli.json);
+        }
+        Commands::Complication { name } => {
+            commands::complication::run(&conn, &name, cli.json);
+        }
+        Commands::AgeRisk { age, sex } => {
+            commands::age_risk::run(&conn, age, sex.as_deref(), cli.json);
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);

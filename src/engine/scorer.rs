@@ -580,6 +580,15 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Ciguatera Fish Poisoning", vec!["fever", "rash", "cough"]);
     map.insert("Ascariasis", vec!["fever", "rash", "chest pain"]);
     map.insert("Kwashiorkor", vec!["cough", "rash", "chest pain"]);
+    // v0.32.0 negative evidence
+    map.insert("Hookworm Infection", vec!["cough", "rash", "chest pain"]);
+    map.insert("Trachoma", vec!["cough", "diarrhea", "joint pain"]);
+    map.insert("Onchocerciasis (River Blindness)", vec!["fever", "diarrhea", "cough"]);
+    map.insert("Myocardial Bridge", vec!["fever", "rash", "cough"]);
+    map.insert("Lymphatic Filariasis (Elephantiasis)", vec!["cough", "diarrhea", "rash"]);
+    map.insert("Acute Rheumatic Fever", vec!["diarrhea", "rash", "cough"]);
+    map.insert("African Trypanosomiasis (Sleeping Sickness)", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Interstitial Lung Disease", vec!["rash", "diarrhea", "joint swelling"]);
     map
 }
 
@@ -3048,6 +3057,148 @@ mod tests_v31 {
         if let (Some(cw), Some(cwo)) = (cig_with, cig_without) {
             assert!(cwo.probability >= cw.probability,
                 "Ciguatera should score same or lower with fever (negative evidence)");
+        }
+    }
+}
+
+// ── v0.32.0 scorer tests ──────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_v32 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_hookworm() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["abdominal pain", "fatigue", "iron-deficiency anemia"]);
+        let hw = results.iter().find(|r| r.disease_name == "Hookworm Infection");
+        assert!(hw.is_some(), "Hookworm Infection should appear");
+        assert!(hw.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_trachoma() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["eye itching and irritation", "eye discharge", "progressive vision loss"]);
+        let tr = results.iter().find(|r| r.disease_name == "Trachoma");
+        assert!(tr.is_some(), "Trachoma should appear");
+        assert!(tr.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_onchocerciasis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe itching", "subcutaneous nodules (onchocercomas)", "visual impairment"]);
+        let oncho = results.iter().find(|r| r.disease_name == "Onchocerciasis (River Blindness)");
+        assert!(oncho.is_some(), "Onchocerciasis should appear");
+        assert!(oncho.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_myocardial_bridge() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chest pain during exercise", "chest pain relieved by rest", "palpitations"]);
+        let mb = results.iter().find(|r| r.disease_name == "Myocardial Bridge");
+        assert!(mb.is_some(), "Myocardial Bridge should appear");
+        assert!(mb.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_lymphatic_filariasis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chronic limb swelling (lymphedema)", "thickened skin on limbs"]);
+        let lf = results.iter().find(|r| r.disease_name == "Lymphatic Filariasis (Elephantiasis)");
+        assert!(lf.is_some(), "Lymphatic Filariasis should appear");
+        assert!(lf.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_acute_rheumatic_fever() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(8), sex: None };
+        let results = score_symptoms_with_context(&conn, &["migratory joint pain (polyarthritis)", "fever", "heart murmur"], &child_ctx);
+        let arf = results.iter().find(|r| r.disease_name == "Acute Rheumatic Fever");
+        assert!(arf.is_some(), "Acute Rheumatic Fever should appear");
+        assert!(arf.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_sleeping_sickness() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["intermittent fever", "sleep disturbance (day sleeping, night insomnia)", "confusion"]);
+        let ss = results.iter().find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
+        assert!(ss.is_some(), "African Trypanosomiasis should appear");
+        assert!(ss.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_interstitial_lung_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["progressive shortness of breath", "dry persistent cough", "clubbing of fingers and toes"]);
+        let ild = results.iter().find(|r| r.disease_name == "Interstitial Lung Disease");
+        assert!(ild.is_some(), "Interstitial Lung Disease should appear");
+        assert!(ild.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_night_sweats() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["night sweats", "fever", "joint pain"]);
+        assert!(!results.is_empty(), "night sweats should match via synonym");
+    }
+
+    #[test]
+    fn test_synonym_elephant_leg() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["elephant leg", "thick skin on legs"]);
+        assert!(!results.is_empty(), "elephant leg should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_exercise_chest_pain() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["exercise chest pain", "palpitations"]);
+        assert!(!results.is_empty(), "exercise chest pain should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_wandering_joint_pain() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["wandering joint pain", "fever"]);
+        assert!(!results.is_empty(), "wandering joint pain should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_finger_clubbing() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["finger clubbing", "cough"]);
+        assert!(!results.is_empty(), "finger clubbing should expand via synonym");
+    }
+
+    #[test]
+    fn test_negative_evidence_hookworm() {
+        let conn = db::init_memory_database().unwrap();
+        let with_cough = score_symptoms(&conn, &["abdominal pain", "fatigue", "cough"]);
+        let without_cough = score_symptoms(&conn, &["abdominal pain", "fatigue"]);
+        let hw_with = with_cough.iter().find(|r| r.disease_name == "Hookworm Infection");
+        let hw_without = without_cough.iter().find(|r| r.disease_name == "Hookworm Infection");
+        if let (Some(hww), Some(hwo)) = (hw_with, hw_without) {
+            assert!(hwo.probability >= hww.probability,
+                "Hookworm should score same or lower with cough (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_negative_evidence_sleeping_sickness() {
+        let conn = db::init_memory_database().unwrap();
+        let with_rash = score_symptoms(&conn, &["intermittent fever", "confusion", "rash"]);
+        let without_rash = score_symptoms(&conn, &["intermittent fever", "confusion"]);
+        let ss_with = with_rash.iter().find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
+        let ss_without = without_rash.iter().find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
+        if let (Some(sw), Some(swo)) = (ss_with, ss_without) {
+            assert!(swo.probability >= sw.probability,
+                "Sleeping Sickness should score same or lower with rash (negative evidence)");
         }
     }
 }
