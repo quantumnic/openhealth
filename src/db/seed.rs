@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '33.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '34.0')",
         [],
     )?;
     tx.commit()?;
@@ -5511,6 +5511,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Non-selective beta-blockers (propranolol, nadolol) for primary prophylaxis. Endoscopic band ligation for large varices. TIPS for secondary prevention. Treat underlying liver disease. Avoid NSAIDs and alcohol.",
             risk_factors: vec![("liver cirrhosis", "high"), ("portal hypertension", "high"), ("alcoholic liver disease", "high"), ("chronic hepatitis B/C", "high"), ("NSAID use", "moderate")],
         },
+        // ── v0.34.0 diseases ──
+        DiseaseEntry {
+            name: "Japanese Encephalitis",
+            description: "Mosquito-borne viral infection causing inflammation of the brain. Leading cause of vaccine-preventable encephalitis in Asia. Most infections asymptomatic but encephalitis has 20-30% fatality.",
+            severity: "high", contagious: false, icd11_code: "1D47",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("high fever",0.9,true), s("severe headache",0.8,true), s("neck stiffness",0.7,true), s("confusion",0.8,false), s("seizures",0.7,false), s("tremor",0.5,false), s("paralysis",0.6,false), s("nausea",0.4,false), s("vomiting",0.4,false)],
+            treatment: "No specific antiviral. Supportive care: airway management, seizure control (benzodiazepines, phenytoin), ICP management (mannitol), IV fluids, antipyretics. ICU for severe cases. Rehabilitation for survivors with neurological sequelae.",
+            first_aid: "Seek emergency medical care immediately. Keep patient cool. Manage seizures: protect from injury, turn on side. Monitor breathing.",
+            prevention: "Vaccination (JE-VC, SA 14-14-2 live attenuated). Mosquito bite prevention: repellents, bed nets, long sleeves at dusk. Eliminate standing water breeding sites.",
+            risk_factors: vec![("travel to endemic areas (South/Southeast Asia)", "high"), ("rural residence near rice paddies", "high"), ("lack of vaccination", "high"), ("outdoor activities at dusk", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hantavirus Pulmonary Syndrome",
+            description: "Severe respiratory disease caused by hantavirus, transmitted by inhaling aerosolized rodent excreta. Rapid progression to respiratory failure. Fatality rate ~36%.",
+            severity: "high", contagious: false, icd11_code: "1D63",
+            age_group: "adults", category: "infectious",
+            symptoms: vec![s("fever",0.9,true), s("muscle pain",0.8,true), s("fatigue",0.7,false), s("headache",0.7,false), s("dizziness",0.5,false), s("nausea",0.6,false), s("vomiting",0.5,false), s("rapid breathing",0.8,true), s("shortness of breath",0.9,true), s("cough",0.6,false), s("tachycardia",0.7,false)],
+            treatment: "EMERGENCY: ICU admission. Mechanical ventilation for respiratory failure. ECMO for refractory hypoxemia. IV ribavirin (limited evidence). Hemodynamic support with vasopressors. Avoid excessive fluid resuscitation (worsens pulmonary edema). No specific antiviral approved.",
+            first_aid: "Call emergency services immediately. Supplemental oxygen if available. Keep patient upright to ease breathing. Monitor for shock.",
+            prevention: "Rodent control: seal entry points, traps, eliminate food sources. Ventilate closed buildings before entering. Wear N95 mask when cleaning rodent-infested areas. Wet-mop (don't sweep) rodent droppings with bleach solution.",
+            risk_factors: vec![("exposure to rodent droppings/urine", "high"), ("cleaning rodent-infested buildings", "high"), ("rural/peridomestic settings", "high"), ("camping or hiking in endemic areas", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Q Fever",
+            description: "Zoonotic disease caused by Coxiella burnetii. Transmitted by inhaling contaminated aerosols from livestock (cattle, sheep, goats). Acute and chronic forms.",
+            severity: "medium", contagious: false, icd11_code: "1C33",
+            age_group: "adults", category: "infectious",
+            symptoms: vec![s("high fever",0.9,true), s("severe headache",0.8,true), s("fatigue",0.8,false), s("muscle pain",0.7,false), s("chills",0.7,false), s("sweating",0.6,false), s("dry cough",0.5,false), s("nausea",0.5,false), s("chest pain",0.4,false), s("hepatomegaly",0.4,false)],
+            treatment: "Acute: Doxycycline 100mg BID x14 days (first-line). Chronic Q fever (endocarditis): Doxycycline + hydroxychloroquine for ≥18 months. Monitor with serology (Phase I IgG). Valve replacement surgery if needed for endocarditis.",
+            first_aid: "Seek medical attention for persistent high fever after livestock exposure. Rest, hydration, antipyretics.",
+            prevention: "Vaccination (Q-Vax, available in Australia). PPE when handling livestock birthing products. Pasteurize milk. Proper disposal of animal birth products. Occupational health measures for farm workers and veterinarians.",
+            risk_factors: vec![("livestock farming (cattle, sheep, goats)", "high"), ("veterinary work", "high"), ("living near farms", "moderate"), ("laboratory work with C. burnetii", "high"), ("immunosuppression (risk for chronic Q fever)", "high")],
+        },
+        DiseaseEntry {
+            name: "Histoplasmosis",
+            description: "Fungal infection caused by Histoplasma capsulatum found in soil contaminated with bird/bat droppings. Ranges from asymptomatic to disseminated disease in immunocompromised.",
+            severity: "medium", contagious: false, icd11_code: "1F2A",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("fever",0.8,true), s("cough",0.7,true), s("fatigue",0.7,false), s("chest pain",0.5,false), s("headache",0.5,false), s("muscle pain",0.5,false), s("chills",0.5,false), s("weight loss",0.6,false), s("night sweats",0.5,false), s("shortness of breath",0.6,false)],
+            treatment: "Mild-moderate: Itraconazole 200mg TID x3 days then BID x6-12 weeks. Severe/disseminated: Amphotericin B lipid formulation x1-2 weeks then itraconazole x12 months. Chronic cavitary: Itraconazole x12-24 months. Monitor serum itraconazole levels.",
+            first_aid: "Seek medical attention for persistent cough, fever after cave/poultry exposure. Rest and hydration.",
+            prevention: "Avoid disturbing soil in endemic areas (Ohio/Mississippi River valleys, Central America). Wear N95 respirator when cleaning chicken coops, caves, or old buildings. Wet soil before excavation. HIV patients in endemic areas may need prophylaxis.",
+            risk_factors: vec![("cave exploration (spelunking)", "high"), ("poultry farming", "high"), ("HIV/AIDS", "high"), ("immunosuppressive therapy", "high"), ("residence in Ohio/Mississippi River valleys", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Coccidioidomycosis (Valley Fever)",
+            description: "Fungal infection caused by Coccidioides species endemic to arid regions of the Americas. Inhalation of arthroconidia from disturbed soil. ~40% symptomatic; rarely disseminates.",
+            severity: "medium", contagious: false, icd11_code: "1F28",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("fever",0.8,true), s("cough",0.7,true), s("chest pain",0.6,false), s("fatigue",0.7,false), s("shortness of breath",0.5,false), s("headache",0.5,false), s("muscle pain",0.5,false), s("joint pain",0.6,false), s("rash on shins (erythema nodosum)",0.4,false), s("night sweats",0.5,false)],
+            treatment: "Mild: Observation, may self-resolve. Moderate/risk factors: Fluconazole 400mg/day or itraconazole x3-6 months. Severe/disseminated: Amphotericin B then azole maintenance. Meningeal: Lifelong fluconazole. Surgical debridement for bone/joint disease.",
+            first_aid: "Seek medical attention for persistent cough and fever in endemic areas. Rest and hydration.",
+            prevention: "Avoid dust exposure in endemic areas (SW United States, Mexico, Central/South America). Use N95 respirator during dust storms or soil disturbance. Stay indoors during dust storms. No vaccine currently available.",
+            risk_factors: vec![("residence in endemic areas (Arizona, California Central Valley)", "high"), ("outdoor occupations (construction, agriculture)", "high"), ("Filipino or African American descent", "moderate"), ("immunosuppression", "high"), ("pregnancy (3rd trimester)", "high")],
+        },
+        DiseaseEntry {
+            name: "Babesiosis",
+            description: "Tick-borne parasitic infection of red blood cells by Babesia species. Similar to malaria. Can be severe in asplenic/immunocompromised patients. Endemic in northeastern/upper midwestern US.",
+            severity: "medium", contagious: false, icd11_code: "1F50",
+            age_group: "adults", category: "infectious",
+            symptoms: vec![s("fever",0.9,true), s("chills",0.8,true), s("sweating",0.7,false), s("fatigue",0.8,false), s("headache",0.6,false), s("muscle pain",0.6,false), s("dark urine",0.5,false), s("jaundice",0.4,false), s("anemia",0.6,false), s("nausea",0.4,false)],
+            treatment: "Mild-moderate: Atovaquone 750mg BID + azithromycin 500-1000mg day 1 then 250mg/day x7-10 days. Severe: IV clindamycin 600mg Q8H + oral quinine 650mg Q8H x7-10 days. Exchange transfusion for parasitemia >10%, severe hemolysis, or organ failure.",
+            first_aid: "Seek medical attention for fever after tick bite in endemic area. Remove tick properly. Save tick for identification if possible.",
+            prevention: "Tick bite prevention: DEET/permethrin, long clothing, tick checks after outdoor activities. Avoid tick habitats May-September. Screen blood donations in endemic areas.",
+            risk_factors: vec![("asplenia (splenectomy)", "high"), ("immunosuppression", "high"), ("age > 50", "moderate"), ("tick exposure in endemic areas (NE US)", "high"), ("blood transfusion", "low")],
+        },
+        DiseaseEntry {
+            name: "Ehrlichiosis",
+            description: "Tick-borne bacterial infection caused by Ehrlichia species. Infects white blood cells. Ranges from mild febrile illness to severe multi-organ disease. Endemic in south-central and eastern US.",
+            severity: "medium", contagious: false, icd11_code: "1C31",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("fever",0.9,true), s("headache",0.8,true), s("fatigue",0.8,false), s("muscle pain",0.7,false), s("nausea",0.5,false), s("vomiting",0.4,false), s("confusion",0.5,false), s("rash",0.3,false), s("cough",0.3,false), s("joint pain",0.4,false)],
+            treatment: "Doxycycline 100mg BID (adults) or 2.2mg/kg BID (children) — start empirically, do not wait for confirmatory testing. Duration: minimum 3 days after defervescence, typically 5-14 days total. Rifampin alternative for doxycycline-allergic pregnant women.",
+            first_aid: "Seek medical care promptly for fever after tick bite. Remove tick with fine-tipped tweezers. Note date of tick exposure.",
+            prevention: "Tick bite prevention: DEET, permethrin-treated clothing, regular tick checks. Avoid tall grass and leaf litter. Shower within 2 hours of coming indoors. Prompt tick removal (<24h reduces transmission).",
+            risk_factors: vec![("tick exposure (Lone Star tick, deer tick)", "high"), ("outdoor activities in endemic areas", "high"), ("immunosuppression", "high"), ("age > 50", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Neurocysticercosis",
+            description: "CNS infection by larval stage of Taenia solium (pork tapeworm). Leading cause of acquired epilepsy in developing countries. Acquired by ingesting tapeworm eggs from contaminated food/water.",
+            severity: "high", contagious: false, icd11_code: "1F70",
+            age_group: "all", category: "neurological",
+            symptoms: vec![s("seizures",0.9,true), s("headache",0.7,true), s("nausea",0.5,false), s("vomiting",0.5,false), s("confusion",0.5,false), s("visual disturbances",0.4,false), s("focal neurological deficits",0.5,false), s("hydrocephalus symptoms",0.4,false), s("cognitive decline",0.3,false)],
+            treatment: "Antiparasitic: Albendazole 15mg/kg/day x10-14 days ± praziquantel. Corticosteroids (dexamethasone) before and during antiparasitic therapy to reduce inflammation. Antiepileptic drugs for seizure control. VP shunt for hydrocephalus. Surgery for intraventricular or giant cysts.",
+            first_aid: "For seizures: protect from injury, turn on side, time seizure. Do not restrain. Seek emergency care for first seizure or prolonged seizure (>5 min).",
+            prevention: "Proper sanitation and handwashing. Cook pork thoroughly (>63°C internal). Meat inspection programs. Mass treatment with praziquantel/niclosamide in endemic areas. Pig vaccination (TSOL18).",
+            risk_factors: vec![("travel to/residence in endemic areas (Latin America, Africa, Asia)", "high"), ("poor sanitation", "high"), ("consumption of undercooked pork", "moderate"), ("close contact with tapeworm carrier", "high")],
+        },
+        DiseaseEntry {
+            name: "Amebic Liver Abscess",
+            description: "Hepatic abscess caused by Entamoeba histolytica. Complication of intestinal amebiasis. Most common extraintestinal manifestation. More frequent in males 20-40 years.",
+            severity: "high", contagious: false, icd11_code: "1A36",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("right upper quadrant pain",0.9,true), s("fever",0.9,true), s("hepatomegaly",0.7,true), s("right shoulder pain (referred)",0.5,false), s("weight loss",0.5,false), s("nausea",0.5,false), s("diarrhea",0.4,false), s("cough",0.3,false), s("jaundice",0.3,false), s("night sweats",0.5,false)],
+            treatment: "Metronidazole 750mg TID x7-10 days or tinidazole 2g/day x5 days for tissue disease. Follow with luminal agent: paromomycin 25-35mg/kg/day TID x7 days. Percutaneous drainage for abscesses >5cm, left lobe (rupture risk), or failure to respond in 5-7 days. Surgery rarely needed.",
+            first_aid: "Seek urgent medical care for right upper abdominal pain with fever. Stay hydrated. Avoid alcohol.",
+            prevention: "Safe drinking water (boil or filter). Hand hygiene. Avoid raw vegetables in endemic areas. Treat asymptomatic cyst passers. Proper sewage disposal.",
+            risk_factors: vec![("travel to/residence in tropics/subtropics", "high"), ("poor sanitation", "high"), ("male sex", "moderate"), ("alcohol use", "moderate"), ("immunosuppression", "high")],
+        },
+        DiseaseEntry {
+            name: "Melioidosis",
+            description: "Infection caused by Burkholderia pseudomallei, a soil/water saprophyte in tropical regions. Highly variable presentation — called 'the great mimicker'. Mortality 10-50% depending on access to care.",
+            severity: "high", contagious: false, icd11_code: "1C14",
+            age_group: "adults", category: "infectious",
+            symptoms: vec![s("fever",0.9,true), s("cough",0.7,true), s("chest pain",0.5,false), s("headache",0.5,false), s("weight loss",0.5,false), s("muscle pain",0.5,false), s("skin abscess",0.6,false), s("joint pain",0.4,false), s("abdominal pain",0.4,false), s("confusion",0.4,false)],
+            treatment: "Intensive phase (≥10-14 days IV): Meropenem 1g Q8H or ceftazidime 2g Q6H. Add TMP-SMX for neurological/bone/joint/prostate involvement. Eradication phase: TMP-SMX (or amoxicillin-clavulanate) for ≥3-6 months. Abscess drainage. High relapse rate if eradication shortened.",
+            first_aid: "Seek medical attention for unexplained fever in tropical setting, especially with diabetes. Cover skin wounds.",
+            prevention: "Avoid contact with soil/water in endemic areas (SE Asia, N Australia) especially during monsoon season. Wear boots/gloves for farming. Boil water. No approved vaccine.",
+            risk_factors: vec![("diabetes mellitus", "high"), ("chronic kidney disease", "high"), ("alcoholism", "high"), ("occupational soil/water exposure in tropics", "high"), ("thalassemia", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Chromoblastomycosis",
+            description: "Chronic fungal skin infection caused by dematiaceous (darkly pigmented) fungi. Acquired through traumatic inoculation (splinters, thorns). Common in tropical agricultural workers.",
+            severity: "low", contagious: false, icd11_code: "1F2D",
+            age_group: "adults", category: "dermatological",
+            symptoms: vec![s("slow-growing warty skin nodules",0.9,true), s("cauliflower-like skin lesions",0.8,true), s("skin nodules on legs or arms",0.7,false), s("mild itching",0.4,false), s("secondary bacterial infection",0.4,false), s("lymphedema of affected limb",0.3,false)],
+            treatment: "Combination therapy preferred. Itraconazole 200-400mg/day + terbinafine 250-500mg/day. Cryotherapy with liquid nitrogen for small lesions. Surgical excision for localized disease. Duration: months to years depending on extent. Monitor for squamous cell carcinoma in chronic lesions.",
+            first_aid: "Clean and cover any puncture wounds from plant material. Seek dermatology referral for growing warty skin lesions that don't heal.",
+            prevention: "Wear protective footwear and gloves during agricultural work. Clean traumatic wounds promptly. Early treatment of small lesions prevents extensive disease.",
+            risk_factors: vec![("agricultural work in tropics", "high"), ("barefoot walking", "high"), ("male sex", "moderate"), ("trauma from plant material (thorns, splinters)", "high")],
+        },
+        DiseaseEntry {
+            name: "Trichinosis",
+            description: "Parasitic disease caused by Trichinella species from eating undercooked meat (usually pork or wild game) containing encysted larvae. Larvae migrate to skeletal muscle.",
+            severity: "medium", contagious: false, icd11_code: "1F66",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("muscle pain",0.9,true), s("fever",0.8,true), s("periorbital edema (swelling around eyes)",0.8,true), s("diarrhea",0.6,false), s("abdominal pain",0.5,false), s("fatigue",0.6,false), s("headache",0.5,false), s("rash",0.3,false), s("eosinophilia",0.6,false), s("muscle weakness",0.5,false)],
+            treatment: "Antiparasitic: Albendazole 400mg BID x8-14 days or mebendazole 200-400mg TID x3 days then 400-500mg TID x10 days. Corticosteroids (prednisone) for severe myocarditis or CNS involvement. Analgesics for muscle pain. Most mild cases self-resolve.",
+            first_aid: "Seek medical care if fever and muscle pain develop 1-4 weeks after eating undercooked meat. Note specific meats consumed.",
+            prevention: "Cook pork and wild game to ≥71°C (160°F) internal temperature. Freezing (-15°C for 20 days) kills most Trichinella species (not T. nativa in arctic game). Meat inspection programs.",
+            risk_factors: vec![("consumption of undercooked pork", "high"), ("wild game consumption (bear, boar, walrus)", "high"), ("home-raised pigs", "moderate"), ("travel to regions with poor meat inspection", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Cryptosporidiosis",
+            description: "Diarrheal disease caused by Cryptosporidium parasites. Major cause of waterborne illness worldwide. Self-limiting in immunocompetent; chronic and life-threatening in AIDS patients.",
+            severity: "low", contagious: true, icd11_code: "1A37",
+            age_group: "all", category: "gastrointestinal",
+            symptoms: vec![s("watery diarrhea",0.9,true), s("abdominal cramps",0.7,true), s("nausea",0.6,false), s("vomiting",0.4,false), s("fever",0.4,false), s("dehydration",0.6,false), s("weight loss",0.5,false), s("fatigue",0.5,false)],
+            treatment: "Immunocompetent: Nitazoxanide 500mg BID x3 days (adults), supportive care with ORS. Usually self-limiting in 1-2 weeks. HIV/AIDS: Antiretroviral therapy (immune reconstitution is key), nitazoxanide, supportive care. Aggressive rehydration in children and elderly.",
+            first_aid: "Maintain hydration with ORS or clear fluids. Monitor for signs of severe dehydration (especially in children). Seek medical care if symptoms persist >3 days.",
+            prevention: "Safe drinking water (boil or filter — chlorine is NOT effective against Crypto). Handwashing after toilet/diaper changes. Avoid swallowing recreational water. Exclude infected persons from swimming pools for 2 weeks after symptoms resolve.",
+            risk_factors: vec![("HIV/AIDS with low CD4 count", "high"), ("contaminated water supply", "high"), ("daycare attendance (children)", "moderate"), ("recreational water exposure", "moderate"), ("travel to developing countries", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Listeriosis",
+            description: "Serious bacterial infection caused by Listeria monocytogenes from contaminated food. Primarily affects pregnant women, neonates, elderly, and immunocompromised. Can cause meningitis, sepsis, and pregnancy loss.",
+            severity: "high", contagious: false, icd11_code: "1C18",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("fever",0.9,true), s("muscle pain",0.7,true), s("headache",0.7,false), s("nausea",0.6,false), s("diarrhea",0.5,false), s("neck stiffness",0.6,false), s("confusion",0.6,false), s("seizures",0.4,false), s("loss of balance",0.4,false), s("vomiting",0.5,false)],
+            treatment: "First-line: IV Ampicillin 2g Q4H ± gentamicin for synergy. Duration: 14-21 days (meningitis), 7-14 days (bacteremia). TMP-SMX for penicillin-allergic patients. Neonates: Ampicillin + gentamicin. Dexamethasone NOT recommended (unlike pneumococcal meningitis).",
+            first_aid: "Seek immediate medical care for fever with headache/neck stiffness, especially if pregnant or immunocompromised. Note recent food history.",
+            prevention: "Avoid soft cheeses, deli meats, smoked fish, unpasteurized dairy (especially during pregnancy). Reheat deli meats to steaming hot. Separate raw and ready-to-eat foods. Refrigerate promptly, consume leftovers within 3-4 days.",
+            risk_factors: vec![("pregnancy", "high"), ("age > 65", "high"), ("immunosuppressive therapy", "high"), ("HIV/AIDS", "high"), ("consumption of deli meats, soft cheeses", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Whipple's Disease",
+            description: "Rare chronic systemic infection caused by Tropheryma whipplei. Affects GI tract, joints, CNS, and cardiovascular system. Predominantly affects middle-aged white males.",
+            severity: "medium", contagious: false, icd11_code: "1C1E",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("diarrhea",0.8,true), s("weight loss",0.8,true), s("joint pain",0.7,true), s("abdominal pain",0.6,false), s("steatorrhea",0.5,false), s("fever",0.5,false), s("lymphadenopathy",0.4,false), s("cognitive decline",0.4,false), s("cardiac murmur",0.3,false), s("skin hyperpigmentation",0.4,false)],
+            treatment: "Induction: Ceftriaxone 2g/day IV x14 days (or meropenem). Maintenance: TMP-SMX DS BID x12 months minimum. Alternative maintenance: Doxycycline + hydroxychloroquine x12-18 months. Monitor with periodic duodenal biopsy. CNS involvement may require longer treatment.",
+            first_aid: "Seek medical attention for chronic diarrhea with joint pain and weight loss. Note duration of symptoms.",
+            prevention: "No specific prevention (organism is ubiquitous in environment). Early diagnosis prevents irreversible CNS damage. Maintain awareness in patients with chronic arthralgia followed by GI symptoms.",
+            risk_factors: vec![("male sex", "moderate"), ("white European descent", "moderate"), ("age 40-60", "moderate"), ("outdoor/farming occupations", "low"), ("HLA-B27 positive", "low")],
+        },
     ]
 }
 
@@ -6496,6 +6662,27 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("huge spleen", "massive splenomegaly"),
         ("big spleen", "massive splenomegaly"),
         ("swollen spleen", "enlarged spleen"),
+        // v0.34.0 synonyms
+        ("brain infection", "encephalitis"),
+        ("mouse disease", "hantavirus"),
+        ("valley fever", "coccidioidomycosis"),
+        ("cave disease", "histoplasmosis"),
+        ("bat cave disease", "histoplasmosis"),
+        ("tick fever", "ehrlichiosis"),
+        ("brain worms", "seizures"),
+        ("liver abscess", "right upper quadrant pain"),
+        ("raw meat", "muscle pain"),
+        ("watery poop", "watery diarrhea"),
+        ("greasy stool", "steatorrhea"),
+        ("oily stool", "steatorrhea"),
+        ("foul smelling stool", "steatorrhea"),
+        ("stiff jaw", "jaw stiffness (lockjaw)"),
+        ("difficulty opening mouth", "trismus"),
+        ("swollen liver", "hepatomegaly"),
+        ("big liver", "hepatomegaly"),
+        ("brain seizure", "seizures"),
+        ("coughing blood", "hemoptysis"),
+        ("blood in spit", "hemoptysis"),
     ]
 }
 
@@ -6508,7 +6695,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 396, "Expected at least 396 diseases, got {count}");
+        assert!(count >= 411, "Expected at least 411 diseases, got {count}");
     }
 
     #[test]
@@ -6558,7 +6745,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "33.0");
+        assert_eq!(ver, "34.0");
     }
 
     #[test]

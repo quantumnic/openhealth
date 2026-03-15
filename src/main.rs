@@ -301,6 +301,12 @@ pub enum Commands {
     },
     /// Database health summary — categories, severity breakdown, top risk factors
     Summary,
+    /// Travel health risk assessment by region — diseases, vaccines, and advice
+    #[command(name = "travel-risk")]
+    TravelRisk {
+        /// Region name, e.g. "africa", "asia", "latin america" (omit to list all)
+        region: Option<String>,
+    },
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -470,6 +476,9 @@ fn main() {
         }
         Commands::Summary => {
             commands::summary::run(&conn, cli.json);
+        }
+        Commands::TravelRisk { region } => {
+            commands::travel_risk::run(&conn, region.as_deref(), cli.json);
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);
