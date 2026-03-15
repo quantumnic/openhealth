@@ -42,3 +42,5 @@ pub mod vaccine;
 pub mod onset;
 pub mod nutrition;
 pub mod polypharm;
+pub mod glossary;
+pub mod water_safety;

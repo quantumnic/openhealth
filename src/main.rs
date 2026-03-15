@@ -274,6 +274,17 @@ pub enum Commands {
         /// Comma-separated medication names, e.g. "warfarin, aspirin, ibuprofen"
         drugs: String,
     },
+    /// Medical terminology glossary — plain-language definitions
+    Glossary {
+        /// Search for a term (partial match). Omit to list all.
+        query: Option<String>,
+    },
+    /// Water purification and safety guide — methods for making water safe to drink
+    #[command(name = "water-safety")]
+    WaterSafety {
+        /// Filter by method name (boiling, sodis, chlorination, ceramic, cloth, tablets)
+        method: Option<String>,
+    },
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -437,6 +448,12 @@ fn main() {
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);
+        }
+        Commands::Glossary { query } => {
+            commands::glossary::run(query.as_deref(), cli.json);
+        }
+        Commands::WaterSafety { method } => {
+            commands::water_safety::run(method.as_deref(), cli.json);
         }
     }
 }

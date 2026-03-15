@@ -334,7 +334,12 @@ fn fuzzy_match(input: &str, symptom: &str) -> bool {
             if sw.len() < 3 {
                 continue;
             }
-            if iw == sw || sw.contains(iw) || iw.contains(sw) {
+            if iw == sw {
+                return true;
+            }
+            // Require minimum 4 chars for substring matching to avoid
+            // false positives like "testicular" matching "tic"
+            if (iw.len() >= 4 && sw.contains(iw)) || (sw.len() >= 4 && iw.contains(sw)) {
                 return true;
             }
             // Typo tolerance: allow edit distance ≤ 1 for words ≥ 5 chars
@@ -568,6 +573,13 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Carbon Monoxide Poisoning", vec!["rash", "diarrhea", "cough"]);
     map.insert("Ankylosing Spondylitis", vec!["rash", "diarrhea", "cough"]);
     map.insert("Heat Stroke", vec!["hypothermia", "shivering", "rash"]);
+    // v0.31.0 negative evidence
+    map.insert("Buruli Ulcer", vec!["fever", "cough", "diarrhea"]);
+    map.insert("Dracunculiasis (Guinea Worm Disease)", vec!["cough", "rash", "headache"]);
+    map.insert("Noma (Cancrum Oris)", vec!["cough", "diarrhea", "rash"]);
+    map.insert("Ciguatera Fish Poisoning", vec!["fever", "rash", "cough"]);
+    map.insert("Ascariasis", vec!["fever", "rash", "chest pain"]);
+    map.insert("Kwashiorkor", vec!["cough", "rash", "chest pain"]);
     map
 }
 
@@ -2939,5 +2951,103 @@ mod tests_v28 {
         let cs = results.iter().find(|r| r.disease_name == "Crush Syndrome");
         assert!(cs.is_some(), "Crush Syndrome should appear");
         assert!(cs.unwrap().probability > 30.0);
+    }
+}
+
+// ── v0.31.0 scorer tests ──────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_v31 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_buruli_ulcer() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["painless skin nodule", "large painless ulcer with undermined edges"]);
+        let bu = results.iter().find(|r| r.disease_name == "Buruli Ulcer");
+        assert!(bu.is_some(), "Buruli Ulcer should appear");
+        assert!(bu.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_guinea_worm() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["painful blister on lower limb", "worm emerging from skin"]);
+        let gw = results.iter().find(|r| r.disease_name == "Dracunculiasis (Guinea Worm Disease)");
+        assert!(gw.is_some(), "Guinea Worm should appear");
+        assert!(gw.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_noma() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(4), sex: None };
+        let results = score_symptoms_with_context(&conn, &["gum ulceration", "tissue necrosis of face", "fever"], &child_ctx);
+        let nm = results.iter().find(|r| r.disease_name == "Noma (Cancrum Oris)");
+        assert!(nm.is_some(), "Noma should appear");
+        assert!(nm.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_ciguatera() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["nausea", "diarrhea", "temperature reversal (cold feels hot)"]);
+        let cig = results.iter().find(|r| r.disease_name == "Ciguatera Fish Poisoning");
+        assert!(cig.is_some(), "Ciguatera should appear");
+        assert!(cig.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_ascariasis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["abdominal pain", "visible worms in stool", "abdominal distension"]);
+        let asc = results.iter().find(|r| r.disease_name == "Ascariasis");
+        assert!(asc.is_some(), "Ascariasis should appear");
+        assert!(asc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_kwashiorkor() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(3), sex: None };
+        let results = score_symptoms_with_context(&conn, &["bilateral pedal edema", "distended abdomen", "hair discoloration (reddish-orange)"], &child_ctx);
+        let kw = results.iter().find(|r| r.disease_name == "Kwashiorkor");
+        assert!(kw.is_some(), "Kwashiorkor should appear");
+        assert!(kw.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_worms_in_poop() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["worms in poop", "belly pain"]);
+        assert!(!results.is_empty(), "worms in poop + belly pain should match via synonyms");
+    }
+
+    #[test]
+    fn test_synonym_swollen_leg() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["swollen leg", "thickened skin"]);
+        assert!(!results.is_empty(), "swollen leg should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_swollen_belly() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["swollen belly", "edema"]);
+        assert!(!results.is_empty(), "swollen belly should expand via synonym");
+    }
+
+    #[test]
+    fn test_negative_evidence_ciguatera() {
+        let conn = db::init_memory_database().unwrap();
+        let with_fever = score_symptoms(&conn, &["nausea", "diarrhea", "temperature reversal (cold feels hot)", "fever"]);
+        let without_fever = score_symptoms(&conn, &["nausea", "diarrhea", "temperature reversal (cold feels hot)"]);
+        let cig_with = with_fever.iter().find(|r| r.disease_name == "Ciguatera Fish Poisoning");
+        let cig_without = without_fever.iter().find(|r| r.disease_name == "Ciguatera Fish Poisoning");
+        if let (Some(cw), Some(cwo)) = (cig_with, cig_without) {
+            assert!(cwo.probability >= cw.probability,
+                "Ciguatera should score same or lower with fever (negative evidence)");
+        }
     }
 }

@@ -30,7 +30,7 @@ OpenHealth is a **fully offline** medical diagnostic tool that:
 - 📊 **Ranks possible conditions** with confidence percentages
 - 🚦 **Triages severity**: 🟢 Home care / 🟡 See doctor / 🔴 Emergency
 - 💊 **Provides WHO treatment protocols** with first aid instructions
-- 🛡️ **Covers 185+ diseases** including the major killers in developing countries
+- 🛡️ **Covers 475+ diseases** including the major killers in developing countries
 - 📴 **Works completely offline** — no internet, no API keys, no cloud
 
 ## 🚀 Installation
@@ -104,6 +104,22 @@ openhealth --json timeline "covid-19"
 ```
 Visualize expected disease progression phases with timeframes, key symptoms per phase, and warning signs for escalation.
 
+### Medical Glossary *(new in v0.31)*
+```bash
+openhealth glossary
+openhealth glossary "sepsis"
+openhealth --json glossary "ORS"
+```
+Plain-language definitions of medical terminology. Designed for community health workers and non-medical users.
+
+### Water Safety Guide *(new in v0.31)*
+```bash
+openhealth water-safety
+openhealth water-safety "boiling"
+openhealth water-safety "sodis"
+```
+Step-by-step water purification methods for field use — boiling, SODIS, chlorination, filtration, and more. Includes WHO ORS recipe.
+
 ### Database Status
 ```bash
 openhealth update
@@ -112,7 +128,7 @@ Check database version and statistics.
 
 ## 🗃️ Diseases Covered
 
-OpenHealth includes detailed data for **200+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
+OpenHealth includes detailed data for **475+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
 
 | Category | Diseases |
 |----------|----------|
@@ -129,7 +145,9 @@ OpenHealth includes detailed data for **200+ conditions**, prioritizing the dise
 | **Oncological** | Lung, Breast, Cervical, Colorectal, Prostate, Ovarian, Pancreatic, Melanoma |
 | **Endocrine** | Thyroid Storm, PCOS, Addison's, Cushing's, Pheochromocytoma |
 | **Neurodevelopmental** | ADHD, Autism Spectrum Disorder |
-| **Other** | HIV, Hepatitis B/C, Rabies, Tetanus, Meningitis, Mpox, Sepsis |
+| **Neglected Tropical** | River Blindness, Elephantiasis, Trachoma, Buruli Ulcer, Guinea Worm, Hookworm, Ascariasis, Sleeping Sickness, Chagas |
+| **Nutritional** | Kwashiorkor, Scurvy, Rickets, Pellagra |
+| **Other** | HIV, Hepatitis B/C, Rabies, Tetanus, Meningitis, Mpox, Sepsis, Anthrax, Brucellosis, Noma |
 
 ## 🧠 How It Works
 

@@ -1793,7 +1793,7 @@ fn test_cli_symptoms_pericarditis() {
 #[test]
 fn test_cli_symptoms_testicular_torsion() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["symptoms", "sudden severe testicular pain, testicular swelling, nausea"])
+        .args(["--json", "symptoms", "sudden severe testicular pain, testicular swelling, nausea"])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
@@ -2079,4 +2079,151 @@ fn test_cli_symptoms_organophosphate() {
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("Organophosphate"), "Should match organophosphate poisoning");
+}
+
+// ── v0.31.0 integration tests ──────────────────────────────────────────
+
+#[test]
+fn test_cli_glossary() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["glossary"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Glossary"), "Should show glossary header");
+    assert!(stdout.contains("Edema"), "Should contain Edema term");
+}
+
+#[test]
+fn test_cli_glossary_search() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["glossary", "sepsis"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Sepsis"), "Should find Sepsis");
+}
+
+#[test]
+fn test_cli_glossary_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "glossary", "fever"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"term\""), "Should output JSON with term field");
+}
+
+#[test]
+fn test_cli_water_safety() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["water-safety"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Water Safety"), "Should show water safety header");
+    assert!(stdout.contains("Boiling"), "Should contain Boiling method");
+}
+
+#[test]
+fn test_cli_water_safety_filter() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["water-safety", "sodis"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Solar"), "Should find SODIS method");
+}
+
+#[test]
+fn test_cli_water_safety_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "water-safety"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"name\""), "Should output JSON");
+}
+
+#[test]
+fn test_cli_disease_buruli_ulcer() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Buruli Ulcer"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Mycobacterium") || stdout.contains("Buruli"), "Should show Buruli Ulcer info");
+}
+
+#[test]
+fn test_cli_disease_kwashiorkor() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Kwashiorkor"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("malnutrition") || stdout.contains("Kwashiorkor"), "Should show Kwashiorkor info");
+}
+
+#[test]
+fn test_cli_disease_noma() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Noma (Cancrum Oris)"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("gangrenous") || stdout.contains("Noma"), "Should show Noma info");
+}
+
+#[test]
+fn test_cli_disease_guinea_worm() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Dracunculiasis (Guinea Worm Disease)"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Dracunculus") || stdout.contains("Guinea Worm"), "Should show Guinea Worm info");
+}
+
+#[test]
+fn test_cli_disease_ciguatera() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Ciguatera Fish Poisoning"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("ciguatoxin") || stdout.contains("Ciguatera"), "Should show Ciguatera info");
+}
+
+#[test]
+fn test_cli_disease_ascariasis() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Ascariasis"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("roundworm") || stdout.contains("Ascaris"), "Should show Ascariasis info");
+}
+
+#[test]
+fn test_cli_synonym_worms_in_poop() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "worms in poop, belly pain"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(!stdout.contains("No matching"), "Should find matches via synonym expansion");
 }

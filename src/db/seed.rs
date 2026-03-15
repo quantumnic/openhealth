@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '30.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '31.0')",
         [],
     )?;
     tx.commit()?;
@@ -5188,6 +5188,75 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Dress in layers. Protect extremities (gloves, insulated boots). Limit exposure time. Stay dry. Avoid alcohol in cold environments.",
             risk_factors: vec![("prolonged cold exposure", "high"), ("wet clothing", "moderate"), ("high altitude", "moderate"), ("peripheral vascular disease", "moderate"), ("alcohol intoxication", "moderate")],
         },
+        // ── v0.31.0 new diseases ──────────────────────────────────────────
+        DiseaseEntry {
+            name: "Buruli Ulcer",
+            description: "Chronic debilitating skin disease caused by Mycobacterium ulcerans. Third most common mycobacterial infection after TB and leprosy.",
+            severity: "medium", contagious: false, icd11_code: "1B25",
+            age_group: "all", category: "dermatological",
+            symptoms: vec![s("painless skin nodule",0.8,true), s("painless skin swelling",0.7,true), s("large painless ulcer with undermined edges",0.9,true), s("bone involvement",0.4,false), s("skin necrosis",0.6,false), s("limited joint movement",0.4,false)],
+            treatment: "8-week course of Rifampicin + Clarithromycin (or Moxifloxacin). Wound care and dressing. Surgery for large lesions or bone involvement. Physiotherapy to prevent disability.",
+            first_aid: "Keep wound clean and covered. Do not apply traditional remedies. Seek medical care early — small lesions respond better to treatment.",
+            prevention: "No vaccine available. Wear protective clothing near water bodies. Prompt treatment of skin injuries. Report suspected cases early.",
+            risk_factors: vec![("exposure to stagnant water", "high"), ("tropical West/Central Africa", "high"), ("rural environment", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Dracunculiasis (Guinea Worm Disease)",
+            description: "Parasitic infection caused by Dracunculus medinensis worm, contracted by drinking contaminated water. Near eradication.",
+            severity: "medium", contagious: false, icd11_code: "1F6C",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("painful blister on lower limb",0.9,true), s("fever",0.5,false), s("nausea",0.4,false), s("worm emerging from skin",0.9,true), s("secondary wound infection",0.6,false), s("burning sensation in affected limb",0.7,true)],
+            treatment: "No drug treatment. Slowly extract worm by winding on a stick (few cm/day). Clean and bandage wound. Prevent secondary infection with antibiotics if needed. Tetanus prophylaxis.",
+            first_aid: "Do NOT pull worm out forcibly. Immerse affected area in cold water to encourage worm emergence. Wind exposed worm on gauze or stick gently. Keep wound clean.",
+            prevention: "Filter drinking water through fine cloth. Pipe filters for individual use. Treat water sources with temephos. Health education. Prevent infected persons from entering water sources.",
+            risk_factors: vec![("drinking unfiltered stagnant water", "high"), ("rural Chad, Ethiopia, Mali, South Sudan", "high")],
+        },
+        DiseaseEntry {
+            name: "Noma (Cancrum Oris)",
+            description: "Severe gangrenous infection destroying facial tissues. Primarily affects malnourished children in Sub-Saharan Africa. 90% fatality if untreated.",
+            severity: "high", contagious: false, icd11_code: "DA0D.0",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("facial swelling",0.8,true), s("gum ulceration",0.8,true), s("tissue necrosis of face",0.9,true), s("foul-smelling discharge",0.7,false), s("fever",0.6,false), s("difficulty eating",0.6,false), s("exposed bone or teeth",0.7,true)],
+            treatment: "Broad-spectrum antibiotics (metronidazole + amoxicillin). Nutritional rehabilitation. Wound debridement. Reconstructive surgery after stabilization. Treat underlying conditions (measles, malaria, malnutrition).",
+            first_aid: "Seek emergency medical care. Clean mouth gently. Provide nutritious soft foods and fluids. Keep wound clean.",
+            prevention: "Improve nutrition (especially in children). Vaccinate against measles. Treat infections early. Improve oral hygiene. Address poverty and malnutrition.",
+            risk_factors: vec![("severe malnutrition", "high"), ("poor oral hygiene", "high"), ("recent measles or malaria", "high"), ("poverty", "high"), ("age 2-6 years", "high")],
+        },
+        DiseaseEntry {
+            name: "Ciguatera Fish Poisoning",
+            description: "Foodborne illness from eating reef fish contaminated with ciguatoxin. Most common marine toxin poisoning worldwide.",
+            severity: "medium", contagious: false, icd11_code: "5C64.0",
+            age_group: "all", category: "toxicological",
+            symptoms: vec![s("nausea",0.7,true), s("vomiting",0.7,true), s("diarrhea",0.7,true), s("temperature reversal (cold feels hot)",0.9,true), s("tingling in hands and feet",0.7,false), s("joint pain",0.5,false), s("muscle pain",0.5,false), s("itching",0.5,false), s("bradycardia",0.4,false), s("weakness",0.5,false)],
+            treatment: "Supportive care: IV fluids, antiemetics. Mannitol IV for neurological symptoms (within 48h). Amitriptyline for chronic neurological symptoms. Avoid alcohol, nuts, and fish for months.",
+            first_aid: "Hydrate. Seek medical care if neurological symptoms develop. Do not induce vomiting. Note which fish was eaten.",
+            prevention: "Avoid eating large reef fish (barracuda, grouper, moray eel, snapper >2kg). Do not eat fish head, roe, or organs. Ciguatoxin is heat-stable — cooking does not help.",
+            risk_factors: vec![("eating large reef fish", "high"), ("tropical/subtropical coastal areas", "high"), ("Caribbean, Pacific islands", "high")],
+        },
+
+        DiseaseEntry {
+            name: "Ascariasis",
+            description: "Intestinal roundworm infection (Ascaris lumbricoides). Most common helminth infection globally, affecting ~800 million people.",
+            severity: "low", contagious: false, icd11_code: "1F60",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("abdominal pain",0.6,true), s("abdominal distension",0.6,true), s("nausea",0.5,false), s("vomiting",0.4,false), s("visible worms in stool",0.9,true), s("cough (larval migration)",0.4,false), s("malnutrition",0.5,false), s("intestinal obstruction",0.4,false)],
+            treatment: "Albendazole 400mg single dose or Mebendazole 500mg single dose. Pyrantel pamoate as alternative. Surgery if intestinal or biliary obstruction.",
+            first_aid: "If worm passed in stool, save for medical identification. Seek medical care. Stay hydrated.",
+            prevention: "Improved sanitation. Hand washing before meals and after defecation. Mass deworming in endemic areas. Proper food washing.",
+            risk_factors: vec![("poor sanitation", "high"), ("contaminated soil or food", "high"), ("children in endemic areas", "high")],
+        },
+
+        DiseaseEntry {
+            name: "Kwashiorkor",
+            description: "Severe protein-energy malnutrition with edema. Primarily affects children after weaning. Major killer in famine and food-insecure regions.",
+            severity: "high", contagious: false, icd11_code: "5B51",
+            age_group: "children", category: "nutritional",
+            symptoms: vec![s("bilateral pedal edema",0.9,true), s("distended abdomen",0.8,true), s("hair discoloration (reddish-orange)",0.7,true), s("skin peeling or flaking",0.7,false), s("irritability",0.6,false), s("loss of appetite",0.7,false), s("diarrhea",0.5,false), s("fatty liver",0.5,false), s("growth retardation",0.6,false), s("moon face",0.6,false)],
+            treatment: "WHO inpatient protocol: Stabilization (treat infections, dehydration, hypothermia). F-75 therapeutic milk. Transition to F-100 or RUTF. Micronutrient supplementation. Gradual refeeding (avoid refeeding syndrome).",
+            first_aid: "Keep child warm. Give small, frequent amounts of sugar water if conscious. Do NOT give large meals — risk of refeeding syndrome. Seek medical care urgently.",
+            prevention: "Adequate protein and calorie intake during weaning. Breastfeeding for first 2 years. Complementary feeding education. Food security programs.",
+            risk_factors: vec![("food insecurity", "high"), ("weaning period", "high"), ("famine or conflict", "high"), ("exclusive starch diet", "high")],
+        },
     ]
 }
 
@@ -6093,6 +6162,19 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("cola colored urine", "dark brown urine"),
         ("spine stiffness", "reduced spinal mobility"),
         ("rigid spine", "reduced spinal mobility"),
+
+        // v0.31.0 synonyms
+        ("skin lump", "painless skin nodule"),
+        ("worm coming out", "worm emerging from skin"),
+        ("worm in skin", "worm emerging from skin"),
+        ("face rotting", "tissue necrosis of face"),
+        ("hot cold reversal", "temperature reversal (cold feels hot)"),
+        ("worms in poop", "visible worms in stool"),
+        ("worms in stool", "visible worms in stool"),
+        ("swollen belly", "distended abdomen"),
+        ("potbelly", "distended abdomen"),
+        ("orange hair", "hair discoloration (reddish-orange)"),
+        ("puffy face", "moon face"),
     ]
 }
 
@@ -6155,7 +6237,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "30.0");
+        assert_eq!(ver, "31.0");
     }
 
     #[test]
