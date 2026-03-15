@@ -136,7 +136,16 @@ pub fn score_symptoms_with_context(
                     .get(&sym_lower)
                     .copied()
                     .unwrap_or(1) as f64;
-                specificity_bonus += (total_diseases / disease_count).ln().max(0.0) * 0.05;
+                let base_specificity = (total_diseases / disease_count).ln().max(0.0) * 0.05;
+                // Pathognomonic bonus: symptoms unique to 1-2 diseases get extra weight
+                let rarity_multiplier = if disease_count <= 1.0 {
+                    2.0
+                } else if disease_count <= 2.0 {
+                    1.5
+                } else {
+                    1.0
+                };
+                specificity_bonus += base_specificity * rarity_multiplier;
             } else if *is_primary {
                 missing_primary.push(sym_name.clone());
             }
@@ -589,6 +598,22 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Acute Rheumatic Fever", vec!["diarrhea", "rash", "cough"]);
     map.insert("African Trypanosomiasis (Sleeping Sickness)", vec!["rash", "cough", "diarrhea"]);
     map.insert("Interstitial Lung Disease", vec!["rash", "diarrhea", "joint swelling"]);
+    // v0.33.0 negative evidence
+    map.insert("Rabies Encephalitis", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Brucellosis", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Strongyloidiasis", vec!["fever", "chest pain", "joint pain"]);
+    map.insert("Hepatorenal Syndrome", vec!["rash", "cough", "fever"]);
+    map.insert("Chronic Pancreatitis", vec!["rash", "fever", "cough"]);
+    map.insert("Pituitary Adenoma", vec!["fever", "rash", "diarrhea"]);
+    map.insert("Myasthenic Crisis", vec!["rash", "fever", "diarrhea"]);
+    map.insert("Hemophagocytic Lymphohistiocytosis (HLH)", vec!["cough", "diarrhea", "joint pain"]);
+    map.insert("Posterior Reversible Encephalopathy Syndrome (PRES)", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Beriberi", vec!["rash", "joint pain", "diarrhea"]);
+    map.insert("Myxedema Coma", vec!["tachycardia", "rash", "diarrhea"]);
+    map.insert("Superior Vena Cava Syndrome", vec!["rash", "diarrhea", "lower limb swelling"]);
+    map.insert("Dermatomyositis", vec!["fever", "diarrhea", "cough"]);
+    map.insert("Visceral Leishmaniasis (Kala-azar)", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Esophageal Varices Bleeding", vec!["rash", "cough", "joint pain"]);
     map
 }
 
@@ -3186,6 +3211,119 @@ mod tests_v32 {
         if let (Some(hww), Some(hwo)) = (hw_with, hw_without) {
             assert!(hwo.probability >= hww.probability,
                 "Hookworm should score same or lower with cough (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_score_brucellosis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["undulating fever", "joint pain", "sweating"]);
+        let br = results.iter().find(|r| r.disease_name == "Brucellosis");
+        assert!(br.is_some(), "Brucellosis should appear");
+        assert!(br.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_hepatorenal_syndrome() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["decreased urine output", "jaundice", "ascites"]);
+        let hrs = results.iter().find(|r| r.disease_name == "Hepatorenal Syndrome");
+        assert!(hrs.is_some(), "Hepatorenal Syndrome should appear");
+        assert!(hrs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_chronic_pancreatitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chronic abdominal pain", "pain radiating to back", "steatorrhea"]);
+        let cp = results.iter().find(|r| r.disease_name == "Chronic Pancreatitis");
+        assert!(cp.is_some(), "Chronic Pancreatitis should appear");
+        assert!(cp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_pituitary_adenoma() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["headache", "visual field defects", "galactorrhea"]);
+        let pa = results.iter().find(|r| r.disease_name == "Pituitary Adenoma");
+        assert!(pa.is_some(), "Pituitary Adenoma should appear");
+        assert!(pa.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_beriberi() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["bilateral lower limb edema", "shortness of breath", "peripheral neuropathy"]);
+        let bb = results.iter().find(|r| r.disease_name == "Beriberi");
+        assert!(bb.is_some(), "Beriberi should appear");
+        assert!(bb.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_myxedema_coma() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["hypothermia", "altered mental status", "bradycardia"]);
+        let mc = results.iter().find(|r| r.disease_name == "Myxedema Coma");
+        assert!(mc.is_some(), "Myxedema Coma should appear");
+        assert!(mc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_dermatomyositis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["proximal muscle weakness", "heliotrope rash", "Gottron's papules"]);
+        let dm = results.iter().find(|r| r.disease_name == "Dermatomyositis");
+        assert!(dm.is_some(), "Dermatomyositis should appear");
+        assert!(dm.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_esophageal_varices() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["hematemesis", "melena", "tachycardia"]);
+        let ev = results.iter().find(|r| r.disease_name == "Esophageal Varices Bleeding");
+        assert!(ev.is_some(), "Esophageal Varices Bleeding should appear");
+        assert!(ev.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_vomiting_blood() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["vomiting blood", "black stool"]);
+        assert!(!results.is_empty(), "vomiting blood + black stool should match via synonyms");
+    }
+
+    #[test]
+    fn test_synonym_fatty_stool() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["fatty stool", "abdominal pain"]);
+        assert!(!results.is_empty(), "fatty stool should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_slow_heartbeat() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["slow heartbeat", "hypothermia"]);
+        assert!(!results.is_empty(), "slow heartbeat should expand to bradycardia");
+    }
+
+    #[test]
+    fn test_synonym_purple_eyelids() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["purple eyelids", "muscle weakness"]);
+        assert!(!results.is_empty(), "purple eyelids should expand via synonym");
+    }
+
+    #[test]
+    fn test_negative_evidence_myxedema_vs_tachycardia() {
+        let conn = db::init_memory_database().unwrap();
+        let with_tachy = score_symptoms(&conn, &["hypothermia", "altered mental status", "tachycardia"]);
+        let without_tachy = score_symptoms(&conn, &["hypothermia", "altered mental status"]);
+        let mc_with = with_tachy.iter().find(|r| r.disease_name == "Myxedema Coma");
+        let mc_without = without_tachy.iter().find(|r| r.disease_name == "Myxedema Coma");
+        if let (Some(mw), Some(mwo)) = (mc_with, mc_without) {
+            assert!(mwo.probability >= mw.probability,
+                "Myxedema Coma should score same or lower with tachycardia (negative evidence)");
         }
     }
 

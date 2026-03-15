@@ -46,3 +46,4 @@ pub mod glossary;
 pub mod water_safety;
 pub mod complication;
 pub mod age_risk;
+pub mod summary;

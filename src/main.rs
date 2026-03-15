@@ -299,6 +299,8 @@ pub enum Commands {
         #[arg(long)]
         sex: Option<String>,
     },
+    /// Database health summary — categories, severity breakdown, top risk factors
+    Summary,
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -465,6 +467,9 @@ fn main() {
         }
         Commands::AgeRisk { age, sex } => {
             commands::age_risk::run(&conn, age, sex.as_deref(), cli.json);
+        }
+        Commands::Summary => {
+            commands::summary::run(&conn, cli.json);
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);
