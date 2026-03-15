@@ -2337,3 +2337,126 @@ fn test_cli_synonym_elephant_leg() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(!stdout.contains("No matching"), "Should find matches for elephant leg via synonym");
 }
+
+// ── v0.37.0 integration tests ──
+
+#[test]
+fn test_disease_mycoplasma_pneumonia() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "disease", "Mycoplasma Pneumonia"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Mycoplasma") || stdout.contains("walking pneumonia") || stdout.contains("atypical"));
+}
+
+#[test]
+fn test_disease_scarlet_fever() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "disease", "Scarlet Fever"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Scarlet Fever") || stdout.contains("streptococcus"));
+}
+
+#[test]
+fn test_disease_goodpasture() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "disease", "Goodpasture Syndrome"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Goodpasture"));
+}
+
+#[test]
+fn test_disease_moyamoya() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "disease", "Moyamoya Disease"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Moyamoya"));
+}
+
+#[test]
+fn test_disease_hereditary_angioedema() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "disease", "Hereditary Angioedema"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Angioedema"));
+}
+
+#[test]
+fn test_disease_erysipelas() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "disease", "Erysipelas"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Erysipelas"));
+}
+
+#[test]
+fn test_disease_cat_scratch() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "disease", "Cat Scratch Disease"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Bartonella") || stdout.contains("Cat Scratch"));
+}
+
+#[test]
+fn test_contagion_command() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "contagion", "measles"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Measles") || stdout.contains("Airborne"));
+}
+
+#[test]
+fn test_contagion_command_json() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "--json", "contagion", "cholera"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Fecal-oral") || stdout.contains("Cholera"));
+}
+
+#[test]
+fn test_contagion_list_all() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "contagion"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Transmission") || stdout.contains("result"));
+}
+
+#[test]
+fn test_symptoms_walking_pneumonia_synonym() {
+    let output = std::process::Command::new("cargo")
+        .args(["run", "--", "symptoms", "walking pneumonia, headache, fatigue"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(!stdout.is_empty());
+}

@@ -661,6 +661,22 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Status Epilepticus", vec!["rash", "diarrhea", "cough"]);
     map.insert("Acute Angle-Closure Crisis", vec!["rash", "fever", "cough"]);
     map.insert("Peritonsillar Abscess (Quinsy)", vec!["rash", "diarrhea", "cough"]);
+    // v0.37.0 negative evidence
+    map.insert("Mycoplasma Pneumonia", vec!["rash", "diarrhea", "joint pain"]);
+    map.insert("Scarlet Fever", vec!["diarrhea", "cough", "joint pain"]);
+    map.insert("Coxsackievirus Myocarditis", vec!["rash", "diarrhea", "joint pain"]);
+    map.insert("Granulomatosis with Polyangiitis (Wegener's)", vec!["diarrhea", "rash", "chronic stable course"]);
+    map.insert("Goodpasture Syndrome", vec!["rash", "joint pain", "diarrhea"]);
+    map.insert("Primary Sclerosing Cholangitis", vec!["rash", "cough", "joint pain"]);
+    map.insert("Hemolytic Disease of the Newborn (HDN)", vec!["cough", "diarrhea", "rash"]);
+    map.insert("Moyamoya Disease", vec!["fever", "rash", "diarrhea"]);
+    map.insert("Boerhaave Syndrome (Esophageal Rupture)", vec!["rash", "diarrhea", "gradual onset"]);
+    map.insert("Hereditary Angioedema", vec!["itchy rash", "fever", "hives"]);
+    map.insert("Strongyloides Hyperinfection", vec!["joint pain", "rash", "headache"]);
+    map.insert("Chronic Mesenteric Ischemia", vec!["fever", "rash", "diarrhea"]);
+    map.insert("Cat Scratch Disease", vec!["cough", "diarrhea", "rash"]);
+    map.insert("Erysipelas", vec!["diarrhea", "cough", "joint pain"]);
+    map.insert("Henoch-Schönlein Purpura Nephritis", vec!["cough", "rash on trunk", "diarrhea"]);
     map
 }
 
@@ -3946,6 +3962,193 @@ mod tests_v36 {
         if let (Some(mw), Some(mwo)) = (me_with, me_without) {
             assert!(mwo.probability >= mw.probability,
                 "ME/CFS should score same or lower with fever (negative evidence)");
+        }
+    }
+}
+
+// ── v0.37.0 scorer tests ──
+
+#[cfg(test)]
+mod tests_v37 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_mycoplasma_pneumonia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["gradual onset dry cough", "low-grade fever", "headache", "fatigue"]);
+        let mp = results.iter().find(|r| r.disease_name == "Mycoplasma Pneumonia");
+        assert!(mp.is_some(), "Mycoplasma Pneumonia should appear");
+        assert!(mp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_scarlet_fever_v37() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(7), sex: None };
+        let results = score_symptoms_with_context(&conn, &["sandpaper-like red rash", "strawberry tongue", "sore throat", "high fever"], &child_ctx);
+        let sf = results.iter().find(|r| r.disease_name == "Scarlet Fever");
+        assert!(sf.is_some(), "Scarlet Fever should appear");
+        assert!(sf.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_coxsackievirus_myocarditis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chest pain", "shortness of breath", "fatigue", "palpitations", "fever"]);
+        let cm = results.iter().find(|r| r.disease_name == "Coxsackievirus Myocarditis");
+        assert!(cm.is_some(), "Coxsackievirus Myocarditis should appear");
+        assert!(cm.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_gpa_wegeners() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chronic sinusitis unresponsive to treatment", "bloody nasal discharge", "cough with hemoptysis"]);
+        let gpa = results.iter().find(|r| r.disease_name == "Granulomatosis with Polyangiitis (Wegener's)");
+        assert!(gpa.is_some(), "GPA should appear");
+        assert!(gpa.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_goodpasture() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["hemoptysis (coughing blood)", "hematuria (blood in urine)", "shortness of breath"]);
+        let gp = results.iter().find(|r| r.disease_name == "Goodpasture Syndrome");
+        assert!(gp.is_some(), "Goodpasture Syndrome should appear");
+        assert!(gp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_psc() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["jaundice", "pruritus (itching)", "fatigue"]);
+        let psc = results.iter().find(|r| r.disease_name == "Primary Sclerosing Cholangitis");
+        assert!(psc.is_some(), "PSC should appear");
+        assert!(psc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_moyamoya() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["recurrent transient ischemic attacks (TIAs)", "headache", "seizures"]);
+        let mm = results.iter().find(|r| r.disease_name == "Moyamoya Disease");
+        assert!(mm.is_some(), "Moyamoya Disease should appear");
+    }
+
+    #[test]
+    fn test_score_boerhaave() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe retrosternal chest pain after vomiting", "subcutaneous emphysema (crepitus in neck/chest)", "vomiting (preceding event)"]);
+        let bs = results.iter().find(|r| r.disease_name == "Boerhaave Syndrome (Esophageal Rupture)");
+        assert!(bs.is_some(), "Boerhaave Syndrome should appear");
+        assert!(bs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_hereditary_angioedema() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["recurrent swelling of face, lips, or tongue", "abdominal pain and swelling", "laryngeal edema (throat swelling, stridor)"]);
+        let hae = results.iter().find(|r| r.disease_name == "Hereditary Angioedema");
+        assert!(hae.is_some(), "Hereditary Angioedema should appear");
+        assert!(hae.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_chronic_mesenteric_ischemia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["postprandial abdominal pain (intestinal angina)", "food aversion / fear of eating (sitophobia)", "unintentional weight loss"]);
+        let cmi = results.iter().find(|r| r.disease_name == "Chronic Mesenteric Ischemia");
+        assert!(cmi.is_some(), "Chronic Mesenteric Ischemia should appear");
+        assert!(cmi.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_cat_scratch_disease() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["papule or pustule at scratch site", "regional lymph node swelling (lymphadenopathy)", "low-grade fever"]);
+        let csd = results.iter().find(|r| r.disease_name == "Cat Scratch Disease");
+        assert!(csd.is_some(), "Cat Scratch Disease should appear");
+        assert!(csd.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_erysipelas() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sharply demarcated raised red skin area", "skin warmth and tenderness", "fever and chills"]);
+        let er = results.iter().find(|r| r.disease_name == "Erysipelas");
+        assert!(er.is_some(), "Erysipelas should appear");
+        assert!(er.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_hsp_nephritis() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(8), sex: None };
+        let results = score_symptoms_with_context(&conn, &["palpable purpura (non-blanching rash on legs/buttocks)", "hematuria (blood in urine)", "proteinuria"], &child_ctx);
+        let hspn = results.iter().find(|r| r.disease_name == "Henoch-Schönlein Purpura Nephritis");
+        assert!(hspn.is_some(), "HSP Nephritis should appear");
+        assert!(hspn.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_walking_pneumonia() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["walking pneumonia", "headache"]);
+        assert!(!results.is_empty(), "walking pneumonia should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_coughing_up_blood() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["coughing up blood", "shortness of breath"]);
+        assert!(!results.is_empty(), "coughing up blood should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_mini_stroke() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["mini stroke", "headache"]);
+        assert!(!results.is_empty(), "mini stroke should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_afraid_to_eat() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["afraid to eat", "weight loss"]);
+        assert!(!results.is_empty(), "afraid to eat should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_swollen_glands() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["swollen glands", "fever"]);
+        assert!(!results.is_empty(), "swollen glands should expand via synonym");
+    }
+
+    #[test]
+    fn test_negative_evidence_mycoplasma() {
+        let conn = db::init_memory_database().unwrap();
+        let with_rash = score_symptoms(&conn, &["gradual onset dry cough", "headache", "rash"]);
+        let without_rash = score_symptoms(&conn, &["gradual onset dry cough", "headache"]);
+        let mp_with = with_rash.iter().find(|r| r.disease_name == "Mycoplasma Pneumonia");
+        let mp_without = without_rash.iter().find(|r| r.disease_name == "Mycoplasma Pneumonia");
+        if let (Some(mw), Some(mwo)) = (mp_with, mp_without) {
+            assert!(mwo.probability >= mw.probability,
+                "Mycoplasma should score same or lower with rash (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_negative_evidence_hereditary_angioedema() {
+        let conn = db::init_memory_database().unwrap();
+        let with_hives = score_symptoms(&conn, &["recurrent swelling of face, lips, or tongue", "itchy rash"]);
+        let without_hives = score_symptoms(&conn, &["recurrent swelling of face, lips, or tongue"]);
+        let hae_with = with_hives.iter().find(|r| r.disease_name == "Hereditary Angioedema");
+        let hae_without = without_hives.iter().find(|r| r.disease_name == "Hereditary Angioedema");
+        if let (Some(hw), Some(hwo)) = (hae_with, hae_without) {
+            assert!(hwo.probability >= hw.probability,
+                "HAE should score same or lower with itchy rash (negative evidence — HAE is non-itchy)");
         }
     }
 }

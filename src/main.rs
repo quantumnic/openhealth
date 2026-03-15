@@ -321,6 +321,11 @@ pub enum Commands {
         /// Search by disease name (partial match). Omit to list all.
         query: Option<String>,
     },
+    /// Transmission routes, infectious periods, and precautions for contagious diseases
+    Contagion {
+        /// Search by disease name or transmission route (omit to list all contagious diseases)
+        query: Option<String>,
+    },
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -499,6 +504,9 @@ fn main() {
         }
         Commands::Incubation { query } => {
             commands::incubation::run(query.as_deref(), cli.json);
+        }
+        Commands::Contagion { query } => {
+            commands::contagion::run(&conn, query.as_deref(), cli.json);
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);

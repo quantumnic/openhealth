@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '36.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '37.0')",
         [],
     )?;
     tx.commit()?;
@@ -6009,6 +6009,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Prompt treatment of streptococcal pharyngitis. Consider tonsillectomy after recurrent episodes. Good oral hygiene.",
             risk_factors: vec![("recurrent tonsillitis", "high"), ("young adults 20-40", "moderate"), ("smoking", "moderate"), ("poor dental hygiene", "moderate"), ("immunosuppression", "moderate")],
         },
+        // ── v0.37.0 diseases ──
+        DiseaseEntry {
+            name: "Mycoplasma Pneumonia",
+            description: "Atypical pneumonia caused by Mycoplasma pneumoniae ('walking pneumonia'). Common in young adults and children.",
+            severity: "medium", contagious: true, icd11_code: "CA40.0",
+            age_group: "all", category: "respiratory",
+            symptoms: vec![s("gradual onset dry cough",0.9,true), s("low-grade fever",0.7,true), s("headache",0.6,false), s("malaise",0.7,false), s("sore throat",0.5,false), s("ear pain",0.3,false), s("fatigue",0.6,false)],
+            treatment: "Macrolide antibiotics (azithromycin, clarithromycin). Doxycycline or fluoroquinolones for resistant cases. Supportive care.",
+            first_aid: "Rest, fluids, OTC fever reducers. Seek medical care if breathing worsens.",
+            prevention: "Hand hygiene, respiratory etiquette. Avoid close contact with infected individuals.",
+            risk_factors: vec![("school/college dormitory", "high"), ("military barracks", "high"), ("age 5-20 years", "moderate"), ("immunosuppression", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Scarlet Fever",
+            description: "Bacterial illness from group A streptococcus featuring sandpaper rash, strawberry tongue, and high fever.",
+            severity: "medium", contagious: true, icd11_code: "1B50",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("sandpaper-like red rash",0.9,true), s("strawberry tongue",0.8,true), s("sore throat",0.8,true), s("high fever",0.8,true), s("flushed face with perioral pallor",0.7,false), s("headache",0.4,false), s("swollen lymph nodes",0.5,false), s("skin peeling after rash resolves",0.6,false)],
+            treatment: "Penicillin or amoxicillin for 10 days. Erythromycin if penicillin-allergic. Antipyretics for fever.",
+            first_aid: "Keep child hydrated, cool compresses for rash discomfort, pain relief for sore throat.",
+            prevention: "Hand hygiene, avoid sharing utensils. Prompt treatment of strep throat prevents scarlet fever.",
+            risk_factors: vec![("age 5-15 years", "high"), ("close contact with strep carrier", "high"), ("crowded settings", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Coxsackievirus Myocarditis",
+            description: "Viral myocarditis caused by Coxsackievirus B, leading to inflammation and potential heart failure.",
+            severity: "high", contagious: true, icd11_code: "BC41",
+            age_group: "all", category: "cardiovascular",
+            symptoms: vec![s("chest pain",0.8,true), s("shortness of breath",0.8,true), s("fatigue",0.7,true), s("palpitations",0.7,false), s("fever",0.6,false), s("swelling in legs",0.5,false), s("rapid heartbeat",0.6,false), s("dizziness",0.4,false)],
+            treatment: "Supportive care: bed rest, heart failure management (ACE inhibitors, beta-blockers, diuretics). IVIG in severe cases. Avoid NSAIDs.",
+            first_aid: "Rest, avoid exertion. Seek emergency care if experiencing severe chest pain or fainting.",
+            prevention: "Hand hygiene, respiratory etiquette. No vaccine available.",
+            risk_factors: vec![("recent viral upper respiratory infection", "high"), ("neonates", "high"), ("immunosuppression", "moderate"), ("young adults", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Granulomatosis with Polyangiitis (Wegener's)",
+            description: "Rare autoimmune vasculitis affecting small/medium vessels — lungs, kidneys, upper airways.",
+            severity: "high", contagious: false, icd11_code: "4A44.0",
+            age_group: "adults", category: "autoimmune",
+            symptoms: vec![s("chronic sinusitis unresponsive to treatment",0.8,true), s("bloody nasal discharge",0.8,true), s("cough with hemoptysis",0.7,true), s("hematuria",0.7,false), s("joint pain",0.5,false), s("fatigue",0.6,false), s("fever",0.5,false), s("saddle nose deformity",0.6,false), s("skin ulcers or purpura",0.5,false)],
+            treatment: "Induction: cyclophosphamide + glucocorticoids, or rituximab + glucocorticoids. Maintenance: azathioprine or rituximab. Plasma exchange for severe renal involvement.",
+            first_aid: "Seek urgent medical care for hemoptysis or bloody urine. Keep well hydrated.",
+            prevention: "No known prevention. Early diagnosis and treatment prevent organ damage.",
+            risk_factors: vec![("age 40-65", "moderate"), ("northern European descent", "moderate"), ("ANCA positivity", "high")],
+        },
+        DiseaseEntry {
+            name: "Goodpasture Syndrome",
+            description: "Rare autoimmune disease with antibodies against glomerular and alveolar basement membranes causing kidney and lung damage.",
+            severity: "high", contagious: false, icd11_code: "4A44.Y",
+            age_group: "adults", category: "autoimmune",
+            symptoms: vec![s("hemoptysis (coughing blood)",0.9,true), s("hematuria (blood in urine)",0.9,true), s("shortness of breath",0.7,true), s("fatigue",0.6,false), s("nausea",0.4,false), s("pallor",0.5,false), s("chest pain",0.4,false), s("decreased urine output",0.6,false)],
+            treatment: "Plasmapheresis + immunosuppression (cyclophosphamide + corticosteroids). Dialysis if renal failure. Avoid smoking.",
+            first_aid: "Seek emergency care immediately for coughing blood or dark/bloody urine.",
+            prevention: "Smoking cessation (smoking triggers pulmonary hemorrhage). Avoid hydrocarbon fume exposure.",
+            risk_factors: vec![("smoking", "high"), ("hydrocarbon exposure", "high"), ("young men 20-30", "moderate"), ("older adults >60", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Primary Sclerosing Cholangitis",
+            description: "Chronic liver disease with inflammation and fibrosis of bile ducts, leading to cirrhosis.",
+            severity: "high", contagious: false, icd11_code: "DC15.0",
+            age_group: "adults", category: "hepatic",
+            symptoms: vec![s("jaundice",0.8,true), s("pruritus (itching)",0.8,true), s("fatigue",0.7,true), s("right upper quadrant pain",0.6,false), s("fever and chills (cholangitis episodes)",0.5,false), s("weight loss",0.5,false), s("dark urine",0.4,false)],
+            treatment: "Ursodeoxycholic acid (controversial). ERCP for dominant strictures. Liver transplant for end-stage disease. Cholangitis: IV antibiotics.",
+            first_aid: "Seek medical care for jaundice or severe itching. Stay hydrated.",
+            prevention: "No known prevention. Regular surveillance for cholangiocarcinoma. Colonoscopy for IBD.",
+            risk_factors: vec![("inflammatory bowel disease (ulcerative colitis)", "high"), ("male sex", "moderate"), ("age 30-50", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hemolytic Disease of the Newborn (HDN)",
+            description: "Fetal/neonatal condition where maternal antibodies attack fetal red blood cells, causing anemia and jaundice.",
+            severity: "high", contagious: false, icd11_code: "KA83",
+            age_group: "neonates", category: "hematologic",
+            symptoms: vec![s("severe neonatal jaundice",0.9,true), s("pallor",0.8,true), s("hepatosplenomegaly",0.7,true), s("edema (hydrops fetalis in severe cases)",0.7,false), s("lethargy",0.6,false), s("poor feeding",0.5,false), s("tachycardia",0.4,false)],
+            treatment: "Phototherapy for jaundice. Exchange transfusion for severe hyperbilirubinemia. Intrauterine transfusion if detected prenatally. IVIG.",
+            first_aid: "Seek immediate neonatal care for jaundice appearing within first 24 hours of life.",
+            prevention: "Anti-D immunoglobulin (RhoGAM) for Rh-negative mothers at 28 weeks and after delivery of Rh-positive infant.",
+            risk_factors: vec![("Rh-negative mother with Rh-positive fetus", "high"), ("ABO incompatibility", "moderate"), ("prior sensitizing pregnancy", "high")],
+        },
+        DiseaseEntry {
+            name: "Moyamoya Disease",
+            description: "Rare progressive cerebrovascular disorder with stenosis of internal carotid arteries and abnormal collateral vessel networks.",
+            severity: "high", contagious: false, icd11_code: "8B22",
+            age_group: "all", category: "neurological",
+            symptoms: vec![s("recurrent transient ischemic attacks (TIAs)",0.9,true), s("stroke symptoms (weakness, speech difficulty)",0.8,true), s("headache",0.6,false), s("seizures",0.5,false), s("cognitive decline",0.5,false), s("involuntary movements (chorea)",0.3,false)],
+            treatment: "Surgical revascularization: direct (STA-MCA bypass) or indirect (EDAS, EMS). Antiplatelet agents. No medical cure.",
+            first_aid: "Treat stroke symptoms as emergency — call emergency services immediately (FAST: Face, Arms, Speech, Time).",
+            prevention: "No primary prevention. Avoid dehydration, hyperventilation, and anemia which may trigger ischemic episodes.",
+            risk_factors: vec![("East Asian descent", "high"), ("family history", "moderate"), ("age peaks: 5-10 and 30-50", "moderate"), ("female sex", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Boerhaave Syndrome (Esophageal Rupture)",
+            description: "Spontaneous transmural perforation of the esophagus, usually from forceful vomiting. Surgical emergency.",
+            severity: "high", contagious: false, icd11_code: "DA23.0",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("severe retrosternal chest pain after vomiting",0.9,true), s("subcutaneous emphysema (crepitus in neck/chest)",0.8,true), s("vomiting (preceding event)",0.8,true), s("shortness of breath",0.7,false), s("fever",0.5,false), s("epigastric pain radiating to back",0.6,false), s("tachycardia",0.5,false)],
+            treatment: "Surgical emergency: primary repair within 24 hours. IV antibiotics, NPO, chest drainage. Endoscopic stent for contained leaks.",
+            first_aid: "Call emergency services immediately. Keep patient NPO (nothing by mouth). Position upright if conscious.",
+            prevention: "Moderate alcohol intake. Avoid forceful vomiting. Treat underlying causes of vomiting.",
+            risk_factors: vec![("forceful retching/vomiting", "high"), ("heavy alcohol use", "high"), ("bulimia", "moderate"), ("straining", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hereditary Angioedema",
+            description: "Genetic disorder with recurrent episodes of severe swelling (face, limbs, airways, GI tract) due to C1-inhibitor deficiency.",
+            severity: "high", contagious: false, icd11_code: "4A00.01",
+            age_group: "all", category: "immunologic",
+            symptoms: vec![s("recurrent swelling of face, lips, or tongue",0.9,true), s("abdominal pain and swelling",0.8,true), s("laryngeal edema (throat swelling, stridor)",0.8,true), s("non-itchy swelling (no urticaria)",0.7,false), s("nausea and vomiting during attacks",0.5,false), s("skin tightness before swelling",0.4,false)],
+            treatment: "Acute: C1-inhibitor concentrate, icatibant, ecallantide. Prophylaxis: lanadelumab, berotralstat, attenuated androgens (danazol). Epinephrine less effective than in allergic angioedema.",
+            first_aid: "If throat swelling occurs, seek emergency care immediately. Administer on-demand treatment if available.",
+            prevention: "Long-term prophylaxis. Avoid ACE inhibitors and estrogen-containing contraceptives. Carry emergency medication.",
+            risk_factors: vec![("family history (autosomal dominant)", "high"), ("ACE inhibitor use", "high"), ("estrogen exposure", "moderate"), ("trauma or surgery", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Strongyloides Hyperinfection",
+            description: "Severe disseminated Strongyloides stercoralis infection in immunosuppressed patients with massive larval burden.",
+            severity: "high", contagious: false, icd11_code: "1F68",
+            age_group: "adults", category: "infectious",
+            symptoms: vec![s("severe abdominal pain",0.8,true), s("diarrhea (potentially bloody)",0.7,true), s("cough and wheezing (pulmonary involvement)",0.7,true), s("fever",0.6,false), s("skin rash (larva currens — serpiginous urticaria)",0.6,false), s("gram-negative sepsis",0.7,false), s("weight loss",0.5,false)],
+            treatment: "Ivermectin (first-line). Albendazole as alternative. Treat gram-negative sepsis with broad-spectrum antibiotics. Reduce immunosuppression.",
+            first_aid: "Seek urgent medical care. Maintain hydration and nutrition.",
+            prevention: "Screen for Strongyloides before immunosuppressive therapy (esp. corticosteroids). Wear shoes in endemic areas.",
+            risk_factors: vec![("corticosteroid therapy", "high"), ("HTLV-1 infection", "high"), ("immunosuppression", "high"), ("tropical/subtropical residence", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Chronic Mesenteric Ischemia",
+            description: "Intestinal angina — chronic inadequate blood flow to intestines, usually from atherosclerosis of mesenteric arteries.",
+            severity: "high", contagious: false, icd11_code: "DB94",
+            age_group: "adults", category: "gastrointestinal",
+            symptoms: vec![s("postprandial abdominal pain (intestinal angina)",0.9,true), s("food aversion / fear of eating (sitophobia)",0.8,true), s("unintentional weight loss",0.8,true), s("nausea after eating",0.5,false), s("diarrhea or constipation",0.4,false), s("abdominal bruit",0.4,false)],
+            treatment: "Mesenteric revascularization: endovascular stenting (preferred) or surgical bypass. Nutritional support. Antiplatelet and statin therapy.",
+            first_aid: "Seek medical evaluation for unexplained weight loss with eating-related pain.",
+            prevention: "Cardiovascular risk factor control: smoking cessation, statin therapy, blood pressure control, diabetes management.",
+            risk_factors: vec![("atherosclerosis", "high"), ("smoking", "high"), ("age >60", "moderate"), ("peripheral vascular disease", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Cat Scratch Disease",
+            description: "Bacterial infection from Bartonella henselae, transmitted by cat scratches or bites. Self-limited in immunocompetent.",
+            severity: "low", contagious: false, icd11_code: "1C12.0",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("papule or pustule at scratch site",0.8,true), s("regional lymph node swelling (lymphadenopathy)",0.9,true), s("low-grade fever",0.6,false), s("fatigue",0.5,false), s("headache",0.4,false), s("body aches",0.3,false)],
+            treatment: "Usually self-limited (resolves in 2-4 months). Azithromycin for severe/persistent cases. Needle aspiration for suppurative nodes.",
+            first_aid: "Clean wound thoroughly. Warm compresses to swollen nodes. OTC pain relief.",
+            prevention: "Avoid cat scratches/bites. Flea control on cats. Do not allow cats to lick open wounds.",
+            risk_factors: vec![("cat ownership (especially kittens)", "high"), ("flea exposure", "moderate"), ("immunosuppression", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Erysipelas",
+            description: "Acute superficial bacterial skin infection (group A streptococcus) with sharply demarcated, raised, erythematous borders.",
+            severity: "medium", contagious: false, icd11_code: "1B70.2",
+            age_group: "all", category: "dermatologic",
+            symptoms: vec![s("sharply demarcated raised red skin area",0.9,true), s("skin warmth and tenderness",0.8,true), s("fever and chills",0.7,true), s("rapid spreading of redness",0.7,false), s("skin blistering (in severe cases)",0.4,false), s("swollen lymph nodes near affected area",0.5,false), s("malaise",0.5,false)],
+            treatment: "Penicillin V or amoxicillin (oral, mild cases). IV penicillin for severe cases. Elevate affected limb. Treat underlying predisposing conditions.",
+            first_aid: "Elevate affected area. Cool compresses for comfort. Seek medical care promptly for fever with spreading redness.",
+            prevention: "Treat skin breaks promptly. Manage lymphedema. Good skin hygiene. Compression stockings if recurrent leg episodes.",
+            risk_factors: vec![("lymphedema", "high"), ("skin break/wound", "high"), ("obesity", "moderate"), ("diabetes", "moderate"), ("venous insufficiency", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Henoch-Schönlein Purpura Nephritis",
+            description: "Renal complication of IgA vasculitis with glomerulonephritis — ranges from mild hematuria to nephrotic syndrome.",
+            severity: "high", contagious: false, icd11_code: "GB60.0",
+            age_group: "children", category: "renal",
+            symptoms: vec![s("palpable purpura (non-blanching rash on legs/buttocks)",0.9,true), s("hematuria (blood in urine)",0.9,true), s("proteinuria",0.8,true), s("abdominal pain",0.6,false), s("joint pain",0.6,false), s("edema (swelling)",0.5,false), s("hypertension",0.5,false)],
+            treatment: "Monitor renal function closely. Mild: supportive. Moderate-severe: corticosteroids, ACE inhibitors. Severe nephritis: pulse methylprednisolone + cyclophosphamide or mycophenolate.",
+            first_aid: "Seek medical evaluation for purpura with dark or bloody urine. Monitor blood pressure.",
+            prevention: "No primary prevention. Close follow-up of HSP patients for renal involvement (urinalysis for 6-12 months).",
+            risk_factors: vec![("age >10 at HSP onset", "high"), ("persistent purpura", "moderate"), ("male sex", "moderate"), ("nephrotic-range proteinuria at presentation", "high")],
+        },
     ]
 }
 
@@ -7075,6 +7241,24 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("non-stop seizure", "continuous seizure activity >5 minutes"),
         ("eye pressure", "hard globe on palpation"),
         ("seeing rainbow halos", "halos around lights"),
+        // v0.37.0 synonyms
+        ("walking pneumonia", "gradual onset dry cough"),
+        ("atypical pneumonia", "gradual onset dry cough"),
+        ("coughing up blood", "hemoptysis (coughing blood)"),
+        ("coughing blood", "hemoptysis (coughing blood)"),
+        ("blood in pee", "hematuria (blood in urine)"),
+        ("bloody pee", "hematuria (blood in urine)"),
+        ("face swelling", "recurrent swelling of face, lips, or tongue"),
+        ("tongue swelling", "recurrent swelling of face, lips, or tongue"),
+        ("lip swelling", "recurrent swelling of face, lips, or tongue"),
+        ("belly pain after eating", "postprandial abdominal pain (intestinal angina)"),
+        ("pain after eating", "postprandial abdominal pain (intestinal angina)"),
+        ("afraid to eat", "food aversion / fear of eating (sitophobia)"),
+        ("cat scratch", "papule or pustule at scratch site"),
+        ("swollen glands", "regional lymph node swelling (lymphadenopathy)"),
+        ("mini stroke", "recurrent transient ischemic attacks (TIAs)"),
+        ("red raised skin", "sharply demarcated raised red skin area"),
+        ("skin infection spreading", "rapid spreading of redness"),
     ]
 }
 
@@ -7087,7 +7271,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 426, "Expected at least 426 diseases, got {count}");
+        assert!(count >= 441, "Expected at least 441 diseases, got {count}");
     }
 
     #[test]
@@ -7137,7 +7321,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "36.0");
+        assert_eq!(ver, "37.0");
     }
 
     #[test]
@@ -7185,3 +7369,5 @@ mod tests {
 // Additional v30 diseases appended via seed extension
 
 // Additional v36 diseases appended via seed extension
+
+// Additional v37 diseases appended via seed extension
