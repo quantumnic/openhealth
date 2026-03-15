@@ -307,6 +307,15 @@ pub enum Commands {
         /// Region name, e.g. "africa", "asia", "latin america" (omit to list all)
         region: Option<String>,
     },
+    /// Weight-based medication dosage calculator
+    #[command(name = "dose-calc")]
+    DoseCalc {
+        /// Patient weight in kg, e.g. "70"
+        weight: f64,
+        /// Optional: filter by medication name or indication
+        #[arg(long)]
+        medication: Option<String>,
+    },
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -479,6 +488,9 @@ fn main() {
         }
         Commands::TravelRisk { region } => {
             commands::travel_risk::run(&conn, region.as_deref(), cli.json);
+        }
+        Commands::DoseCalc { weight, medication } => {
+            commands::dose_calc::run(weight, medication.as_deref(), cli.json);
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);

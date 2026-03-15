@@ -48,3 +48,4 @@ pub mod complication;
 pub mod age_risk;
 pub mod summary;
 pub mod travel_risk;
+pub mod dose_calc;
