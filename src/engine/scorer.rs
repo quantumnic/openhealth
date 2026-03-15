@@ -554,6 +554,20 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Chronic Urticaria", vec!["fever", "joint pain", "weight loss"]);
     map.insert("Varicose Veins", vec!["fever", "rash", "cough"]);
     map.insert("Benign Prostatic Hyperplasia", vec!["fever", "rash", "weight loss"]);
+    // v30 negative evidence
+    map.insert("Periapical Abscess", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Bruxism", vec!["fever", "rash", "diarrhea", "weight loss"]);
+    map.insert("Peripheral Artery Disease", vec!["fever", "rash", "cough"]);
+    map.insert("Neonatal Jaundice", vec!["rash", "cough", "diarrhea"]);
+    map.insert("Neonatal Sepsis", vec!["rash", "chronic pain"]);
+    map.insert("Turner Syndrome", vec!["fever", "cough", "diarrhea"]);
+    map.insert("Marfan Syndrome", vec!["fever", "rash", "weight gain"]);
+    map.insert("Crush Syndrome", vec!["rash", "cough", "sore throat"]);
+    map.insert("Fat Embolism Syndrome", vec!["diarrhea", "sore throat", "joint pain"]);
+    map.insert("Organophosphate Poisoning", vec!["mydriasis", "dry mouth", "constipation"]);
+    map.insert("Carbon Monoxide Poisoning", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Ankylosing Spondylitis", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Heat Stroke", vec!["hypothermia", "shivering", "rash"]);
     map
 }
 
@@ -2861,5 +2875,69 @@ mod tests_v28 {
             assert!(cwo.probability >= cw.probability,
                 "Contact Dermatitis should score same or lower with fever (negative evidence)");
         }
+    }
+
+    // v30 scorer tests
+    #[test]
+    fn test_score_periapical_abscess() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe toothache", "facial swelling", "foul taste in mouth"]);
+        let pa = results.iter().find(|r| r.disease_name == "Periapical Abscess");
+        assert!(pa.is_some(), "Periapical Abscess should appear");
+        assert!(pa.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_dvt() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["leg swelling", "calf pain", "leg warmth"]);
+        let dvt = results.iter().find(|r| r.disease_name == "Deep Vein Thrombosis");
+        assert!(dvt.is_some(), "DVT should appear");
+        assert!(dvt.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_organophosphate() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["excessive salivation", "miosis", "muscle fasciculations", "lacrimation"]);
+        let op = results.iter().find(|r| r.disease_name == "Organophosphate Poisoning");
+        assert!(op.is_some(), "Organophosphate Poisoning should appear");
+        assert!(op.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_heat_stroke() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["core temperature > 40C", "altered mental status", "hot dry skin"]);
+        let hs = results.iter().find(|r| r.disease_name == "Heat Stroke");
+        assert!(hs.is_some(), "Heat Stroke should appear");
+        assert!(hs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_ankylosing_spondylitis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["chronic lower back pain", "morning stiffness lasting > 30 min", "reduced spinal mobility"]);
+        let as_ = results.iter().find(|r| r.disease_name == "Ankylosing Spondylitis");
+        assert!(as_.is_some(), "Ankylosing Spondylitis should appear");
+        assert!(as_.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_carbon_monoxide() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["headache", "dizziness", "confusion", "cherry-red skin"]);
+        let co = results.iter().find(|r| r.disease_name == "Carbon Monoxide Poisoning");
+        assert!(co.is_some(), "Carbon Monoxide Poisoning should appear");
+        assert!(co.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_crush_syndrome() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["dark brown urine", "muscle weakness after compression", "swollen extremity"]);
+        let cs = results.iter().find(|r| r.disease_name == "Crush Syndrome");
+        assert!(cs.is_some(), "Crush Syndrome should appear");
+        assert!(cs.unwrap().probability > 30.0);
     }
 }

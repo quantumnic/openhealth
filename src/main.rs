@@ -269,6 +269,11 @@ pub enum Commands {
         #[arg(long)]
         assess: Option<String>,
     },
+    /// Polypharmacy checker — multi-drug interaction analysis
+    Polypharm {
+        /// Comma-separated medication names, e.g. "warfarin, aspirin, ibuprofen"
+        drugs: String,
+    },
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -426,6 +431,9 @@ fn main() {
             } else {
                 commands::nutrition::run(query.as_deref(), cli.json);
             }
+        }
+        Commands::Polypharm { drugs } => {
+            commands::polypharm::run(&conn, &drugs, cli.json);
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);

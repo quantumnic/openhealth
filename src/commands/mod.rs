@@ -41,3 +41,4 @@ pub mod lifestyle;
 pub mod vaccine;
 pub mod onset;
 pub mod nutrition;
+pub mod polypharm;

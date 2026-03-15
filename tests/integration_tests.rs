@@ -2012,3 +2012,71 @@ fn test_cli_disease_shingles() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("varicella") || stdout.contains("zoster") || stdout.contains("Shingles"), "Should show shingles info");
 }
+
+// v30 integration tests
+
+#[test]
+fn test_cli_polypharm_command() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["polypharm", "warfarin, aspirin, ibuprofen"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Interaction") || stdout.contains("bleeding"), "Should find warfarin-aspirin interaction");
+}
+
+#[test]
+fn test_cli_polypharm_no_interaction() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["polypharm", "acetaminophen, metformin"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("No known interactions") || stdout.contains("interactions"), "Should show result");
+}
+
+#[test]
+fn test_cli_polypharm_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["--json", "polypharm", "simvastatin, erythromycin"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"severity\""), "JSON output should contain severity field");
+}
+
+#[test]
+fn test_cli_disease_dvt_v30() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Deep Vein Thrombosis"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("clot") || stdout.contains("Thrombosis"), "Should show DVT info");
+}
+
+#[test]
+fn test_cli_disease_heat_stroke_v30() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["disease", "Heat Stroke"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("hyperthermia") || stdout.contains("Heat Stroke"), "Should show heat stroke info");
+}
+
+#[test]
+fn test_cli_symptoms_organophosphate() {
+    let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+        .args(["symptoms", "excessive salivation, miosis, muscle fasciculations"])
+        .output()
+        .expect("failed to execute");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Organophosphate"), "Should match organophosphate poisoning");
+}

@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '29.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '30.0')",
         [],
     )?;
     tx.commit()?;
@@ -5062,6 +5062,132 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Regular exercise. Healthy diet (limit red meat, increase vegetables). Limit caffeine and alcohol. Maintain healthy weight. Regular prostate screening after 50.",
             risk_factors: vec![("age > 50", "high"), ("family history", "moderate"), ("obesity", "moderate"), ("diabetes", "moderate"), ("sedentary lifestyle", "moderate")],
         },
+        // ── v30 diseases ──────────────────────────────────────────
+        DiseaseEntry {
+            name: "Periapical Abscess",
+            description: "Bacterial infection at the root tip of a tooth, usually from untreated dental caries or trauma. Can spread to surrounding tissue.",
+            severity: "medium", contagious: false, icd11_code: "DA0C.0",
+            age_group: "all", category: "dental",
+            symptoms: vec![s("severe toothache",0.9,true), s("tooth sensitivity to heat",0.7,true), s("facial swelling",0.7,false), s("swollen lymph nodes",0.5,false), s("fever",0.4,false), s("foul taste in mouth",0.6,false), s("pain when chewing",0.7,false)],
+            treatment: "Incision and drainage. Root canal therapy or extraction. Antibiotics (amoxicillin, clindamycin) for spreading infection. Analgesics.",
+            first_aid: "Rinse with warm salt water. Over-the-counter pain relief (ibuprofen). Do not apply aspirin to gums. Seek dental care urgently.",
+            prevention: "Regular dental checkups. Brush twice daily, floss. Treat cavities early. Avoid sugary foods.",
+            risk_factors: vec![("untreated dental caries", "high"), ("poor oral hygiene", "high"), ("diabetes", "moderate"), ("immunosuppression", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Bruxism",
+            description: "Involuntary grinding or clenching of teeth, often during sleep. Can cause dental damage, jaw pain, and headaches.",
+            severity: "low", contagious: false, icd11_code: "DA0F.0",
+            age_group: "all", category: "dental",
+            symptoms: vec![s("jaw pain",0.8,true), s("teeth grinding",0.9,true), s("headache",0.6,false), s("earache",0.5,false), s("facial pain",0.6,false), s("worn tooth enamel",0.7,true), s("disrupted sleep",0.5,false)],
+            treatment: "Custom mouth guard (occlusal splint). Stress management. Behavioral therapy. Muscle relaxants short-term. Botox injections for severe cases.",
+            first_aid: "Apply warm compress to jaw. Gentle jaw stretches. Avoid hard foods. OTC analgesics for pain.",
+            prevention: "Stress reduction techniques. Avoid caffeine and alcohol before bed. Regular dental exams. Good sleep hygiene.",
+            risk_factors: vec![("stress", "high"), ("anxiety", "high"), ("sleep disorders", "moderate"), ("caffeine use", "moderate"), ("alcohol use", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Deep Vein Thrombosis",
+            description: "Blood clot formation in deep veins, usually in the legs. Life-threatening if clot dislodges (pulmonary embolism).",
+            severity: "high", contagious: false, icd11_code: "BD72",
+            age_group: "adults", category: "vascular",
+            symptoms: vec![s("leg swelling",0.9,true), s("calf pain",0.8,true), s("leg warmth",0.7,false), s("leg redness",0.6,false), s("heavy legs",0.5,false), s("visible surface veins",0.4,false)],
+            treatment: "Anticoagulation: heparin initially, then warfarin or DOACs (rivaroxaban, apixaban). Compression stockings. Thrombolysis for massive DVT. IVC filter if anticoagulation contraindicated.",
+            first_aid: "Do not massage the affected leg. Elevate leg. Seek emergency care immediately. Do not walk long distances.",
+            prevention: "Stay active during long travel. Compression stockings for high-risk patients. Hydration. Early mobilization after surgery.",
+            risk_factors: vec![("immobility", "high"), ("recent surgery", "high"), ("cancer", "high"), ("oral contraceptives", "moderate"), ("obesity", "moderate"), ("age > 60", "moderate")],
+        },
+
+        DiseaseEntry {
+            name: "Neonatal Jaundice",
+            description: "Yellowing of skin/eyes in newborns due to elevated bilirubin. Common in first week of life. Severe cases risk kernicterus (brain damage).",
+            severity: "medium", contagious: false, icd11_code: "KB60",
+            age_group: "neonates", category: "neonatal",
+            symptoms: vec![s("yellow skin",0.9,true), s("yellow eyes",0.9,true), s("poor feeding",0.7,false), s("lethargy",0.6,false), s("high-pitched cry",0.5,false), s("dark urine",0.5,false)],
+            treatment: "Phototherapy (blue light). Exchange transfusion for severe cases. IV immunoglobulin for Rh/ABO incompatibility. Frequent feeding to promote bilirubin excretion.",
+            first_aid: "Ensure adequate feeding (breast or formula). Place baby in indirect sunlight briefly. Monitor skin color. Seek medical care if jaundice deepens.",
+            prevention: "Early and frequent breastfeeding. Rh immune globulin for Rh-negative mothers. Monitor bilirubin levels in at-risk newborns.",
+            risk_factors: vec![("prematurity", "high"), ("blood group incompatibility", "high"), ("breastfeeding difficulty", "moderate"), ("sibling with jaundice", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Neonatal Sepsis",
+            description: "Systemic bacterial infection in newborns (< 28 days). Early-onset (< 72h) often from maternal transmission; late-onset from nosocomial sources.",
+            severity: "high", contagious: false, icd11_code: "KA60",
+            age_group: "neonates", category: "neonatal",
+            symptoms: vec![s("fever in newborn",0.8,true), s("hypothermia",0.7,true), s("poor feeding",0.8,true), s("lethargy",0.7,false), s("rapid breathing in newborn",0.7,false), s("jaundice",0.5,false), s("abdominal distension",0.5,false), s("irritability",0.5,false)],
+            treatment: "Empiric IV antibiotics: ampicillin + gentamicin (early-onset), vancomycin + cefotaxime (late-onset). Blood culture-guided therapy. Supportive: IV fluids, oxygen, temperature regulation.",
+            first_aid: "Keep baby warm. Ensure airway clear. Rush to hospital immediately. Do not delay seeking care.",
+            prevention: "Intrapartum antibiotic prophylaxis for GBS-positive mothers. Hand hygiene in NICUs. Exclusive breastfeeding. Clean delivery practices.",
+            risk_factors: vec![("prematurity", "high"), ("prolonged rupture of membranes", "high"), ("maternal GBS colonization", "high"), ("low birth weight", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Turner Syndrome",
+            description: "Chromosomal condition affecting females — complete or partial absence of one X chromosome (45,X). Causes short stature, ovarian failure, and cardiac defects.",
+            severity: "medium", contagious: false, icd11_code: "LD50.0",
+            age_group: "all", category: "genetic",
+            symptoms: vec![s("short stature",0.9,true), s("delayed puberty",0.8,true), s("webbed neck",0.7,true), s("low hairline",0.5,false), s("swollen hands and feet at birth",0.6,false), s("widely spaced nipples",0.5,false), s("infertility",0.7,false)],
+            treatment: "Growth hormone therapy for short stature. Estrogen replacement at puberty. Cardiac monitoring and surgery if needed (coarctation of aorta). Fertility assistance (egg donation/IVF).",
+            first_aid: "Not an acute condition. Supportive care, psychological support. Regular cardiac and thyroid monitoring.",
+            prevention: "Not preventable (chromosomal). Prenatal diagnosis via karyotyping. Genetic counseling. Early intervention improves outcomes.",
+            risk_factors: vec![("random chromosomal event", "high")],
+        },
+        DiseaseEntry {
+            name: "Marfan Syndrome",
+            description: "Autosomal dominant connective tissue disorder caused by FBN1 gene mutation. Affects heart, eyes, skeleton, and blood vessels.",
+            severity: "high", contagious: false, icd11_code: "LD28.0",
+            age_group: "all", category: "genetic",
+            symptoms: vec![s("tall thin body habitus",0.8,true), s("long arms and fingers",0.7,true), s("chest deformity",0.6,false), s("lens subluxation",0.7,true), s("aortic root dilation",0.8,true), s("joint hypermobility",0.6,false), s("scoliosis",0.5,false), s("stretch marks",0.4,false)],
+            treatment: "Beta-blockers or ARBs to slow aortic dilation. Regular echocardiograms. Prophylactic aortic surgery when root > 5 cm. Lens surgery if needed. Avoid contact sports.",
+            first_aid: "If sudden severe chest/back pain: suspect aortic dissection — call emergency services immediately.",
+            prevention: "Not preventable (genetic). Genetic counseling. Regular cardiovascular surveillance. Avoid isometric exercise and contact sports.",
+            risk_factors: vec![("family history", "high"), ("FBN1 mutation", "high")],
+        },
+        DiseaseEntry {
+            name: "Crush Syndrome",
+            description: "Systemic response to prolonged muscle compression (earthquakes, building collapse). Release causes rhabdomyolysis, hyperkalemia, renal failure.",
+            severity: "high", contagious: false, icd11_code: "NB21",
+            age_group: "all", category: "trauma",
+            symptoms: vec![s("dark brown urine",0.9,true), s("muscle weakness after compression",0.8,true), s("swollen extremity",0.7,true), s("numbness in compressed limb",0.6,false), s("rapid heart rate",0.6,false), s("nausea",0.4,false), s("decreased urine output",0.7,false)],
+            treatment: "Aggressive IV fluid resuscitation (NS 1-1.5 L/hr) BEFORE extrication if possible. Cardiac monitoring for hyperkalemia. Calcium gluconate, insulin+glucose, sodium bicarbonate for hyperkalemia. Dialysis for renal failure. Fasciotomy if compartment syndrome.",
+            first_aid: "If trapped person found: start IV fluids before releasing compression if possible. Monitor cardiac rhythm. Keep warm. Call for specialized rescue team.",
+            prevention: "Building codes and earthquake preparedness. Rapid search and rescue. Pre-hospital fluid resuscitation protocols.",
+            risk_factors: vec![("earthquake/building collapse", "high"), ("prolonged entrapment > 1 hour", "high"), ("large muscle mass compressed", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Fat Embolism Syndrome",
+            description: "Fat globules enter bloodstream after long bone fractures or orthopedic surgery, causing respiratory and neurological dysfunction.",
+            severity: "high", contagious: false, icd11_code: "NB20",
+            age_group: "all", category: "trauma",
+            symptoms: vec![s("shortness of breath",0.8,true), s("petechial rash",0.9,true), s("confusion",0.8,true), s("rapid heart rate",0.6,false), s("fever",0.5,false), s("low oxygen saturation",0.7,false), s("anxiety",0.4,false)],
+            treatment: "Supportive care: high-flow oxygen, mechanical ventilation if needed. IV fluids. Early fracture fixation reduces incidence. Corticosteroids (controversial, sometimes used prophylactically). No specific antidote.",
+            first_aid: "Administer high-flow oxygen. Immobilize fractures. Monitor consciousness. Transport to hospital immediately.",
+            prevention: "Early surgical fixation of long bone fractures. Gentle handling during orthopedic procedures. Corticosteroid prophylaxis in high-risk patients (debated).",
+            risk_factors: vec![("long bone fracture", "high"), ("pelvic fracture", "high"), ("orthopedic surgery", "moderate"), ("multiple fractures", "high")],
+        },
+
+
+
+        DiseaseEntry {
+            name: "Heat Stroke",
+            description: "Life-threatening hyperthermia (core temp > 40°C/104°F) with central nervous system dysfunction. Medical emergency requiring immediate cooling.",
+            severity: "high", contagious: false, icd11_code: "NF01",
+            age_group: "all", category: "environmental",
+            symptoms: vec![s("core temperature > 40C",0.9,true), s("altered mental status",0.9,true), s("hot dry skin",0.7,true), s("rapid heart rate",0.6,false), s("headache",0.5,false), s("nausea",0.4,false), s("seizures",0.5,false), s("loss of consciousness",0.6,false)],
+            treatment: "Immediate aggressive cooling: ice water immersion, evaporative cooling, cold IV fluids. Airway management. IV fluid resuscitation. Benzodiazepines for shivering/seizures. Monitor for DIC, rhabdomyolysis, organ failure.",
+            first_aid: "Move to shade/cool area. Remove clothing. Apply cold water/ice packs to neck, armpits, groin. Fan the person. Call emergency services immediately.",
+            prevention: "Avoid prolonged heat exposure. Hydrate frequently. Wear light clothing. Acclimatize gradually. Never leave children/pets in vehicles.",
+            risk_factors: vec![("strenuous exercise in heat", "high"), ("elderly", "high"), ("dehydration", "high"), ("certain medications (anticholinergics, diuretics)", "moderate"), ("lack of acclimatization", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Frostbite",
+            description: "Tissue freezing injury from prolonged cold exposure. Severity ranges from superficial (skin only) to deep (muscle, bone). Extremities most affected.",
+            severity: "medium", contagious: false, icd11_code: "NF00",
+            age_group: "all", category: "environmental",
+            symptoms: vec![s("numbness in extremities",0.8,true), s("white or grayish-yellow skin",0.8,true), s("hard or waxy skin",0.7,true), s("clumsiness due to stiff joints",0.5,false), s("blistering after rewarming",0.6,false), s("tingling or burning sensation",0.5,false)],
+            treatment: "Rapid rewarming in 37-39°C water for 15-30 min. Do not rub affected area. Ibuprofen for anti-inflammatory effect. Aloe vera topical. Debridement of dead tissue. Possible amputation for severe cases. Tetanus prophylaxis.",
+            first_aid: "Get out of cold. Do not rub frostbitten area. Do not rewarm if risk of refreezing. Remove wet clothing. Warm with body heat or warm (not hot) water. Seek medical care.",
+            prevention: "Dress in layers. Protect extremities (gloves, insulated boots). Limit exposure time. Stay dry. Avoid alcohol in cold environments.",
+            risk_factors: vec![("prolonged cold exposure", "high"), ("wet clothing", "moderate"), ("high altitude", "moderate"), ("peripheral vascular disease", "moderate"), ("alcohol intoxication", "moderate")],
+        },
     ]
 }
 
@@ -5929,6 +6055,44 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("trouble starting to pee", "difficulty starting urination"),
         ("can't empty bladder", "incomplete bladder emptying"),
         ("dribbling pee", "dribbling after urination"),
+        // v30 synonyms
+        ("tooth pain", "severe toothache"),
+        ("teeth pain", "severe toothache"),
+        ("sensitive teeth", "tooth sensitivity to heat"),
+        ("grinding teeth", "teeth grinding"),
+        ("clenching teeth", "teeth grinding"),
+        ("jaw clenching", "teeth grinding"),
+        ("swollen leg", "leg swelling"),
+        ("calf cramp", "calf pain"),
+        ("leg cramp", "calf pain"),
+        ("walking pain in legs", "leg pain when walking"),
+        ("cold toes", "cold feet"),
+        ("yellow baby", "yellow skin"),
+        ("baby not eating", "poor feeding"),
+        ("baby won't feed", "poor feeding"),
+        ("floppy baby", "lethargy"),
+        ("too much drooling", "excessive salivation"),
+        ("watery eyes", "lacrimation"),
+        ("pinpoint pupils", "miosis"),
+        ("small pupils", "miosis"),
+        ("muscle twitching", "muscle fasciculations"),
+        ("back stiffness", "morning stiffness lasting > 30 min"),
+        ("lower back stiffness", "morning stiffness lasting > 30 min"),
+        ("overheating", "core temperature > 40C"),
+        ("heat exhaustion", "core temperature > 40C"),
+        ("frozen fingers", "numbness in extremities"),
+        ("frozen toes", "numbness in extremities"),
+        ("white fingers", "white or grayish-yellow skin"),
+        ("white toes", "white or grayish-yellow skin"),
+        ("blood clot in leg", "leg swelling"),
+        ("dvt", "leg swelling"),
+        ("cherry red lips", "cherry-red skin"),
+        ("co poisoning", "headache"),
+        ("pesticide poisoning", "excessive salivation"),
+        ("dark urine", "dark brown urine"),
+        ("cola colored urine", "dark brown urine"),
+        ("spine stiffness", "reduced spinal mobility"),
+        ("rigid spine", "reduced spinal mobility"),
     ]
 }
 
@@ -5991,7 +6155,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "29.0");
+        assert_eq!(ver, "30.0");
     }
 
     #[test]
@@ -6035,3 +6199,5 @@ mod tests {
 // Additional v27 diseases appended via seed extension
 
 // Additional v29 diseases appended via seed extension
+
+// Additional v30 diseases appended via seed extension
