@@ -646,6 +646,21 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Ebola Virus Disease", vec!["chronic onset", "joint pain", "rash"]);
     map.insert("Mpox (Monkeypox)", vec!["diarrhea", "cough", "joint pain"]);
     map.insert("Tularemia", vec!["rash", "diarrhea", "chronic onset"]);
+    // v0.36.0 negative evidence
+    map.insert("Rocky Mountain Spotted Fever", vec!["diarrhea", "cough", "chronic onset"]);
+    map.insert("Typhoid Fever", vec!["rash on extremities", "cough", "rapid onset"]);
+    map.insert("Norovirus Gastroenteritis", vec!["high fever", "rash", "bloody stool"]);
+    map.insert("Pertussis (Whooping Cough)", vec!["rash", "diarrhea", "high fever"]);
+    map.insert("Amoebic Dysentery", vec!["rash", "cough", "joint pain"]);
+    map.insert("Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)", vec!["fever", "rash", "acute onset"]);
+    map.insert("Croup (Laryngotracheobronchitis)", vec!["rash", "diarrhea", "high fever"]);
+    map.insert("Hand, Foot, and Mouth Disease", vec!["cough", "joint pain", "high fever"]);
+    map.insert("Rotavirus Gastroenteritis", vec!["rash", "cough", "bloody stool"]);
+    map.insert("Otitis Externa (Swimmer's Ear)", vec!["fever", "rash", "diarrhea"]);
+    map.insert("Tension Pneumothorax", vec!["rash", "fever", "diarrhea"]);
+    map.insert("Status Epilepticus", vec!["rash", "diarrhea", "cough"]);
+    map.insert("Acute Angle-Closure Crisis", vec!["rash", "fever", "cough"]);
+    map.insert("Peritonsillar Abscess (Quinsy)", vec!["rash", "diarrhea", "cough"]);
     map
 }
 
@@ -3697,6 +3712,240 @@ mod tests_v35 {
         if let (Some(gw), Some(gwo)) = (gi_with, gi_without) {
             assert!(gwo.probability >= gw.probability,
                 "Giardiasis should score same or lower with fever (negative evidence)");
+        }
+    }
+}
+
+// ── v0.36.0 scorer tests ──
+
+#[cfg(test)]
+mod tests_v36 {
+    use super::*;
+    use crate::db;
+
+    #[test]
+    fn test_score_rmsf() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden high fever", "severe headache", "petechial rash spreading from wrists and ankles"]);
+        let rmsf = results.iter().find(|r| r.disease_name == "Rocky Mountain Spotted Fever");
+        assert!(rmsf.is_some(), "RMSF should appear");
+        assert!(rmsf.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_typhoid() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sustained high fever (stepladder pattern)", "abdominal pain", "rose spots on trunk"]);
+        let tf = results.iter().find(|r| r.disease_name == "Typhoid Fever");
+        assert!(tf.is_some(), "Typhoid Fever should appear");
+        assert!(tf.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_norovirus() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden onset vomiting", "watery diarrhea", "nausea"]);
+        let nv = results.iter().find(|r| r.disease_name == "Norovirus Gastroenteritis");
+        assert!(nv.is_some(), "Norovirus should appear");
+        assert!(nv.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_scarlet_fever() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sandpaper-like red rash", "strawberry tongue", "sore throat", "high fever"]);
+        let sf = results.iter().find(|r| r.disease_name == "Scarlet Fever");
+        assert!(sf.is_some(), "Scarlet Fever should appear");
+        assert!(sf.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_pertussis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["paroxysmal coughing fits", "inspiratory whoop", "post-tussive vomiting"]);
+        let pt = results.iter().find(|r| r.disease_name == "Pertussis (Whooping Cough)");
+        assert!(pt.is_some(), "Pertussis should appear");
+        assert!(pt.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_amoebic_dysentery() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["bloody diarrhea", "abdominal pain and cramping", "tenesmus (rectal straining)"]);
+        let ad = results.iter().find(|r| r.disease_name == "Amoebic Dysentery");
+        assert!(ad.is_some(), "Amoebic Dysentery should appear");
+        assert!(ad.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_me_cfs() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["profound debilitating fatigue >6 months", "post-exertional malaise (PEM)", "unrefreshing sleep"]);
+        let me = results.iter().find(|r| r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)");
+        assert!(me.is_some(), "ME/CFS should appear");
+        assert!(me.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_croup() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(2), sex: None };
+        let results = score_symptoms_with_context(&conn, &["barking cough", "inspiratory stridor", "hoarse voice"], &child_ctx);
+        let cr = results.iter().find(|r| r.disease_name == "Croup (Laryngotracheobronchitis)");
+        assert!(cr.is_some(), "Croup should appear");
+        assert!(cr.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_hfmd() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(3), sex: None };
+        let results = score_symptoms_with_context(&conn, &["painful mouth sores (enanthem)", "rash on palms of hands", "rash on soles of feet", "fever"], &child_ctx);
+        let hfmd = results.iter().find(|r| r.disease_name == "Hand, Foot, and Mouth Disease");
+        assert!(hfmd.is_some(), "HFMD should appear");
+        assert!(hfmd.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_rotavirus() {
+        let conn = db::init_memory_database().unwrap();
+        let child_ctx = PatientContext { age: Some(1), sex: None };
+        let results = score_symptoms_with_context(&conn, &["profuse watery diarrhea", "vomiting", "fever", "dehydration"], &child_ctx);
+        let rv = results.iter().find(|r| r.disease_name == "Rotavirus Gastroenteritis");
+        assert!(rv.is_some(), "Rotavirus should appear");
+        assert!(rv.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_otitis_externa() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["ear pain worsened by pulling outer ear", "ear canal itching", "ear discharge"]);
+        let oe = results.iter().find(|r| r.disease_name == "Otitis Externa (Swimmer's Ear)");
+        assert!(oe.is_some(), "Otitis Externa should appear");
+        assert!(oe.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_tension_pneumothorax() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe shortness of breath", "unilateral absent breath sounds", "tracheal deviation away from affected side"]);
+        let tp = results.iter().find(|r| r.disease_name == "Tension Pneumothorax");
+        assert!(tp.is_some(), "Tension Pneumothorax should appear");
+        assert!(tp.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_status_epilepticus() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["continuous seizure activity >5 minutes", "loss of consciousness", "repetitive convulsions without recovery"]);
+        let se = results.iter().find(|r| r.disease_name == "Status Epilepticus");
+        assert!(se.is_some(), "Status Epilepticus should appear");
+        assert!(se.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_angle_closure_crisis() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sudden severe eye pain", "blurred vision", "halos around lights", "fixed mid-dilated pupil"]);
+        let acc = results.iter().find(|r| r.disease_name == "Acute Angle-Closure Crisis");
+        assert!(acc.is_some(), "Acute Angle-Closure Crisis should appear");
+        assert!(acc.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_score_quinsy() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["severe unilateral sore throat", "trismus (difficulty opening mouth)", "uvula deviation"]);
+        let qs = results.iter().find(|r| r.disease_name == "Peritonsillar Abscess (Quinsy)");
+        assert!(qs.is_some(), "Quinsy should appear");
+        assert!(qs.unwrap().probability > 30.0);
+    }
+
+    #[test]
+    fn test_synonym_stomach_flu() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["stomach flu", "nausea"]);
+        assert!(!results.is_empty(), "stomach flu should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_whooping_cough() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["whooping cough", "vomiting"]);
+        assert!(!results.is_empty(), "whooping cough should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_sandpaper_rash() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["sandpaper rash", "sore throat", "fever"]);
+        assert!(!results.is_empty(), "sandpaper rash should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_seal_bark_cough() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["seal bark cough", "stridor"]);
+        assert!(!results.is_empty(), "seal bark cough should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_swimmers_ear() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["swimmers ear", "ear discharge"]);
+        assert!(!results.is_empty(), "swimmers ear should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_prolonged_seizure() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["prolonged seizure", "unconscious"]);
+        assert!(!results.is_empty(), "prolonged seizure should expand via synonym");
+    }
+
+    #[test]
+    fn test_synonym_seeing_rainbow_halos() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["seeing rainbow halos", "eye pain"]);
+        assert!(!results.is_empty(), "seeing rainbow halos should expand via synonym");
+    }
+
+    #[test]
+    fn test_negative_evidence_norovirus() {
+        let conn = db::init_memory_database().unwrap();
+        let with_rash = score_symptoms(&conn, &["sudden onset vomiting", "watery diarrhea", "rash"]);
+        let without_rash = score_symptoms(&conn, &["sudden onset vomiting", "watery diarrhea"]);
+        let nv_with = with_rash.iter().find(|r| r.disease_name == "Norovirus Gastroenteritis");
+        let nv_without = without_rash.iter().find(|r| r.disease_name == "Norovirus Gastroenteritis");
+        if let (Some(nw), Some(nwo)) = (nv_with, nv_without) {
+            assert!(nwo.probability >= nw.probability,
+                "Norovirus should score same or lower with rash (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_negative_evidence_pertussis() {
+        let conn = db::init_memory_database().unwrap();
+        let with_rash = score_symptoms(&conn, &["paroxysmal coughing fits", "inspiratory whoop", "rash"]);
+        let without_rash = score_symptoms(&conn, &["paroxysmal coughing fits", "inspiratory whoop"]);
+        let pt_with = with_rash.iter().find(|r| r.disease_name == "Pertussis (Whooping Cough)");
+        let pt_without = without_rash.iter().find(|r| r.disease_name == "Pertussis (Whooping Cough)");
+        if let (Some(pw), Some(pwo)) = (pt_with, pt_without) {
+            assert!(pwo.probability >= pw.probability,
+                "Pertussis should score same or lower with rash (negative evidence)");
+        }
+    }
+
+    #[test]
+    fn test_negative_evidence_me_cfs() {
+        let conn = db::init_memory_database().unwrap();
+        let with_fever = score_symptoms(&conn, &["profound debilitating fatigue >6 months", "post-exertional malaise (PEM)", "fever"]);
+        let without_fever = score_symptoms(&conn, &["profound debilitating fatigue >6 months", "post-exertional malaise (PEM)"]);
+        let me_with = with_fever.iter().find(|r| r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)");
+        let me_without = without_fever.iter().find(|r| r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)");
+        if let (Some(mw), Some(mwo)) = (me_with, me_without) {
+            assert!(mwo.probability >= mw.probability,
+                "ME/CFS should score same or lower with fever (negative evidence)");
         }
     }
 }

@@ -53,7 +53,7 @@ pub fn seed_all(conn: &Connection) -> rusqlite::Result<()> {
     }
 
     tx.execute(
-        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '35.0')",
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('seed_version', '36.0')",
         [],
     )?;
     tx.commit()?;
@@ -5843,6 +5843,172 @@ fn get_disease_data() -> Vec<DiseaseEntry> {
             prevention: "Tick/insect bite prevention. Wear gloves when handling wild animals (especially rabbits, hares). Cook game meat thoroughly. Use insect repellent. Laboratory biosafety precautions.",
             risk_factors: vec![("hunters/trappers", "high"), ("tick/deer fly exposure", "high"), ("laboratory workers", "moderate"), ("landscapers/farmers", "moderate"), ("endemic areas (North America, Europe, Asia)", "moderate")],
         },
+        // ── v0.36.0 diseases ──
+        DiseaseEntry {
+            name: "Rocky Mountain Spotted Fever",
+            description: "Tick-borne rickettsial disease caused by Rickettsia rickettsii. Can be fatal without early treatment.",
+            severity: "high", contagious: false, icd11_code: "1C30",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("sudden high fever",0.9,true), s("severe headache",0.8,true), s("petechial rash spreading from wrists and ankles",0.9,true), s("muscle pain",0.6,false), s("nausea",0.5,false), s("vomiting",0.4,false), s("abdominal pain",0.4,false), s("confusion",0.5,false), s("joint pain",0.4,false)],
+            treatment: "Doxycycline 100mg PO BID for 7 days minimum (drug of choice for all ages including children). Start empirically on clinical suspicion — do not wait for lab confirmation. IV doxycycline if unable to take orally.",
+            first_aid: "Seek immediate medical care for fever and rash after tick exposure. Remove any attached ticks.",
+            prevention: "Tick bite prevention: long sleeves/pants in endemic areas, DEET/permethrin repellent, daily tick checks. Prompt tick removal within 24h.",
+            risk_factors: vec![("tick exposure in endemic areas", "high"), ("outdoor activities in spring/summer", "high"), ("living near wooded areas", "moderate"), ("children ages 5-9", "moderate"), ("delayed treatment", "high")],
+        },
+        DiseaseEntry {
+            name: "Typhoid Fever",
+            description: "Systemic bacterial infection caused by Salmonella typhi, spread through contaminated food/water. Common in areas with poor sanitation.",
+            severity: "high", contagious: true, icd11_code: "1A07",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("sustained high fever (stepladder pattern)",0.9,true), s("headache",0.7,false), s("abdominal pain",0.7,true), s("rose spots on trunk",0.6,true), s("constipation or diarrhea",0.6,false), s("hepatosplenomegaly",0.5,false), s("fatigue",0.6,false), s("relative bradycardia",0.5,false), s("coated tongue",0.4,false)],
+            treatment: "Azithromycin 1g Day 1 then 500mg x 5-7 days (uncomplicated). Ceftriaxone 2g IV daily x 10-14 days (severe/complicated). Fluoroquinolones if susceptible. Supportive: fluids, nutrition. Watch for intestinal perforation.",
+            first_aid: "Keep patient hydrated. Seek medical care for prolonged high fever especially after travel to endemic areas.",
+            prevention: "Safe water and food practices. Typhoid vaccination before travel to endemic areas. Handwashing. Proper sewage disposal.",
+            risk_factors: vec![("travel to endemic areas (South Asia, Africa)", "high"), ("contaminated water/food", "high"), ("poor sanitation", "high"), ("household contact with carrier", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Norovirus Gastroenteritis",
+            description: "Highly contagious viral gastroenteritis causing acute vomiting and diarrhea. Leading cause of foodborne illness outbreaks worldwide.",
+            severity: "low", contagious: true, icd11_code: "1A22",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("sudden onset vomiting",0.9,true), s("watery diarrhea",0.8,true), s("nausea",0.8,true), s("abdominal cramps",0.7,false), s("low-grade fever",0.5,false), s("headache",0.4,false), s("muscle pain",0.3,false), s("fatigue",0.4,false)],
+            treatment: "Supportive care: oral rehydration solution (ORS). IV fluids if severe dehydration. Anti-emetics (ondansetron) if needed. Self-limiting in 1-3 days. No antiviral treatment available.",
+            first_aid: "Small frequent sips of fluids. ORS or clear broths. Avoid dairy and heavy foods until recovery.",
+            prevention: "Handwashing with soap (alcohol sanitizers less effective). Thorough cooking of shellfish. Disinfect contaminated surfaces with bleach. Isolate symptomatic individuals.",
+            risk_factors: vec![("cruise ships/closed environments", "high"), ("daycare centers", "high"), ("healthcare facilities", "high"), ("contaminated shellfish consumption", "moderate"), ("elderly/immunocompromised", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Scarlet Fever",
+            description: "Bacterial infection caused by Group A Streptococcus producing erythrogenic toxin. Primarily affects children. Follows streptococcal pharyngitis.",
+            severity: "medium", contagious: true, icd11_code: "1B50.2",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("sandpaper-like red rash",0.9,true), s("strawberry tongue",0.8,true), s("sore throat",0.8,true), s("high fever",0.7,true), s("flushed face with circumoral pallor",0.7,false), s("headache",0.5,false), s("nausea",0.4,false), s("vomiting",0.3,false), s("swollen lymph nodes in neck",0.5,false), s("skin peeling after rash resolves",0.6,false)],
+            treatment: "Penicillin V 250-500mg PO BID x 10 days (first-line). Amoxicillin alternative. Penicillin-allergic: Azithromycin or Cephalexin. Antipyretics for fever. Adequate fluid intake.",
+            first_aid: "Keep child comfortable. Cool fluids for sore throat. Seek medical care for rash with fever and sore throat.",
+            prevention: "Avoid close contact with infected individuals. Good hand hygiene. Treat streptococcal pharyngitis promptly to prevent toxin-mediated disease.",
+            risk_factors: vec![("children ages 5-15", "high"), ("close contact with GAS infection", "high"), ("school/daycare exposure", "moderate"), ("crowded living conditions", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Pertussis (Whooping Cough)",
+            description: "Highly contagious respiratory infection caused by Bordetella pertussis. Dangerous for infants. Characterized by prolonged paroxysmal coughing.",
+            severity: "medium", contagious: true, icd11_code: "1C12",
+            age_group: "all", category: "respiratory",
+            symptoms: vec![s("paroxysmal coughing fits",0.9,true), s("inspiratory whoop",0.8,true), s("post-tussive vomiting",0.7,true), s("runny nose (catarrhal phase)",0.5,false), s("low-grade fever",0.4,false), s("apnea in infants",0.7,false), s("cyanosis during coughing",0.6,false), s("exhaustion after coughing",0.5,false)],
+            treatment: "Azithromycin 500mg Day 1 then 250mg x 4 days (first-line). Erythromycin or TMP-SMX alternative. Antibiotics reduce transmission but may not shorten symptoms if started late. Infants: hospitalization, oxygen, suctioning.",
+            first_aid: "Keep infant/child calm. Small frequent feeds. Clear secretions gently. Seek emergency care if infant has apnea or cyanosis.",
+            prevention: "DTaP vaccination (children), Tdap booster (adolescents/adults). Tdap during each pregnancy (27-36 weeks). Post-exposure prophylaxis with azithromycin for household contacts.",
+            risk_factors: vec![("unvaccinated or under-vaccinated", "high"), ("infants < 6 months", "high"), ("waning immunity (>5 years since booster)", "moderate"), ("household contact with case", "high")],
+        },
+        DiseaseEntry {
+            name: "Amoebic Dysentery",
+            description: "Intestinal infection caused by Entamoeba histolytica. Common in tropical regions with poor sanitation. Can cause liver abscess if untreated.",
+            severity: "medium", contagious: true, icd11_code: "1A36",
+            age_group: "all", category: "infectious",
+            symptoms: vec![s("bloody diarrhea",0.9,true), s("abdominal pain and cramping",0.8,true), s("frequent loose stools (10-20/day)",0.7,true), s("fever",0.5,false), s("fatigue",0.5,false), s("weight loss",0.5,false), s("tenesmus (rectal straining)",0.6,false), s("liver tenderness if abscess",0.4,false)],
+            treatment: "Metronidazole 750mg PO TID x 7-10 days (invasive disease) followed by Paromomycin 25-35mg/kg/day TID x 7 days (luminal cysticide). Tinidazole alternative. Liver abscess: same regimen, percutaneous drainage if >5cm or no response.",
+            first_aid: "Maintain hydration with ORS. Seek medical care for bloody diarrhea with fever.",
+            prevention: "Safe drinking water (boil or filter). Avoid raw vegetables/fruits washed with untreated water. Hand hygiene. Proper sanitation.",
+            risk_factors: vec![("travel to tropical endemic areas", "high"), ("contaminated water/food", "high"), ("poor sanitation", "high"), ("men who have sex with men", "moderate"), ("immunosuppression", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)",
+            description: "Complex chronic multisystem disease characterized by profound fatigue not improved by rest, with post-exertional malaise as hallmark feature.",
+            severity: "medium", contagious: false, icd11_code: "8E49",
+            age_group: "adults", category: "neurological",
+            symptoms: vec![s("profound debilitating fatigue >6 months",0.9,true), s("post-exertional malaise (PEM)",0.9,true), s("unrefreshing sleep",0.8,true), s("cognitive impairment (brain fog)",0.8,false), s("orthostatic intolerance",0.6,false), s("widespread muscle pain",0.5,false), s("sore throat",0.4,false), s("tender lymph nodes",0.4,false), s("headache",0.5,false), s("light sensitivity",0.4,false), s("sound sensitivity",0.4,false)],
+            treatment: "No cure. Pacing/energy management to avoid PEM triggers. Low-dose naltrexone (experimental). Treat comorbid sleep disorders, pain, orthostatic intolerance. Avoid graded exercise therapy (can worsen). Rintatolimod in some countries.",
+            first_aid: "Rest. Avoid overexertion. Seek specialist evaluation for unexplained chronic fatigue.",
+            prevention: "No established prevention. Early rest during post-viral illness may reduce risk. Avoid pushing through fatigue during recovery from infections.",
+            risk_factors: vec![("viral infection trigger (EBV, COVID-19)", "high"), ("female sex", "moderate"), ("ages 30-50", "moderate"), ("genetic predisposition", "moderate"), ("physical/emotional stress", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Croup (Laryngotracheobronchitis)",
+            description: "Viral upper airway infection causing subglottic swelling. Common in children 6 months to 3 years. Characteristic barking cough and stridor.",
+            severity: "medium", contagious: true, icd11_code: "CA40.1",
+            age_group: "children", category: "respiratory",
+            symptoms: vec![s("barking cough",0.9,true), s("inspiratory stridor",0.9,true), s("hoarse voice",0.7,true), s("low-grade fever",0.5,false), s("runny nose",0.4,false), s("worsening at night",0.6,false), s("respiratory distress in severe cases",0.5,false), s("intercostal retractions",0.5,false)],
+            treatment: "Mild: cool mist, comfort measures. Moderate-severe: Dexamethasone 0.6mg/kg PO single dose (first-line). Nebulized epinephrine (racemic 2.25% or L-epinephrine) for moderate-severe stridor at rest. Observe 2-4h after epinephrine for rebound.",
+            first_aid: "Keep child calm (crying worsens stridor). Cool night air or humidified air. Upright position. Seek ER if stridor at rest or difficulty breathing.",
+            prevention: "Hand hygiene. Avoid contact with respiratory infections. Influenza and parainfluenza are common causes — standard respiratory precautions.",
+            risk_factors: vec![("children 6 months to 3 years", "high"), ("fall/winter season", "moderate"), ("male sex", "moderate"), ("prior croup episodes", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Hand, Foot, and Mouth Disease",
+            description: "Common viral illness in young children caused by Coxsackievirus A16 or Enterovirus 71. Characterized by oral sores and rash on hands and feet.",
+            severity: "low", contagious: true, icd11_code: "1F05",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("painful mouth sores (enanthem)",0.9,true), s("rash on palms of hands",0.8,true), s("rash on soles of feet",0.8,true), s("fever",0.7,true), s("sore throat",0.6,false), s("decreased appetite",0.6,false), s("irritability in infants",0.5,false), s("drooling (due to painful swallowing)",0.4,false), s("rash on buttocks",0.5,false)],
+            treatment: "Supportive care only. Acetaminophen/Ibuprofen for pain and fever. Cold fluids and ice pops for oral pain. Topical oral anesthetics (magic mouthwash) for severe oral pain. Self-limiting in 7-10 days.",
+            first_aid: "Offer cool soft foods and plenty of fluids. Avoid acidic/spicy foods. Monitor hydration especially in young children.",
+            prevention: "Hand hygiene. Disinfect toys and surfaces. Avoid close contact with infected individuals. No vaccine available (except for EV-A71 in some Asian countries).",
+            risk_factors: vec![("children < 5 years", "high"), ("daycare/school attendance", "high"), ("summer/fall season", "moderate"), ("close contact with infected child", "high")],
+        },
+        DiseaseEntry {
+            name: "Rotavirus Gastroenteritis",
+            description: "Leading cause of severe diarrhea in infants and young children worldwide. Highly contagious. Responsible for significant childhood mortality in developing countries.",
+            severity: "medium", contagious: true, icd11_code: "1A23",
+            age_group: "children", category: "infectious",
+            symptoms: vec![s("profuse watery diarrhea",0.9,true), s("vomiting",0.8,true), s("fever",0.7,true), s("abdominal cramps",0.6,false), s("dehydration",0.8,false), s("irritability",0.5,false), s("lethargy if severely dehydrated",0.5,false), s("decreased urine output",0.5,false)],
+            treatment: "Oral rehydration therapy (ORS) — cornerstone of treatment. IV fluids (Ringer's lactate) for severe dehydration. Zinc supplementation 20mg/day x 10-14 days (WHO recommendation for children). No antiviral. Ondansetron for persistent vomiting.",
+            first_aid: "Small frequent sips of ORS. Continue breastfeeding. Seek emergency care for signs of severe dehydration (sunken eyes, skin tenting, absent tears).",
+            prevention: "Rotavirus vaccination (RotaTeq or Rotarix) — part of WHO essential vaccine schedule. Handwashing. Breastfeeding offers partial protection.",
+            risk_factors: vec![("children 6 months to 2 years", "high"), ("unvaccinated", "high"), ("developing countries", "high"), ("daycare attendance", "moderate"), ("malnutrition", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Otitis Externa (Swimmer's Ear)",
+            description: "Infection of the external ear canal, commonly caused by Pseudomonas or Staphylococcus. Associated with water exposure and ear canal trauma.",
+            severity: "low", contagious: false, icd11_code: "AB10",
+            age_group: "all", category: "ENT",
+            symptoms: vec![s("ear pain worsened by pulling outer ear",0.9,true), s("ear canal itching",0.7,true), s("ear discharge",0.7,true), s("ear canal swelling",0.6,false), s("decreased hearing",0.5,false), s("ear fullness",0.4,false), s("jaw pain when chewing",0.4,false), s("tender lymph nodes near ear",0.3,false)],
+            treatment: "Topical antibiotic-steroid drops (Ciprofloxacin-Dexamethasone or Ofloxacin) 3-4 drops BID-TID x 7-10 days. Keep ear dry. Ear wick for severely swollen canal. Oral antibiotics only for extension beyond canal or immunocompromised.",
+            first_aid: "Keep ear dry. Avoid inserting objects in ear. Over-the-counter pain relief. Tilt head to drain water after swimming.",
+            prevention: "Dry ears after swimming (hair dryer on low, or drying drops — 1:1 rubbing alcohol:white vinegar). Avoid cotton swabs in ear canal. Earplugs for swimming.",
+            risk_factors: vec![("swimming/water sports", "high"), ("humid climate", "moderate"), ("cotton swab use", "moderate"), ("eczema/psoriasis of ear canal", "moderate"), ("hearing aids/earbuds", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Tension Pneumothorax",
+            description: "Life-threatening condition where air enters the pleural space through a one-way valve mechanism, causing progressive lung collapse and hemodynamic compromise.",
+            severity: "high", contagious: false, icd11_code: "CB23",
+            age_group: "all", category: "respiratory",
+            symptoms: vec![s("severe shortness of breath",0.9,true), s("unilateral absent breath sounds",0.9,true), s("tracheal deviation away from affected side",0.8,true), s("hypotension",0.7,true), s("distended neck veins (JVD)",0.7,false), s("tachycardia",0.7,false), s("chest pain",0.6,false), s("cyanosis",0.6,false), s("subcutaneous emphysema",0.5,false)],
+            treatment: "IMMEDIATE needle decompression: 14-16G needle in 2nd intercostal space midclavicular line or 4th-5th ICS anterior axillary line (affected side). Follow with chest tube (tube thoracostomy). This is a clinical diagnosis — do NOT delay for imaging.",
+            first_aid: "Call emergency services immediately. If trained: needle decompression. Position patient upright if conscious. Supplemental oxygen if available.",
+            prevention: "Proper management of pneumothorax. Careful positive-pressure ventilation. Secure chest tubes. Monitor ventilated patients closely.",
+            risk_factors: vec![("penetrating chest trauma", "high"), ("mechanical ventilation", "high"), ("prior pneumothorax", "moderate"), ("central line placement", "moderate"), ("CPR/resuscitation", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Status Epilepticus",
+            description: "Medical emergency defined as continuous seizure activity >5 minutes or repeated seizures without recovery between episodes. Requires immediate treatment to prevent brain damage.",
+            severity: "high", contagious: false, icd11_code: "8A62",
+            age_group: "all", category: "neurological",
+            symptoms: vec![s("continuous seizure activity >5 minutes",0.9,true), s("loss of consciousness",0.8,true), s("repetitive convulsions without recovery",0.9,true), s("tonic-clonic movements",0.7,false), s("cyanosis",0.6,false), s("tongue biting",0.5,false), s("urinary incontinence",0.5,false), s("post-ictal confusion",0.6,false), s("tachycardia",0.5,false), s("hyperthermia",0.4,false)],
+            treatment: "Stage 1 (0-5 min): Benzodiazepines — Lorazepam 4mg IV or Midazolam 10mg IM/intranasal. Stage 2 (5-20 min): Repeat benzodiazepine once. Stage 3 (20-40 min): Fosphenytoin 20mg PE/kg IV, Valproate, or Levetiracetam. Stage 4 (>40 min): RSI and continuous midazolam/propofol/pentobarbital drip. Continuous EEG monitoring.",
+            first_aid: "Call emergency services. Protect head, clear area. Place on side (recovery position) if possible. Do NOT put anything in mouth. Time the seizure. Do NOT restrain.",
+            prevention: "Medication adherence for known epilepsy. Avoid seizure triggers (sleep deprivation, alcohol withdrawal, medication changes). Medical alert bracelet.",
+            risk_factors: vec![("known epilepsy with subtherapeutic levels", "high"), ("alcohol withdrawal", "high"), ("CNS infection", "high"), ("stroke", "moderate"), ("traumatic brain injury", "moderate"), ("electrolyte abnormalities", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Acute Angle-Closure Crisis",
+            description: "Ophthalmic emergency caused by sudden blockage of aqueous humor drainage, leading to rapid intraocular pressure rise. Can cause permanent vision loss within hours.",
+            severity: "high", contagious: false, icd11_code: "9B81.0",
+            age_group: "adults", category: "ophthalmological",
+            symptoms: vec![s("sudden severe eye pain",0.9,true), s("blurred vision",0.8,true), s("halos around lights",0.8,true), s("fixed mid-dilated pupil",0.8,true), s("red eye (conjunctival injection)",0.7,false), s("severe headache",0.6,false), s("nausea and vomiting",0.6,false), s("hard globe on palpation",0.5,false), s("tearing",0.4,false)],
+            treatment: "Emergency IOP reduction: Topical timolol 0.5% + pilocarpine 2% (affected + fellow eye) + Apraclonidine 1%. Systemic: Acetazolamide 500mg IV/PO + Mannitol 1-2g/kg IV if needed. Definitive: Laser peripheral iridotomy (LPI) within 24-48h. Prophylactic LPI on fellow eye.",
+            first_aid: "Seek emergency eye care immediately. Do not rub eye. Keep in well-lit room (promotes miosis).",
+            prevention: "Screening in at-risk populations (hyperopia, Asian/Inuit descent, family history). Prophylactic laser iridotomy. Avoid medications causing pupil dilation in at-risk patients.",
+            risk_factors: vec![("hyperopia (farsightedness)", "high"), ("age >60", "high"), ("female sex", "moderate"), ("Asian or Inuit descent", "moderate"), ("family history of angle closure", "moderate"), ("anticholinergic medications", "moderate")],
+        },
+        DiseaseEntry {
+            name: "Peritonsillar Abscess (Quinsy)",
+            description: "Collection of pus between the tonsillar capsule and pharyngeal muscles. Most common deep neck space infection. Complication of tonsillitis.",
+            severity: "medium", contagious: false, icd11_code: "CA03.1",
+            age_group: "all", category: "ENT",
+            symptoms: vec![s("severe unilateral sore throat",0.9,true), s("trismus (difficulty opening mouth)",0.8,true), s("uvula deviation",0.7,true), s("muffled ('hot potato') voice",0.7,false), s("drooling",0.6,false), s("high fever",0.7,false), s("ear pain on same side (referred)",0.5,false), s("neck swelling",0.5,false), s("difficulty swallowing",0.7,false), s("foul breath",0.4,false)],
+            treatment: "Needle aspiration or incision and drainage (I&D) — primary treatment. Antibiotics: Amoxicillin-Clavulanate or Clindamycin. IV antibiotics if unable to swallow. Pain management. Consider tonsillectomy for recurrent episodes.",
+            first_aid: "Seek urgent medical care. Soft cool foods and fluids if able to swallow. Pain relief with acetaminophen/ibuprofen. Do NOT attempt home drainage.",
+            prevention: "Prompt treatment of streptococcal pharyngitis. Consider tonsillectomy after recurrent episodes. Good oral hygiene.",
+            risk_factors: vec![("recurrent tonsillitis", "high"), ("young adults 20-40", "moderate"), ("smoking", "moderate"), ("poor dental hygiene", "moderate"), ("immunosuppression", "moderate")],
+        },
     ]
 }
 
@@ -6875,6 +7041,40 @@ pub fn get_symptom_synonyms() -> Vec<(&'static str, &'static str)> {
         ("pox lesions", "skin rash progressing: macules → papules → vesicles → pustules → crusts"),
         ("rabbit fever", "sudden fever"),
         ("skin ulcer after tick bite", "skin ulcer at inoculation site"),
+        // v0.36.0 synonyms
+        ("tick bite rash", "petechial rash spreading from wrists and ankles"),
+        ("spotted rash", "petechial rash spreading from wrists and ankles"),
+        ("stepladder fever", "sustained high fever (stepladder pattern)"),
+        ("rose spots", "rose spots on trunk"),
+        ("projectile vomiting", "sudden onset vomiting"),
+        ("stomach flu", "watery diarrhea"),
+        ("stomach virus", "watery diarrhea"),
+        ("norovirus", "sudden onset vomiting"),
+        ("sandpaper rash", "sandpaper-like red rash"),
+        ("rough red rash", "sandpaper-like red rash"),
+        ("whooping cough", "paroxysmal coughing fits"),
+        ("whooping", "inspiratory whoop"),
+        ("100 day cough", "paroxysmal coughing fits"),
+        ("bloody poop", "bloody diarrhea"),
+        ("blood in poop", "bloody diarrhea"),
+        ("dysentery", "bloody diarrhea"),
+        ("total exhaustion", "profound debilitating fatigue >6 months"),
+        ("crash after exertion", "post-exertional malaise (PEM)"),
+        ("pem", "post-exertional malaise (PEM)"),
+        ("croupy cough", "barking cough"),
+        ("seal bark cough", "barking cough"),
+        ("mouth blisters", "painful mouth sores (enanthem)"),
+        ("hand rash", "rash on palms of hands"),
+        ("foot rash", "rash on soles of feet"),
+        ("swimmers ear", "ear pain worsened by pulling outer ear"),
+        ("water in ear", "ear canal itching"),
+        ("ear infection swimming", "ear pain worsened by pulling outer ear"),
+        ("cant open mouth", "trismus (difficulty opening mouth)"),
+        ("hot potato voice", "muffled ('hot potato') voice"),
+        ("prolonged seizure", "continuous seizure activity >5 minutes"),
+        ("non-stop seizure", "continuous seizure activity >5 minutes"),
+        ("eye pressure", "hard globe on palpation"),
+        ("seeing rainbow halos", "halos around lights"),
     ]
 }
 
@@ -6887,7 +7087,7 @@ mod tests {
     fn test_seed_creates_diseases() {
         let conn = db::init_memory_database().unwrap();
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM diseases", [], |r| r.get(0)).unwrap();
-        assert!(count >= 411, "Expected at least 411 diseases, got {count}");
+        assert!(count >= 426, "Expected at least 426 diseases, got {count}");
     }
 
     #[test]
@@ -6937,7 +7137,7 @@ mod tests {
             "SELECT value FROM metadata WHERE key = 'seed_version'",
             [], |r| r.get(0),
         ).unwrap();
-        assert_eq!(ver, "35.0");
+        assert_eq!(ver, "36.0");
     }
 
     #[test]
@@ -6983,3 +7183,5 @@ mod tests {
 // Additional v29 diseases appended via seed extension
 
 // Additional v30 diseases appended via seed extension
+
+// Additional v36 diseases appended via seed extension

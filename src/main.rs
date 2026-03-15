@@ -316,6 +316,11 @@ pub enum Commands {
         #[arg(long)]
         medication: Option<String>,
     },
+    /// Disease incubation period reference — time from exposure to symptom onset
+    Incubation {
+        /// Search by disease name (partial match). Omit to list all.
+        query: Option<String>,
+    },
     /// Filter diseases by symptom onset speed (sudden, acute, subacute, chronic)
     Onset {
         /// Onset type: sudden (seconds), acute (hours), subacute (days), chronic (weeks+)
@@ -491,6 +496,9 @@ fn main() {
         }
         Commands::DoseCalc { weight, medication } => {
             commands::dose_calc::run(weight, medication.as_deref(), cli.json);
+        }
+        Commands::Incubation { query } => {
+            commands::incubation::run(query.as_deref(), cli.json);
         }
         Commands::Onset { onset_type, symptoms } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);
