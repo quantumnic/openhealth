@@ -144,7 +144,9 @@ pub fn run(conn: &Connection, onset_input: &str, symptoms: Option<&str>, json: b
         Some(s) => s,
         None => {
             if json {
-                println!("{{\"error\": \"Unknown onset type. Use: sudden, acute, subacute, chronic\"}}");
+                println!(
+                    "{{\"error\": \"Unknown onset type. Use: sudden, acute, subacute, chronic\"}}"
+                );
             } else {
                 println!("{}", "Unknown onset type. Use: sudden, acute (hours), subacute (days), chronic (weeks+)".red());
             }
@@ -161,7 +163,10 @@ pub fn run(conn: &Connection, onset_input: &str, symptoms: Option<&str>, json: b
 
     if matching_names.is_empty() {
         if json {
-            println!("{{\"onset_type\": \"{}\", \"diseases\": []}}", speed.label());
+            println!(
+                "{{\"onset_type\": \"{}\", \"diseases\": []}}",
+                speed.label()
+            );
         } else {
             println!("{}", "No diseases mapped for this onset type.".yellow());
         }
@@ -169,14 +174,21 @@ pub fn run(conn: &Connection, onset_input: &str, symptoms: Option<&str>, json: b
     }
 
     // Fetch disease details from DB
-    let placeholders: Vec<String> = matching_names.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+    let placeholders: Vec<String> = matching_names
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
     let query = format!(
         "SELECT name, severity, description FROM diseases WHERE name IN ({})",
         placeholders.join(", ")
     );
 
     let mut stmt = conn.prepare(&query).unwrap();
-    let params: Vec<&dyn rusqlite::types::ToSql> = matching_names.iter().map(|n| n as &dyn rusqlite::types::ToSql).collect();
+    let params: Vec<&dyn rusqlite::types::ToSql> = matching_names
+        .iter()
+        .map(|n| n as &dyn rusqlite::types::ToSql)
+        .collect();
     let diseases: Vec<OnsetDisease> = stmt
         .query_map(params.as_slice(), |row| {
             Ok(OnsetDisease {
@@ -241,7 +253,9 @@ pub fn run(conn: &Connection, onset_input: &str, symptoms: Option<&str>, json: b
     println!(
         "\n{} {}",
         speed.emoji(),
-        format!("═══ {} Onset Diseases ═══", speed.label()).bold().cyan()
+        format!("═══ {} Onset Diseases ═══", speed.label())
+            .bold()
+            .cyan()
     );
 
     if let Some(sym) = symptoms {
@@ -251,7 +265,10 @@ pub fn run(conn: &Connection, onset_input: &str, symptoms: Option<&str>, json: b
     }
 
     if filtered.is_empty() {
-        println!("{}", "  No matching diseases found for this onset + symptom combination.".yellow());
+        println!(
+            "{}",
+            "  No matching diseases found for this onset + symptom combination.".yellow()
+        );
     } else {
         for d in &filtered {
             let severity_colored = match d.severity.as_str() {

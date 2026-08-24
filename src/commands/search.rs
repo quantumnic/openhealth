@@ -24,7 +24,9 @@ pub fn run(conn: &Connection, query: &str, json: bool) {
         )
         .unwrap();
     let diseases: Vec<(String, String, String)> = dis_stmt
-        .query_map([&pattern], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .query_map([&pattern], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
         .unwrap()
         .filter_map(|r| r.ok())
         .collect();
@@ -48,7 +50,11 @@ pub fn run(conn: &Connection, query: &str, json: bool) {
     println!();
 
     if !symptoms.is_empty() {
-        println!("  {} ({} found)", "Matching Symptoms:".underline(), symptoms.len());
+        println!(
+            "  {} ({} found)",
+            "Matching Symptoms:".underline(),
+            symptoms.len()
+        );
         for sym in &symptoms {
             // Find which diseases have this symptom
             let mut d_stmt = conn
@@ -67,7 +73,11 @@ pub fn run(conn: &Connection, query: &str, json: bool) {
     }
 
     if !diseases.is_empty() {
-        println!("  {} ({} found)", "Matching Diseases:".underline(), diseases.len());
+        println!(
+            "  {} ({} found)",
+            "Matching Diseases:".underline(),
+            diseases.len()
+        );
         for (name, category, severity) in &diseases {
             let emoji = match severity.as_str() {
                 "high" => "🔴",

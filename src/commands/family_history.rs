@@ -1,5 +1,5 @@
-use rusqlite::Connection;
 use colored::*;
+use rusqlite::Connection;
 
 /// Family history risk assessment.
 /// Given a list of diseases in the family, identify diseases the user may be at increased risk for.
@@ -11,7 +11,9 @@ pub fn run(conn: &Connection, history: &str, json: bool) {
         .collect();
 
     if items.is_empty() {
-        eprintln!("Please provide family history items, e.g. \"diabetes, heart attack, breast cancer\"");
+        eprintln!(
+            "Please provide family history items, e.g. \"diabetes, heart attack, breast cancer\""
+        );
         return;
     }
 
@@ -68,20 +70,35 @@ pub fn run(conn: &Connection, history: &str, json: bool) {
         return;
     }
 
-    println!("{}", "╔══════════════════════════════════════════════════════════╗".bright_cyan());
-    println!("{}", "║       👨‍👩‍👧‍👦  Family History Risk Assessment                ║".bright_cyan());
-    println!("{}", "╚══════════════════════════════════════════════════════════╝".bright_cyan());
+    println!(
+        "{}",
+        "╔══════════════════════════════════════════════════════════╗".bright_cyan()
+    );
+    println!(
+        "{}",
+        "║       👨‍👩‍👧‍👦  Family History Risk Assessment                ║".bright_cyan()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════════════╝".bright_cyan()
+    );
     println!();
     println!("{}: {}", "Family history".bold(), items.join(", "));
     println!();
 
     if at_risk.is_empty() {
-        println!("{}", "No specific increased risks identified from the given family history.".yellow());
+        println!(
+            "{}",
+            "No specific increased risks identified from the given family history.".yellow()
+        );
         println!("This doesn't mean zero risk — discuss with your healthcare provider.");
         return;
     }
 
-    println!("{} disease(s) with increased risk identified:\n", at_risk.len());
+    println!(
+        "{} disease(s) with increased risk identified:\n",
+        at_risk.len()
+    );
 
     for entry in &at_risk {
         let emoji = match entry.risk_level.as_str() {
@@ -95,19 +112,19 @@ pub fn run(conn: &Connection, history: &str, json: bool) {
             entry.disease.bold(),
             format!("(risk: {})", entry.risk_level).dimmed()
         );
-        println!(
-            "    Family link: {}",
-            entry.because_of
-        );
-        println!(
-            "    📋 Screening: {}",
-            entry.screening
-        );
+        println!("    Family link: {}", entry.because_of);
+        println!("    📋 Screening: {}", entry.screening);
         println!();
     }
 
-    println!("{}", "⚠️  Family history increases risk but does not guarantee disease.".yellow());
-    println!("{}", "   Discuss screening plans with your healthcare provider.".yellow());
+    println!(
+        "{}",
+        "⚠️  Family history increases risk but does not guarantee disease.".yellow()
+    );
+    println!(
+        "{}",
+        "   Discuss screening plans with your healthcare provider.".yellow()
+    );
 }
 
 struct RiskEntry {
@@ -275,6 +292,9 @@ mod tests {
     #[test]
     fn test_family_risk_mappings_not_empty() {
         let mappings = get_family_risk_mappings();
-        assert!(mappings.len() >= 15, "Should have at least 15 risk mappings");
+        assert!(
+            mappings.len() >= 15,
+            "Should have at least 15 risk mappings"
+        );
     }
 }

@@ -27,7 +27,9 @@ pub fn run(conn: &Connection, category_filter: Option<&str>, json: bool) {
             Ok(PrevalenceEntry {
                 disease: row.get(1)?,
                 severity: row.get(2)?,
-                category: row.get::<_, Option<String>>(3)?.unwrap_or_else(|| "general".into()),
+                category: row
+                    .get::<_, Option<String>>(3)?
+                    .unwrap_or_else(|| "general".into()),
                 symptom_count: row.get::<_, usize>(4)?,
                 risk_factor_count: row.get::<_, usize>(5)?,
             })
@@ -68,10 +70,7 @@ pub fn run(conn: &Connection, category_filter: Option<&str>, json: bool) {
             }
             current_cat = entry.category.clone();
             cat_count = 0;
-            println!(
-                "📂 {}",
-                current_cat.to_uppercase().bright_cyan().bold()
-            );
+            println!("📂 {}", current_cat.to_uppercase().bright_cyan().bold());
         }
         cat_count += 1;
 

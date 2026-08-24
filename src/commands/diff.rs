@@ -12,7 +12,11 @@ pub fn run(conn: &Connection, disease_a: &str, disease_b: &str, json: bool) {
         Some(d) => d,
         None => {
             let msg = format!("Disease '{disease_a}' not found.");
-            if json { println!("{{\"error\": \"{msg}\"}}"); } else { println!("{}", msg.red()); }
+            if json {
+                println!("{{\"error\": \"{msg}\"}}");
+            } else {
+                println!("{}", msg.red());
+            }
             return;
         }
     };
@@ -20,7 +24,11 @@ pub fn run(conn: &Connection, disease_a: &str, disease_b: &str, json: bool) {
         Some(d) => d,
         None => {
             let msg = format!("Disease '{disease_b}' not found.");
-            if json { println!("{{\"error\": \"{msg}\"}}"); } else { println!("{}", msg.red()); }
+            if json {
+                println!("{{\"error\": \"{msg}\"}}");
+            } else {
+                println!("{}", msg.red());
+            }
             return;
         }
     };
@@ -28,8 +36,10 @@ pub fn run(conn: &Connection, disease_a: &str, disease_b: &str, json: bool) {
     let a_symptoms = load_symptoms(conn, a_id);
     let b_symptoms = load_symptoms(conn, b_id);
 
-    let a_set: std::collections::HashSet<&str> = a_symptoms.iter().map(|(n, _, _)| n.as_str()).collect();
-    let b_set: std::collections::HashSet<&str> = b_symptoms.iter().map(|(n, _, _)| n.as_str()).collect();
+    let a_set: std::collections::HashSet<&str> =
+        a_symptoms.iter().map(|(n, _, _)| n.as_str()).collect();
+    let b_set: std::collections::HashSet<&str> =
+        b_symptoms.iter().map(|(n, _, _)| n.as_str()).collect();
 
     let shared: Vec<&str> = a_set.intersection(&b_set).copied().collect();
     let only_a: Vec<&str> = a_set.difference(&b_set).copied().collect();
@@ -55,10 +65,20 @@ pub fn run(conn: &Connection, disease_a: &str, disease_b: &str, json: bool) {
     println!();
     let sev_a = SeverityLevel::from_str(&a_sev);
     let sev_b = SeverityLevel::from_str(&b_sev);
-    println!("  {} {} {}", sev_a.emoji(), a_name.bold(), format!("({})", a_sev).dimmed());
+    println!(
+        "  {} {} {}",
+        sev_a.emoji(),
+        a_name.bold(),
+        format!("({})", a_sev).dimmed()
+    );
     println!("    {}", a_desc.dimmed());
     println!("  vs.");
-    println!("  {} {} {}", sev_b.emoji(), b_name.bold(), format!("({})", b_sev).dimmed());
+    println!(
+        "  {} {} {}",
+        sev_b.emoji(),
+        b_name.bold(),
+        format!("({})", b_sev).dimmed()
+    );
     println!("    {}", b_desc.dimmed());
     println!();
 
@@ -71,7 +91,11 @@ pub fn run(conn: &Connection, disease_a: &str, disease_b: &str, json: bool) {
     }
 
     if !only_a.is_empty() {
-        println!("  {} ({})", format!("Only in {}:", a_name).underline(), only_a.len());
+        println!(
+            "  {} ({})",
+            format!("Only in {}:", a_name).underline(),
+            only_a.len()
+        );
         for sym in &only_a {
             println!("    🅰️  {}", sym.green());
         }
@@ -79,7 +103,11 @@ pub fn run(conn: &Connection, disease_a: &str, disease_b: &str, json: bool) {
     }
 
     if !only_b.is_empty() {
-        println!("  {} ({})", format!("Only in {}:", b_name).underline(), only_b.len());
+        println!(
+            "  {} ({})",
+            format!("Only in {}:", b_name).underline(),
+            only_b.len()
+        );
         for sym in &only_b {
             println!("    🅱️  {}", sym.blue());
         }
@@ -88,8 +116,11 @@ pub fn run(conn: &Connection, disease_a: &str, disease_b: &str, json: bool) {
 
     println!("  💡 Distinguishing symptoms help tell these conditions apart.");
     if !only_a.is_empty() || !only_b.is_empty() {
-        println!("     Ask about: {}", 
-            only_a.iter().chain(only_b.iter())
+        println!(
+            "     Ask about: {}",
+            only_a
+                .iter()
+                .chain(only_b.iter())
                 .take(5)
                 .copied()
                 .collect::<Vec<&str>>()
@@ -104,17 +135,20 @@ fn load_disease(conn: &Connection, name: &str) -> Option<(i64, String, String, S
         "SELECT id, name, description, severity FROM diseases WHERE name LIKE ?1",
         [format!("%{name}%")],
         |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
-    ).ok()
+    )
+    .ok()
 }
 
 fn load_symptoms(conn: &Connection, disease_id: i64) -> Vec<(String, f64, bool)> {
     let mut stmt = conn
         .prepare("SELECT s.name, ds.weight, ds.is_primary FROM disease_symptoms ds JOIN symptoms s ON s.id = ds.symptom_id WHERE ds.disease_id = ?1")
         .unwrap();
-    stmt.query_map([disease_id], |row| Ok((row.get(0)?, row.get(1)?, row.get::<_, i32>(2)? != 0)))
-        .unwrap()
-        .filter_map(|r| r.ok())
-        .collect()
+    stmt.query_map([disease_id], |row| {
+        Ok((row.get(0)?, row.get(1)?, row.get::<_, i32>(2)? != 0))
+    })
+    .unwrap()
+    .filter_map(|r| r.ok())
+    .collect()
 }
 
 #[cfg(test)]

@@ -90,13 +90,11 @@ pub fn run(conn: &Connection, age: u8, sex: Option<&str>, json: bool) {
 
     println!(
         "  {}",
-        "💡 Discuss age-appropriate screening with your healthcare provider."
-            .dimmed()
+        "💡 Discuss age-appropriate screening with your healthcare provider.".dimmed()
     );
     println!(
         "  {}",
-        "📋 Use `openhealth screen` for detailed screening recommendations.\n"
-            .dimmed()
+        "📋 Use `openhealth screen` for detailed screening recommendations.\n".dimmed()
     );
 }
 
@@ -107,7 +105,11 @@ fn get_risks_for_age(age: u8, sex: Option<&str>) -> Vec<AgeRisk> {
 
     // Neonates
     if age == 0 {
-        risks.push(AgeRisk { disease: "Neonatal Sepsis", risk_note: "Watch for poor feeding, lethargy, temperature instability. Seek care immediately." });
+        risks.push(AgeRisk {
+            disease: "Neonatal Sepsis",
+            risk_note:
+                "Watch for poor feeding, lethargy, temperature instability. Seek care immediately.",
+        });
         risks.push(AgeRisk { disease: "Neonatal Jaundice", risk_note: "Common in first week. Monitor yellowing of skin/eyes. Phototherapy if bilirubin elevated." });
         risks.push(AgeRisk { disease: "Pyloric Stenosis", risk_note: "Projectile vomiting at 2-8 weeks. More common in firstborn males. Surgical correction." });
     }
@@ -141,35 +143,72 @@ fn get_risks_for_age(age: u8, sex: Option<&str>) -> Vec<AgeRisk> {
 
     // Young adults
     if (18..=39).contains(&age) {
-        risks.push(AgeRisk { disease: "STIs / HIV", risk_note: "Peak transmission age. Regular screening, safe sex practices, PrEP if at risk." });
+        risks.push(AgeRisk {
+            disease: "STIs / HIV",
+            risk_note:
+                "Peak transmission age. Regular screening, safe sex practices, PrEP if at risk.",
+        });
         risks.push(AgeRisk { disease: "Mental Health", risk_note: "Peak onset for many psychiatric conditions (schizophrenia, bipolar). Seek help early." });
         if is_female {
-            risks.push(AgeRisk { disease: "Preeclampsia", risk_note: "Monitor blood pressure during pregnancy. Early detection saves lives." });
-            risks.push(AgeRisk { disease: "Endometriosis", risk_note: "Severe period pain is NOT normal. Average diagnostic delay is 7-10 years." });
+            risks.push(AgeRisk {
+                disease: "Preeclampsia",
+                risk_note: "Monitor blood pressure during pregnancy. Early detection saves lives.",
+            });
+            risks.push(AgeRisk {
+                disease: "Endometriosis",
+                risk_note:
+                    "Severe period pain is NOT normal. Average diagnostic delay is 7-10 years.",
+            });
         }
     }
 
     // Middle-aged
     if (40..=64).contains(&age) {
-        risks.push(AgeRisk { disease: "Cardiovascular Disease", risk_note: "Leading cause of death. Screen blood pressure, cholesterol, glucose regularly." });
-        risks.push(AgeRisk { disease: "Type 2 Diabetes", risk_note: "Risk increases with age. Screen fasting glucose/HbA1c every 3 years from age 45." });
+        risks.push(AgeRisk {
+            disease: "Cardiovascular Disease",
+            risk_note:
+                "Leading cause of death. Screen blood pressure, cholesterol, glucose regularly.",
+        });
+        risks.push(AgeRisk {
+            disease: "Type 2 Diabetes",
+            risk_note:
+                "Risk increases with age. Screen fasting glucose/HbA1c every 3 years from age 45.",
+        });
         risks.push(AgeRisk { disease: "Colorectal Cancer", risk_note: "Screening recommended from age 45. Colonoscopy every 10 years or stool tests annually." });
         if is_female && age >= 50 {
-            risks.push(AgeRisk { disease: "Breast Cancer", risk_note: "Mammography screening every 1-2 years. Self-examination monthly." });
+            risks.push(AgeRisk {
+                disease: "Breast Cancer",
+                risk_note: "Mammography screening every 1-2 years. Self-examination monthly.",
+            });
             risks.push(AgeRisk { disease: "Osteoporosis", risk_note: "Bone density declines post-menopause. Calcium, vitamin D, weight-bearing exercise." });
         }
         if is_male && age >= 50 {
-            risks.push(AgeRisk { disease: "Prostate Cancer", risk_note: "Discuss PSA screening with physician. Shared decision-making recommended." });
+            risks.push(AgeRisk {
+                disease: "Prostate Cancer",
+                risk_note:
+                    "Discuss PSA screening with physician. Shared decision-making recommended.",
+            });
         }
     }
 
     // Seniors
     if age >= 65 {
-        risks.push(AgeRisk { disease: "Falls and Fractures", risk_note: "Leading cause of injury. Home safety, exercise, vision checks, medication review." });
+        risks.push(AgeRisk {
+            disease: "Falls and Fractures",
+            risk_note:
+                "Leading cause of injury. Home safety, exercise, vision checks, medication review.",
+        });
         risks.push(AgeRisk { disease: "Dementia / Alzheimer's", risk_note: "Risk doubles every 5 years after 65. Cognitive screening, social engagement, exercise help." });
-        risks.push(AgeRisk { disease: "Pneumonia", risk_note: "Higher mortality in elderly. Annual flu + pneumococcal vaccination critical." });
+        risks.push(AgeRisk {
+            disease: "Pneumonia",
+            risk_note:
+                "Higher mortality in elderly. Annual flu + pneumococcal vaccination critical.",
+        });
         risks.push(AgeRisk { disease: "Atrial Fibrillation", risk_note: "Increases stroke risk 5x. Pulse check, ECG screening. Anticoagulation if detected." });
-        risks.push(AgeRisk { disease: "Chronic Kidney Disease", risk_note: "Often asymptomatic until advanced. Annual creatinine/GFR screening." });
+        risks.push(AgeRisk {
+            disease: "Chronic Kidney Disease",
+            risk_note: "Often asymptomatic until advanced. Annual creatinine/GFR screening.",
+        });
         if is_male {
             risks.push(AgeRisk { disease: "Benign Prostatic Hyperplasia", risk_note: "Very common after 60. Urinary symptoms treatable. See urologist if symptomatic." });
         }

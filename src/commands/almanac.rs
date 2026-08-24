@@ -20,37 +20,137 @@ struct AlmanacDisease {
 
 struct SeasonalEntry {
     disease: &'static str,
-    months: &'static [u32],   // 1-12
+    months: &'static [u32], // 1-12
     reason: &'static str,
 }
 
 fn get_seasonal_data() -> Vec<SeasonalEntry> {
     vec![
-        SeasonalEntry { disease: "Influenza", months: &[11,12,1,2,3], reason: "Peak flu season in temperate climates" },
-        SeasonalEntry { disease: "Common Cold", months: &[9,10,11,12,1,2,3], reason: "Rhinovirus thrives in cool, dry air" },
-        SeasonalEntry { disease: "Norovirus Gastroenteritis", months: &[11,12,1,2,3], reason: "Winter vomiting bug peaks in cold months" },
-        SeasonalEntry { disease: "Dengue Fever", months: &[6,7,8,9,10], reason: "Rainy season increases Aedes mosquito breeding" },
-        SeasonalEntry { disease: "Malaria", months: &[5,6,7,8,9,10], reason: "Warm wet season increases Anopheles mosquito activity" },
-        SeasonalEntry { disease: "Heatstroke", months: &[6,7,8], reason: "Summer heat waves; highest risk during extreme temperatures" },
-        SeasonalEntry { disease: "Lyme Disease", months: &[5,6,7,8], reason: "Tick nymphs are most active in late spring/summer" },
-        SeasonalEntry { disease: "Asthma", months: &[3,4,5,9,10], reason: "Spring pollen and fall allergens trigger exacerbations" },
-        SeasonalEntry { disease: "Chickenpox", months: &[3,4,5,6], reason: "Historically peaks in spring before widespread vaccination" },
-        SeasonalEntry { disease: "Hand, Foot, and Mouth Disease", months: &[6,7,8,9], reason: "Enterovirus transmission peaks in summer/early fall" },
-        SeasonalEntry { disease: "Measles", months: &[2,3,4,5], reason: "Late winter/spring peaks due to indoor crowding" },
-        SeasonalEntry { disease: "Rotavirus Gastroenteritis", months: &[1,2,3,4,5], reason: "Peaks in winter/spring in temperate climates" },
-        SeasonalEntry { disease: "Cholera", months: &[6,7,8,9,10], reason: "Rainy season and flooding contaminate water supplies" },
-        SeasonalEntry { disease: "Yellow Fever", months: &[7,8,9,10], reason: "Peak mosquito season in endemic areas" },
-        SeasonalEntry { disease: "Depression", months: &[11,12,1,2], reason: "Seasonal affective disorder (SAD) peaks with reduced daylight" },
-        SeasonalEntry { disease: "Pneumonia", months: &[12,1,2,3], reason: "Cold weather and respiratory virus circulation increase risk" },
-        SeasonalEntry { disease: "Bronchiolitis", months: &[11,12,1,2], reason: "RSV season peaks in winter" },
-        SeasonalEntry { disease: "Tinea Versicolor", months: &[5,6,7,8,9], reason: "Hot humid weather promotes Malassezia overgrowth" },
-        SeasonalEntry { disease: "Scabies", months: &[10,11,12,1,2], reason: "Increased close contact and indoor crowding in winter" },
-        SeasonalEntry { disease: "Croup", months: &[10,11,12], reason: "Parainfluenza virus circulation peaks in fall" },
-        SeasonalEntry { disease: "COVID-19", months: &[11,12,1,2,3], reason: "Respiratory virus with winter surge pattern" },
-        SeasonalEntry { disease: "Pertussis", months: &[6,7,8,9], reason: "Late summer/early fall peaks in many regions" },
-        SeasonalEntry { disease: "Plantar Fasciitis", months: &[3,4,5], reason: "Spring exercise ramp-up after winter inactivity" },
-        SeasonalEntry { disease: "Kidney Stones", months: &[6,7,8], reason: "Dehydration in summer heat increases stone formation risk" },
-        SeasonalEntry { disease: "Gout", months: &[3,4,5,6], reason: "Dietary changes and dehydration in warmer months" },
+        SeasonalEntry {
+            disease: "Influenza",
+            months: &[11, 12, 1, 2, 3],
+            reason: "Peak flu season in temperate climates",
+        },
+        SeasonalEntry {
+            disease: "Common Cold",
+            months: &[9, 10, 11, 12, 1, 2, 3],
+            reason: "Rhinovirus thrives in cool, dry air",
+        },
+        SeasonalEntry {
+            disease: "Norovirus Gastroenteritis",
+            months: &[11, 12, 1, 2, 3],
+            reason: "Winter vomiting bug peaks in cold months",
+        },
+        SeasonalEntry {
+            disease: "Dengue Fever",
+            months: &[6, 7, 8, 9, 10],
+            reason: "Rainy season increases Aedes mosquito breeding",
+        },
+        SeasonalEntry {
+            disease: "Malaria",
+            months: &[5, 6, 7, 8, 9, 10],
+            reason: "Warm wet season increases Anopheles mosquito activity",
+        },
+        SeasonalEntry {
+            disease: "Heatstroke",
+            months: &[6, 7, 8],
+            reason: "Summer heat waves; highest risk during extreme temperatures",
+        },
+        SeasonalEntry {
+            disease: "Lyme Disease",
+            months: &[5, 6, 7, 8],
+            reason: "Tick nymphs are most active in late spring/summer",
+        },
+        SeasonalEntry {
+            disease: "Asthma",
+            months: &[3, 4, 5, 9, 10],
+            reason: "Spring pollen and fall allergens trigger exacerbations",
+        },
+        SeasonalEntry {
+            disease: "Chickenpox",
+            months: &[3, 4, 5, 6],
+            reason: "Historically peaks in spring before widespread vaccination",
+        },
+        SeasonalEntry {
+            disease: "Hand, Foot, and Mouth Disease",
+            months: &[6, 7, 8, 9],
+            reason: "Enterovirus transmission peaks in summer/early fall",
+        },
+        SeasonalEntry {
+            disease: "Measles",
+            months: &[2, 3, 4, 5],
+            reason: "Late winter/spring peaks due to indoor crowding",
+        },
+        SeasonalEntry {
+            disease: "Rotavirus Gastroenteritis",
+            months: &[1, 2, 3, 4, 5],
+            reason: "Peaks in winter/spring in temperate climates",
+        },
+        SeasonalEntry {
+            disease: "Cholera",
+            months: &[6, 7, 8, 9, 10],
+            reason: "Rainy season and flooding contaminate water supplies",
+        },
+        SeasonalEntry {
+            disease: "Yellow Fever",
+            months: &[7, 8, 9, 10],
+            reason: "Peak mosquito season in endemic areas",
+        },
+        SeasonalEntry {
+            disease: "Depression",
+            months: &[11, 12, 1, 2],
+            reason: "Seasonal affective disorder (SAD) peaks with reduced daylight",
+        },
+        SeasonalEntry {
+            disease: "Pneumonia",
+            months: &[12, 1, 2, 3],
+            reason: "Cold weather and respiratory virus circulation increase risk",
+        },
+        SeasonalEntry {
+            disease: "Bronchiolitis",
+            months: &[11, 12, 1, 2],
+            reason: "RSV season peaks in winter",
+        },
+        SeasonalEntry {
+            disease: "Tinea Versicolor",
+            months: &[5, 6, 7, 8, 9],
+            reason: "Hot humid weather promotes Malassezia overgrowth",
+        },
+        SeasonalEntry {
+            disease: "Scabies",
+            months: &[10, 11, 12, 1, 2],
+            reason: "Increased close contact and indoor crowding in winter",
+        },
+        SeasonalEntry {
+            disease: "Croup",
+            months: &[10, 11, 12],
+            reason: "Parainfluenza virus circulation peaks in fall",
+        },
+        SeasonalEntry {
+            disease: "COVID-19",
+            months: &[11, 12, 1, 2, 3],
+            reason: "Respiratory virus with winter surge pattern",
+        },
+        SeasonalEntry {
+            disease: "Pertussis",
+            months: &[6, 7, 8, 9],
+            reason: "Late summer/early fall peaks in many regions",
+        },
+        SeasonalEntry {
+            disease: "Plantar Fasciitis",
+            months: &[3, 4, 5],
+            reason: "Spring exercise ramp-up after winter inactivity",
+        },
+        SeasonalEntry {
+            disease: "Kidney Stones",
+            months: &[6, 7, 8],
+            reason: "Dehydration in summer heat increases stone formation risk",
+        },
+        SeasonalEntry {
+            disease: "Gout",
+            months: &[3, 4, 5, 6],
+            reason: "Dietary changes and dehydration in warmer months",
+        },
     ]
 }
 
@@ -65,9 +165,18 @@ fn season_for_month(month: u32) -> &'static str {
 
 fn month_name(m: u32) -> &'static str {
     match m {
-        1 => "January", 2 => "February", 3 => "March", 4 => "April",
-        5 => "May", 6 => "June", 7 => "July", 8 => "August",
-        9 => "September", 10 => "October", 11 => "November", 12 => "December",
+        1 => "January",
+        2 => "February",
+        3 => "March",
+        4 => "April",
+        5 => "May",
+        6 => "June",
+        7 => "July",
+        8 => "August",
+        9 => "September",
+        10 => "October",
+        11 => "November",
+        12 => "December",
         _ => "Unknown",
     }
 }
@@ -105,9 +214,7 @@ fn tips_for_season(season: &str) -> Vec<String> {
 }
 
 pub fn run(conn: &Connection, month_input: Option<u32>, json: bool) {
-    let current_month = month_input.unwrap_or_else(|| {
-        chrono::Local::now().month()
-    });
+    let current_month = month_input.unwrap_or_else(|| chrono::Local::now().month());
 
     if !(1..=12).contains(&current_month) {
         if json {
@@ -129,11 +236,13 @@ pub fn run(conn: &Connection, month_input: Option<u32>, json: bool) {
             continue;
         }
         // Look up severity from database
-        let severity: Option<String> = conn.query_row(
-            "SELECT severity FROM diseases WHERE name = ?1",
-            [entry.disease],
-            |row| row.get(0),
-        ).ok();
+        let severity: Option<String> = conn
+            .query_row(
+                "SELECT severity FROM diseases WHERE name = ?1",
+                [entry.disease],
+                |row| row.get(0),
+            )
+            .ok();
 
         active.push(AlmanacDisease {
             name: entry.disease.to_string(),
@@ -144,7 +253,11 @@ pub fn run(conn: &Connection, month_input: Option<u32>, json: bool) {
 
     // Sort by severity
     active.sort_by(|a, b| {
-        let sev_order = |s: &str| match s { "high" => 0, "medium" => 1, _ => 2 };
+        let sev_order = |s: &str| match s {
+            "high" => 0,
+            "medium" => 1,
+            _ => 2,
+        };
         sev_order(&a.severity).cmp(&sev_order(&b.severity))
     });
 
@@ -156,14 +269,31 @@ pub fn run(conn: &Connection, month_input: Option<u32>, json: bool) {
             diseases: active,
             tips,
         };
-        println!("{}", serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".into()));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".into())
+        );
         return;
     }
 
     println!();
-    println!("{}", "╔══════════════════════════════════════════════════════════╗".bright_cyan());
-    println!("{}", format!("║         📅  Health Almanac — {} ({})             ║", month_name(current_month), season).bright_cyan());
-    println!("{}", "╚══════════════════════════════════════════════════════════╝".bright_cyan());
+    println!(
+        "{}",
+        "╔══════════════════════════════════════════════════════════╗".bright_cyan()
+    );
+    println!(
+        "{}",
+        format!(
+            "║         📅  Health Almanac — {} ({})             ║",
+            month_name(current_month),
+            season
+        )
+        .bright_cyan()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════════════╝".bright_cyan()
+    );
     println!();
 
     if active.is_empty() {
@@ -216,7 +346,12 @@ mod tests {
     fn test_seasonal_data_valid_months() {
         for entry in get_seasonal_data() {
             for m in entry.months {
-                assert!((1..=12).contains(m), "Invalid month in {}: {}", entry.disease, m);
+                assert!(
+                    (1..=12).contains(m),
+                    "Invalid month in {}: {}",
+                    entry.disease,
+                    m
+                );
             }
         }
     }

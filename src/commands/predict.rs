@@ -56,8 +56,12 @@ pub fn run(conn: &Connection, name: &str, json: bool) {
 
     // Build prognosis based on severity and available data
     let recovery_outlook = match severity.as_str() {
-        "high" => "Requires prompt medical intervention. Outcomes depend heavily on speed of treatment.",
-        "medium" => "Generally treatable with appropriate medical care. Most patients recover well.",
+        "high" => {
+            "Requires prompt medical intervention. Outcomes depend heavily on speed of treatment."
+        }
+        "medium" => {
+            "Generally treatable with appropriate medical care. Most patients recover well."
+        }
         _ => "Usually self-limiting or manageable with simple treatment. Good prognosis.",
     };
 
@@ -88,10 +92,7 @@ pub fn run(conn: &Connection, name: &str, json: bool) {
 
     // Display
     println!();
-    println!(
-        "{}",
-        format!("🔮 Prognosis: {disease_name}").bold().cyan()
-    );
+    println!("{}", format!("🔮 Prognosis: {disease_name}").bold().cyan());
     println!("{}", "─".repeat(50));
 
     let sev_display = match severity.as_str() {
@@ -101,10 +102,7 @@ pub fn run(conn: &Connection, name: &str, json: bool) {
     };
     println!("  {} {sev_display}", "Severity:".bold());
     println!("  {} {recovery_outlook}", "Outlook:".bold());
-    println!(
-        "  {} {typical_duration}",
-        "Typical Duration:".bold()
-    );
+    println!("  {} {typical_duration}", "Typical Duration:".bold());
 
     if !prognosis.complications.is_empty() {
         println!();
@@ -151,8 +149,7 @@ pub fn run(conn: &Connection, name: &str, json: bool) {
     println!();
     println!(
         "  {}",
-        "⚕️  This is informational only — consult a healthcare provider."
-            .dimmed()
+        "⚕️  This is informational only — consult a healthcare provider.".dimmed()
     );
     println!(
         "  {}",
@@ -268,7 +265,9 @@ fn build_lifestyle_impact(severity: &str, risk_factors: &[(String, String)]) -> 
         )
     } else {
         match severity {
-            "high" => "May require significant lifestyle adjustments during and after treatment.".into(),
+            "high" => {
+                "May require significant lifestyle adjustments during and after treatment.".into()
+            }
             "medium" => "Moderate lifestyle adjustments may help recovery and prevention.".into(),
             _ => "Minimal long-term lifestyle impact expected with proper management.".into(),
         }

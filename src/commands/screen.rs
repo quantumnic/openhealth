@@ -39,23 +39,37 @@ pub fn run(age: Option<u8>, sex: Option<&str>, json: bool) {
     let age_val = age.unwrap_or(0);
     let sex_val = sex.map(|s| s.to_lowercase());
 
-    let filtered: Vec<&Screening> = screenings.iter().filter(|s| {
-        let age_ok = age_val == 0 || (age_val >= s.start_age && age_val <= s.end_age);
-        let sex_ok = match (&sex_val, s.sex) {
-            (Some(user_sex), Some(screen_sex)) => user_sex == screen_sex,
-            _ => true,
-        };
-        age_ok && sex_ok
-    }).collect();
+    let filtered: Vec<&Screening> = screenings
+        .iter()
+        .filter(|s| {
+            let age_ok = age_val == 0 || (age_val >= s.start_age && age_val <= s.end_age);
+            let sex_ok = match (&sex_val, s.sex) {
+                (Some(user_sex), Some(screen_sex)) => user_sex == screen_sex,
+                _ => true,
+            };
+            age_ok && sex_ok
+        })
+        .collect();
 
     if json {
         print_json(&filtered, age, sex);
         return;
     }
 
-    println!("{}", "╔══════════════════════════════════════════════════════════════╗".bright_cyan());
-    println!("{}", "║        🏥  HEALTH SCREENING RECOMMENDATIONS                 ║".bright_cyan().bold());
-    println!("{}", "╚══════════════════════════════════════════════════════════════╝".bright_cyan());
+    println!(
+        "{}",
+        "╔══════════════════════════════════════════════════════════════╗".bright_cyan()
+    );
+    println!(
+        "{}",
+        "║        🏥  HEALTH SCREENING RECOMMENDATIONS                 ║"
+            .bright_cyan()
+            .bold()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════════════════╝".bright_cyan()
+    );
     println!();
 
     if let Some(a) = age {
@@ -72,19 +86,44 @@ pub fn run(age: Option<u8>, sex: Option<&str>, json: bool) {
         return;
     }
 
-    println!("  {} recommended screenings:\n", filtered.len().to_string().bright_yellow().bold());
+    println!(
+        "  {} recommended screenings:\n",
+        filtered.len().to_string().bright_yellow().bold()
+    );
 
     for (i, s) in filtered.iter().enumerate() {
         let priority = if age_val > 0 {
-            if age_val >= s.start_age && age_val <= s.end_age { "✅" } else { "⏳" }
+            if age_val >= s.start_age && age_val <= s.end_age {
+                "✅"
+            } else {
+                "⏳"
+            }
         } else {
             "📋"
         };
 
-        println!("  {} {} {}", priority, format!("{}.", i + 1).dimmed(), s.name.bright_white().bold());
+        println!(
+            "  {} {} {}",
+            priority,
+            format!("{}.", i + 1).dimmed(),
+            s.name.bright_white().bold()
+        );
         println!("     {} {}", "Test:".dimmed(), s.test);
-        println!("     {} Ages {}-{}", "When:".dimmed(), s.start_age, if s.end_age >= 120 { "ongoing".to_string() } else { s.end_age.to_string() });
-        println!("     {} {}", "How often:".dimmed(), s.frequency.bright_yellow());
+        println!(
+            "     {} Ages {}-{}",
+            "When:".dimmed(),
+            s.start_age,
+            if s.end_age >= 120 {
+                "ongoing".to_string()
+            } else {
+                s.end_age.to_string()
+            }
+        );
+        println!(
+            "     {} {}",
+            "How often:".dimmed(),
+            s.frequency.bright_yellow()
+        );
         if let Some(sex_req) = s.sex {
             println!("     {} {}", "For:".dimmed(), sex_req.bright_magenta());
         }
@@ -93,25 +132,37 @@ pub fn run(age: Option<u8>, sex: Option<&str>, json: bool) {
         println!();
     }
 
-    println!("{}", "  ⚠️  These are general guidelines. Consult your healthcare".yellow());
-    println!("{}", "     provider for personalized screening recommendations.".yellow());
+    println!(
+        "{}",
+        "  ⚠️  These are general guidelines. Consult your healthcare".yellow()
+    );
+    println!(
+        "{}",
+        "     provider for personalized screening recommendations.".yellow()
+    );
     println!();
-    println!("  {}", "Source: USPSTF, WHO, ACS, AAO, ADA guidelines".dimmed());
+    println!(
+        "  {}",
+        "Source: USPSTF, WHO, ACS, AAO, ADA guidelines".dimmed()
+    );
 }
 
 fn print_json(screenings: &[&Screening], age: Option<u8>, sex: Option<&str>) {
-    let items: Vec<serde_json::Value> = screenings.iter().map(|s| {
-        serde_json::json!({
-            "name": s.name,
-            "test": s.test,
-            "start_age": s.start_age,
-            "end_age": if s.end_age >= 120 { None } else { Some(s.end_age) },
-            "frequency": s.frequency,
-            "sex": s.sex,
-            "source": s.source,
-            "notes": s.notes,
+    let items: Vec<serde_json::Value> = screenings
+        .iter()
+        .map(|s| {
+            serde_json::json!({
+                "name": s.name,
+                "test": s.test,
+                "start_age": s.start_age,
+                "end_age": if s.end_age >= 120 { None } else { Some(s.end_age) },
+                "frequency": s.frequency,
+                "sex": s.sex,
+                "source": s.source,
+                "notes": s.notes,
+            })
         })
-    }).collect();
+        .collect();
 
     let output = serde_json::json!({
         "filter_age": age,

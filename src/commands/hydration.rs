@@ -89,7 +89,9 @@ pub fn run(input: &str, json: bool) {
     }
 
     tips.push("Fruits and vegetables contribute ~20% of daily water intake".to_string());
-    tips.push("Caffeinated beverages have mild diuretic effect — compensate with extra water".to_string());
+    tips.push(
+        "Caffeinated beverages have mild diuretic effect — compensate with extra water".to_string(),
+    );
 
     let result = HydrationResult {
         weight_kg: weight,
@@ -141,8 +143,7 @@ pub fn run(input: &str, json: bool) {
     println!();
     println!(
         "{}",
-        "⚕️  Based on WHO/EFSA guidelines. Individual needs may vary."
-            .dimmed()
+        "⚕️  Based on WHO/EFSA guidelines. Individual needs may vary.".dimmed()
     );
     println!();
 }

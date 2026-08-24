@@ -37,7 +37,9 @@ pub fn run(conn: &Connection, name: &str, limit: usize, json: bool) {
         .prepare("SELECT id, name, severity FROM diseases WHERE id != ?1")
         .unwrap();
     let others: Vec<(i64, String, String)> = stmt
-        .query_map([target_id], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .query_map([target_id], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
         .unwrap()
         .filter_map(|r| r.ok())
         .collect();
@@ -50,7 +52,10 @@ pub fn run(conn: &Connection, name: &str, limit: usize, json: bool) {
             continue;
         }
 
-        let intersection = target_symptoms.iter().filter(|s| other_symptoms.contains(s)).count();
+        let intersection = target_symptoms
+            .iter()
+            .filter(|s| other_symptoms.contains(s))
+            .count();
         if intersection == 0 {
             continue;
         }
@@ -90,7 +95,10 @@ pub fn run(conn: &Connection, name: &str, limit: usize, json: bool) {
     }
 
     display::print_banner();
-    println!("{}", format!("━━━ Diseases Similar to {} ━━━", target_name).bold());
+    println!(
+        "{}",
+        format!("━━━ Diseases Similar to {} ━━━", target_name).bold()
+    );
     println!();
 
     if similarities.is_empty() {
@@ -151,7 +159,9 @@ mod tests {
         let conn = db::init_memory_database().unwrap();
         // Malaria should have similar diseases (e.g., Dengue, Typhoid)
         let target_id: i64 = conn
-            .query_row("SELECT id FROM diseases WHERE name = 'Malaria'", [], |r| r.get(0))
+            .query_row("SELECT id FROM diseases WHERE name = 'Malaria'", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         let syms = get_symptom_ids(&conn, target_id);
         assert!(!syms.is_empty());

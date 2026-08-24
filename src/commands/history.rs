@@ -53,7 +53,10 @@ pub fn run(conn: &Connection, limit: usize, json: bool) {
     }
 
     if entries.is_empty() {
-        println!("{}", "📋 No diagnosis history yet. Run `symptoms` or `check` to build history.".yellow());
+        println!(
+            "{}",
+            "📋 No diagnosis history yet. Run `symptoms` or `check` to build history.".yellow()
+        );
         return;
     }
 
@@ -78,10 +81,7 @@ pub fn run(conn: &Connection, limit: usize, json: bool) {
     println!();
 
     for entry in &entries {
-        let disease_str = entry
-            .top_disease
-            .as_deref()
-            .unwrap_or("No match");
+        let disease_str = entry.top_disease.as_deref().unwrap_or("No match");
         let prob_str = entry
             .top_probability
             .map(|p| format!("{:.1}%", p))

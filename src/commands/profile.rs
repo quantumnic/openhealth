@@ -1,9 +1,20 @@
 use colored::*;
 use rusqlite::Connection;
 
-pub fn run(conn: &Connection, age: Option<u8>, sex: Option<&str>, show: bool, clear: bool, json: bool) {
+pub fn run(
+    conn: &Connection,
+    age: Option<u8>,
+    sex: Option<&str>,
+    show: bool,
+    clear: bool,
+    json: bool,
+) {
     if clear {
-        conn.execute("DELETE FROM metadata WHERE key IN ('profile_age', 'profile_sex')", []).ok();
+        conn.execute(
+            "DELETE FROM metadata WHERE key IN ('profile_age', 'profile_sex')",
+            [],
+        )
+        .ok();
         if json {
             println!("{{\"status\": \"cleared\"}}");
         } else {
@@ -16,7 +27,8 @@ pub fn run(conn: &Connection, age: Option<u8>, sex: Option<&str>, show: bool, cl
         conn.execute(
             "INSERT OR REPLACE INTO metadata (key, value) VALUES ('profile_age', ?1)",
             [a.to_string()],
-        ).ok();
+        )
+        .ok();
     }
 
     if let Some(s) = sex {
@@ -32,7 +44,8 @@ pub fn run(conn: &Connection, age: Option<u8>, sex: Option<&str>, show: bool, cl
         conn.execute(
             "INSERT OR REPLACE INTO metadata (key, value) VALUES ('profile_sex', ?1)",
             [&s],
-        ).ok();
+        )
+        .ok();
     }
 
     if show || (age.is_none() && sex.is_none()) {
@@ -53,7 +66,9 @@ pub fn run(conn: &Connection, age: Option<u8>, sex: Option<&str>, show: bool, cl
             );
             println!(
                 "  Sex: {}",
-                current_sex.as_deref().unwrap_or(&"not set".dimmed().to_string())
+                current_sex
+                    .as_deref()
+                    .unwrap_or(&"not set".dimmed().to_string())
             );
             println!();
             println!("  Set with: openhealth profile --age 35 --sex male");

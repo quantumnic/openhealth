@@ -90,11 +90,18 @@ pub fn run(method: Option<&str>, as_json: bool) {
     }
 
     println!("\n{}", "💧 Water Safety & Purification Guide".bold().cyan());
-    println!("   {}\n", "Making water safe to drink — methods for any situation".dimmed());
+    println!(
+        "   {}\n",
+        "Making water safe to drink — methods for any situation".dimmed()
+    );
 
     // WHO ORS recipe
     println!("{}", "━".repeat(60).dimmed());
-    println!("  {} {}", "🧂".bold(), "WHO Oral Rehydration Solution (ORS) Recipe".bold().yellow());
+    println!(
+        "  {} {}",
+        "🧂".bold(),
+        "WHO Oral Rehydration Solution (ORS) Recipe".bold().yellow()
+    );
     println!("  For 1 liter of clean water:");
     println!("    • 6 level teaspoons of sugar");
     println!("    • ½ level teaspoon of salt");

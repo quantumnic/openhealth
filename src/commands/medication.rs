@@ -158,8 +158,7 @@ pub fn run(name: &str, json: bool) {
             .filter(|m| {
                 query.split_whitespace().any(|w| {
                     w.len() >= 3
-                        && (m.name.to_lowercase().contains(w)
-                            || m.class.to_lowercase().contains(w))
+                        && (m.name.to_lowercase().contains(w) || m.class.to_lowercase().contains(w))
                 })
             })
             .collect();
@@ -250,8 +249,7 @@ fn print_medication(m: &MedicationInfo) {
     println!();
     println!(
         "  {}",
-        "⚠️  Always consult a healthcare professional before taking any medication."
-            .yellow()
+        "⚠️  Always consult a healthcare professional before taking any medication.".yellow()
     );
     println!();
 }
@@ -281,14 +279,19 @@ mod tests {
     #[test]
     fn test_medication_search_paracetamol() {
         let meds = get_medications();
-        let found = meds.iter().any(|m| m.name.to_lowercase().contains("paracetamol"));
+        let found = meds
+            .iter()
+            .any(|m| m.name.to_lowercase().contains("paracetamol"));
         assert!(found, "Should find paracetamol");
     }
 
     #[test]
     fn test_medication_search_by_class() {
         let meds = get_medications();
-        let nsaids: Vec<_> = meds.iter().filter(|m| m.class.to_lowercase().contains("nsaid")).collect();
+        let nsaids: Vec<_> = meds
+            .iter()
+            .filter(|m| m.class.to_lowercase().contains("nsaid"))
+            .collect();
         assert!(nsaids.len() >= 2, "Should find at least 2 NSAIDs");
     }
 }

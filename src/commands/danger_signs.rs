@@ -37,7 +37,10 @@ pub fn run(category: Option<&str>, json: bool) {
             "adult" | "general" => results.push(adult_danger_signs()),
             _ => {
                 if !json {
-                    println!("Unknown category: '{}'. Use: child, maternal, neonatal, adult", cat);
+                    println!(
+                        "Unknown category: '{}'. Use: child, maternal, neonatal, adult",
+                        cat
+                    );
                 }
             }
         }
@@ -57,10 +60,7 @@ pub fn run(category: Option<&str>, json: bool) {
             "{}",
             "╔══════════════════════════════════════════════════════════╗".bright_red()
         );
-        println!(
-            "║  ⚠️   {}",
-            format!("{:<52}║", result.title).bright_red()
-        );
+        println!("║  ⚠️   {}", format!("{:<52}║", result.title).bright_red());
         println!(
             "{}",
             "╚══════════════════════════════════════════════════════════╝".bright_red()
@@ -91,7 +91,9 @@ pub fn run(category: Option<&str>, json: bool) {
         println!();
         println!(
             "  {}",
-            "⚠️  Any danger sign = SEEK IMMEDIATE MEDICAL CARE".red().bold()
+            "⚠️  Any danger sign = SEEK IMMEDIATE MEDICAL CARE"
+                .red()
+                .bold()
         );
     }
     println!();

@@ -92,8 +92,7 @@ pub fn run(conn: &Connection, input: &str, json: bool) {
         if !matched.is_empty() {
             // Normalize: factor count and total possible
             let total_factors = risk_factors.len() as f64;
-            let risk_score =
-                ((score / (total_factors * 3.0)) * 100.0).clamp(5.0, 95.0);
+            let risk_score = ((score / (total_factors * 3.0)) * 100.0).clamp(5.0, 95.0);
             results.push(RiskResult {
                 disease: dname.clone(),
                 severity: dsev.clone(),
@@ -111,19 +110,13 @@ pub fn run(conn: &Connection, input: &str, json: bool) {
     }
 
     if results.is_empty() {
-        println!(
-            "{}",
-            "No diseases matched the given risk factors.".yellow()
-        );
+        println!("{}", "No diseases matched the given risk factors.".yellow());
         println!("Try broader terms like: smoking, obesity, diabetes, immunosuppression");
         return;
     }
 
     println!("{}", "━━━ Risk Assessment ━━━".bold());
-    println!(
-        "  Factors: {}",
-        factors.join(", ").bright_cyan()
-    );
+    println!("  Factors: {}", factors.join(", ").bright_cyan());
     println!();
 
     for (i, r) in results.iter().take(15).enumerate() {
@@ -156,8 +149,7 @@ pub fn run(conn: &Connection, input: &str, json: bool) {
     println!("{}", "━━━━━━━━━━━━━━━━━━━━━━━━".dimmed());
     println!(
         "{}",
-        "⚠️  Risk assessment is informational only. Consult a healthcare provider."
-            .yellow()
+        "⚠️  Risk assessment is informational only. Consult a healthcare provider.".yellow()
     );
     println!();
 }

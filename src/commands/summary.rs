@@ -117,18 +117,15 @@ pub fn run(conn: &Connection, json: bool) {
     println!();
     println!(
         "{}",
-        "╔══════════════════════════════════════════════════════════╗"
-            .bright_cyan()
+        "╔══════════════════════════════════════════════════════════╗".bright_cyan()
     );
     println!(
         "{}",
-        "║          🏥  OpenHealth Database Summary  🏥           ║"
-            .bright_cyan()
+        "║          🏥  OpenHealth Database Summary  🏥           ║".bright_cyan()
     );
     println!(
         "{}",
-        "╚══════════════════════════════════════════════════════════╝"
-            .bright_cyan()
+        "╚══════════════════════════════════════════════════════════╝".bright_cyan()
     );
     println!();
 
@@ -180,10 +177,7 @@ pub fn run(conn: &Connection, json: bool) {
         );
     }
     if categories.len() > 10 {
-        println!(
-            "        ... and {} more categories",
-            categories.len() - 10
-        );
+        println!("        ... and {} more categories", categories.len() - 10);
     }
     println!();
 
