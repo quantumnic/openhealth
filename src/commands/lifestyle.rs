@@ -9,7 +9,13 @@ struct LifestyleTip {
     source: &'static str,
 }
 
-pub fn run(conn: &Connection, age: Option<u8>, sex: Option<&str>, factors: Option<&str>, json: bool) {
+pub fn run(
+    conn: &Connection,
+    age: Option<u8>,
+    sex: Option<&str>,
+    factors: Option<&str>,
+    json: bool,
+) {
     let tips = generate_tips(age, sex, factors);
 
     if json {
@@ -28,9 +34,18 @@ pub fn run(conn: &Connection, age: Option<u8>, sex: Option<&str>, factors: Optio
         return;
     }
 
-    println!("\n{}", "╔══════════════════════════════════════════════════╗".cyan());
-    println!("{}", "║    🌿 Personalized Lifestyle Recommendations    ║".cyan());
-    println!("{}", "╚══════════════════════════════════════════════════╝".cyan());
+    println!(
+        "\n{}",
+        "╔══════════════════════════════════════════════════╗".cyan()
+    );
+    println!(
+        "{}",
+        "║    🌿 Personalized Lifestyle Recommendations    ║".cyan()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════╝".cyan()
+    );
 
     if let Some(a) = age {
         print!("\n  👤 Age: {}", a);
@@ -75,7 +90,11 @@ pub fn run(conn: &Connection, age: Option<u8>, sex: Option<&str>, factors: Optio
 fn generate_tips(age: Option<u8>, sex: Option<&str>, factors: Option<&str>) -> Vec<LifestyleTip> {
     let mut tips = Vec::new();
     let factor_list: Vec<&str> = factors
-        .map(|f| f.split(',').map(|s| s.trim().to_lowercase()).collect::<Vec<_>>())
+        .map(|f| {
+            f.split(',')
+                .map(|s| s.trim().to_lowercase())
+                .collect::<Vec<_>>()
+        })
         .unwrap_or_default()
         .into_iter()
         .map(|s| -> &str { Box::leak(s.into_boxed_str()) })
@@ -329,7 +348,8 @@ mod tests {
     fn test_generate_tips_smoking_factor() {
         let tips = generate_tips(None, None, Some("smoking"));
         assert!(
-            tips.iter().any(|t| t.title.contains("smoking") || t.title.contains("Quit")),
+            tips.iter()
+                .any(|t| t.title.contains("smoking") || t.title.contains("Quit")),
             "Should include smoking cessation tip"
         );
     }
@@ -347,6 +367,12 @@ mod tests {
     fn test_lifestyle_run_json() {
         let conn = db::init_memory_database().unwrap();
         // Just verify it doesn't panic
-        run(&conn, Some(30), Some("female"), Some("smoking,obesity"), true);
+        run(
+            &conn,
+            Some(30),
+            Some("female"),
+            Some("smoking,obesity"),
+            true,
+        );
     }
 }

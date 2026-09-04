@@ -1,6 +1,6 @@
 use colored::*;
-use serde::Serialize;
 use rusqlite::Connection;
+use serde::Serialize;
 
 #[derive(Serialize)]
 struct SeverityStats {
@@ -23,7 +23,11 @@ pub fn run(conn: &Connection, json: bool) {
 
     for (level, emoji, desc) in [
         ("low", "🟢", "Monitor at home — mild, self-care appropriate"),
-        ("medium", "🟡", "See a doctor soon — needs medical attention"),
+        (
+            "medium",
+            "🟡",
+            "See a doctor soon — needs medical attention",
+        ),
         ("high", "🔴", "Emergency — seek immediate medical help"),
     ] {
         let mut stmt = conn
@@ -81,27 +85,17 @@ pub fn run(conn: &Connection, json: bool) {
         println!("  {}", colored_level);
         println!("  {}", lvl.description.dimmed());
         println!("  {} diseases ({}%)  {}", lvl.count, pct, bar);
-        println!(
-            "  Examples: {}",
-            lvl.examples.join(", ").dimmed()
-        );
+        println!("  Examples: {}", lvl.examples.join(", ").dimmed());
         println!();
     }
 
-    println!(
-        "  Total diseases in database: {}",
-        total.to_string().bold()
-    );
+    println!("  Total diseases in database: {}", total.to_string().bold());
     println!();
     println!(
         "{}",
-        "  ⚠️  Severity ratings are general guidance. Always seek professional"
-            .dimmed()
+        "  ⚠️  Severity ratings are general guidance. Always seek professional".dimmed()
     );
-    println!(
-        "{}",
-        "     medical advice for any health concern.".dimmed()
-    );
+    println!("{}", "     medical advice for any health concern.".dimmed());
     println!();
 }
 

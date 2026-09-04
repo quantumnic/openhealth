@@ -1,6 +1,6 @@
 use colored::Colorize;
-use rusqlite::Connection;
 use rand_seed::RngSeed;
+use rusqlite::Connection;
 
 /// Simple deterministic PRNG seeded from system time for quiz randomization.
 mod rand_seed {
@@ -135,7 +135,9 @@ fn generate_questions(conn: &Connection, count: usize) -> Vec<QuizQuestion> {
 
     // Gather disease data
     let mut stmt = conn
-        .prepare("SELECT d.name, d.severity, d.category, d.contagious, d.description FROM diseases d")
+        .prepare(
+            "SELECT d.name, d.severity, d.category, d.contagious, d.description FROM diseases d",
+        )
         .unwrap();
     let diseases: Vec<(String, String, String, bool, String)> = stmt
         .query_map([], |row| {
@@ -157,7 +159,9 @@ fn generate_questions(conn: &Connection, count: usize) -> Vec<QuizQuestion> {
 
     // Gather treatments
     let mut treat_stmt = conn
-        .prepare("SELECT d.name, t.first_aid FROM treatments t JOIN diseases d ON d.id = t.disease_id")
+        .prepare(
+            "SELECT d.name, t.first_aid FROM treatments t JOIN diseases d ON d.id = t.disease_id",
+        )
         .unwrap();
     let _treatments: Vec<(String, String)> = treat_stmt
         .query_map([], |row| {
@@ -177,7 +181,7 @@ fn generate_questions(conn: &Connection, count: usize) -> Vec<QuizQuestion> {
             "SELECT d.name, s.name FROM disease_symptoms ds 
              JOIN diseases d ON d.id = ds.disease_id 
              JOIN symptoms s ON s.id = ds.symptom_id 
-             WHERE ds.is_primary = 1"
+             WHERE ds.is_primary = 1",
         )
         .unwrap();
     let _primary_symptoms: Vec<(String, String)> = sym_stmt
@@ -203,15 +207,19 @@ fn generate_questions(conn: &Connection, count: usize) -> Vec<QuizQuestion> {
             0 => {
                 // "What severity is X?"
                 let sev_options = ["low", "medium", "high"];
-                let correct_idx = sev_options.iter().position(|s| *s == severity.as_str()).unwrap_or(0);
-                let mut opts: Vec<String> = sev_options.iter().map(|s| {
-                    match *s {
+                let correct_idx = sev_options
+                    .iter()
+                    .position(|s| *s == severity.as_str())
+                    .unwrap_or(0);
+                let mut opts: Vec<String> = sev_options
+                    .iter()
+                    .map(|s| match *s {
                         "low" => "🟢 Low".to_string(),
                         "medium" => "🟡 Medium".to_string(),
                         "high" => "🔴 High".to_string(),
                         _ => s.to_string(),
-                    }
-                }).collect();
+                    })
+                    .collect();
                 opts.push("None of the above".to_string());
                 QuizQuestion {
                     question: format!("What is the severity level of {}?", name),
@@ -235,7 +243,11 @@ fn generate_questions(conn: &Connection, count: usize) -> Vec<QuizQuestion> {
                     explanation: format!(
                         "{} is {}.",
                         name,
-                        if contagious { "contagious" } else { "not contagious" }
+                        if contagious {
+                            "contagious"
+                        } else {
+                            "not contagious"
+                        }
                     ),
                 }
             }

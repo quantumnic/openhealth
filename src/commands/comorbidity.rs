@@ -2,7 +2,6 @@ use colored::*;
 use rusqlite::Connection;
 use serde::Serialize;
 
-
 #[derive(Serialize)]
 struct ComorbidityResult {
     disease: String,
@@ -31,9 +30,7 @@ pub fn run(conn: &Connection, disease_name: &str, limit: usize, json: bool) {
         Some(id) => id,
         None => {
             // Try fuzzy match
-            let mut stmt = conn
-                .prepare("SELECT id, name FROM diseases")
-                .unwrap();
+            let mut stmt = conn.prepare("SELECT id, name FROM diseases").unwrap();
             let matches: Vec<(i64, String)> = stmt
                 .query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)))
                 .unwrap()
@@ -58,7 +55,11 @@ pub fn run(conn: &Connection, disease_name: &str, limit: usize, json: bool) {
     };
 
     let actual_name: String = conn
-        .query_row("SELECT name FROM diseases WHERE id = ?1", [disease_id], |r| r.get(0))
+        .query_row(
+            "SELECT name FROM diseases WHERE id = ?1",
+            [disease_id],
+            |r| r.get(0),
+        )
         .unwrap();
 
     // Get risk factors for target disease
@@ -170,11 +171,11 @@ pub fn run(conn: &Connection, disease_name: &str, limit: usize, json: bool) {
     println!();
     println!(
         "{}",
-        format!("🔗 Comorbidity Analysis: {actual_name}").bright_cyan().bold()
+        format!("🔗 Comorbidity Analysis: {actual_name}")
+            .bright_cyan()
+            .bold()
     );
-    println!(
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    );
+    println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!();
 
     if scored.is_empty() {

@@ -253,14 +253,20 @@ pub fn run(age_group: Option<&str>, name: Option<&str>, json: bool) {
 
     let filtered: Vec<&Vaccine> = if let Some(search) = name {
         let search_lower = search.to_lowercase();
-        vaccines.iter().filter(|v| {
-            v.name.to_lowercase().contains(&search_lower)
-                || v.abbreviation.to_lowercase().contains(&search_lower)
-                || v.prevents.to_lowercase().contains(&search_lower)
-        }).collect()
+        vaccines
+            .iter()
+            .filter(|v| {
+                v.name.to_lowercase().contains(&search_lower)
+                    || v.abbreviation.to_lowercase().contains(&search_lower)
+                    || v.prevents.to_lowercase().contains(&search_lower)
+            })
+            .collect()
     } else if let Some(ag) = age_group {
         let ag_lower = ag.to_lowercase();
-        vaccines.iter().filter(|v| v.age_group.to_lowercase() == ag_lower || v.age_group == "all").collect()
+        vaccines
+            .iter()
+            .filter(|v| v.age_group.to_lowercase() == ag_lower || v.age_group == "all")
+            .collect()
     } else {
         vaccines.iter().collect()
     };
@@ -275,9 +281,19 @@ pub fn run(age_group: Option<&str>, name: Option<&str>, json: bool) {
         return;
     }
 
-    println!("{}", "═══════════════════════════════════════════════".blue().bold());
+    println!(
+        "{}",
+        "═══════════════════════════════════════════════"
+            .blue()
+            .bold()
+    );
     println!("{}", " 💉  VACCINATION REFERENCE".blue().bold());
-    println!("{}", "═══════════════════════════════════════════════".blue().bold());
+    println!(
+        "{}",
+        "═══════════════════════════════════════════════"
+            .blue()
+            .bold()
+    );
     println!();
 
     for v in &filtered {
@@ -288,13 +304,29 @@ pub fn run(age_group: Option<&str>, name: Option<&str>, json: bool) {
         println!("  {} {}", "Booster:".white().bold(), v.booster);
         println!("  {} {}", "Age group:".white().bold(), v.age_group);
         println!("  {} {}", "Side effects:".white().bold(), v.side_effects);
-        println!("  {} {}", "Contraindications:".yellow().bold(), v.contraindications);
+        println!(
+            "  {} {}",
+            "Contraindications:".yellow().bold(),
+            v.contraindications
+        );
         println!("  {} {}", "Source:".dimmed(), v.source);
         println!();
     }
 
-    println!("{}", "───────────────────────────────────────────────".dimmed());
-    println!("{}", "⚠  This is a reference guide. Always consult local immunization schedules".yellow());
-    println!("{}", "   and a healthcare provider for personalized recommendations.".yellow());
-    println!("{}", format!("   {} vaccines in database", filtered.len()).dimmed());
+    println!(
+        "{}",
+        "───────────────────────────────────────────────".dimmed()
+    );
+    println!(
+        "{}",
+        "⚠  This is a reference guide. Always consult local immunization schedules".yellow()
+    );
+    println!(
+        "{}",
+        "   and a healthcare provider for personalized recommendations.".yellow()
+    );
+    println!(
+        "{}",
+        format!("   {} vaccines in database", filtered.len()).dimmed()
+    );
 }

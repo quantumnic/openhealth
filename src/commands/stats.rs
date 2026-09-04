@@ -2,10 +2,7 @@ use colored::*;
 use rusqlite::Connection;
 
 pub fn run(conn: &Connection) {
-    println!(
-        "{}",
-        "━━━ OpenHealth Database Statistics ━━━".bold()
-    );
+    println!("{}", "━━━ OpenHealth Database Statistics ━━━".bold());
     println!();
 
     let disease_count: i64 = conn

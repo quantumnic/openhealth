@@ -1,9 +1,24 @@
 use colored::*;
 
 pub fn run() {
-    println!("{}", "╔══════════════════════════════════════════════════════════╗".red().bold());
-    println!("{}", "║            🚨  EMERGENCY CHECKLIST  🚨                  ║".red().bold());
-    println!("{}", "╚══════════════════════════════════════════════════════════╝".red().bold());
+    println!(
+        "{}",
+        "╔══════════════════════════════════════════════════════════╗"
+            .red()
+            .bold()
+    );
+    println!(
+        "{}",
+        "║            🚨  EMERGENCY CHECKLIST  🚨                  ║"
+            .red()
+            .bold()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════════════╝"
+            .red()
+            .bold()
+    );
     println!();
 
     println!("{}", "STEP 1: ASSESS THE SITUATION".bold().underline());
@@ -26,7 +41,10 @@ pub fn run() {
     println!("{}", "STEP 3: IMMEDIATE ACTIONS".bold().underline());
     println!();
 
-    println!("  {} Start CPR", "🫀 NOT BREATHING / NO PULSE:".red().bold());
+    println!(
+        "  {} Start CPR",
+        "🫀 NOT BREATHING / NO PULSE:".red().bold()
+    );
     println!("     • 30 chest compressions (hard, fast, center of chest)");
     println!("     • 2 rescue breaths");
     println!("     • Repeat until help arrives");
@@ -81,8 +99,14 @@ pub fn run() {
     println!("  □ Note time of injury/onset for medical team");
     println!();
 
-    println!("{}", "⚠️  This checklist is for guidance only. Professional medical".yellow());
-    println!("{}", "   care should always be sought in emergencies.".yellow());
+    println!(
+        "{}",
+        "⚠️  This checklist is for guidance only. Professional medical".yellow()
+    );
+    println!(
+        "{}",
+        "   care should always be sought in emergencies.".yellow()
+    );
 }
 
 #[cfg(test)]

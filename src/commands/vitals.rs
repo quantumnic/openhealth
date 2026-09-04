@@ -20,7 +20,8 @@ struct VitalsReport {
 /// Parse a vitals string like "hr=72 bp=120/80 temp=37.2 spo2=98 rr=16"
 fn parse_vitals(input: &str) -> Vec<VitalSign> {
     let mut vitals = Vec::new();
-    let parts: Vec<&str> = input.split([',', ' '])
+    let parts: Vec<&str> = input
+        .split([',', ' '])
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .collect();
@@ -78,13 +79,22 @@ fn interpret_heart_rate(hr: f64) -> VitalSign {
     let (status, interp) = if hr < 40.0 {
         ("critical", "Severe bradycardia — seek emergency care")
     } else if hr < 60.0 {
-        ("low", "Bradycardia — may be normal in athletes, otherwise evaluate")
+        (
+            "low",
+            "Bradycardia — may be normal in athletes, otherwise evaluate",
+        )
     } else if hr <= 100.0 {
         ("normal", "Normal resting heart rate")
     } else if hr <= 120.0 {
-        ("elevated", "Tachycardia — may indicate stress, fever, dehydration, or cardiac issue")
+        (
+            "elevated",
+            "Tachycardia — may indicate stress, fever, dehydration, or cardiac issue",
+        )
     } else {
-        ("critical", "Severe tachycardia — seek medical attention immediately")
+        (
+            "critical",
+            "Severe tachycardia — seek medical attention immediately",
+        )
     };
     VitalSign {
         name: "Heart Rate".into(),
@@ -97,9 +107,16 @@ fn interpret_heart_rate(hr: f64) -> VitalSign {
 
 fn interpret_temperature(temp: f64) -> VitalSign {
     // Assume Celsius; if > 45, probably Fahrenheit
-    let temp_c = if temp > 45.0 { (temp - 32.0) * 5.0 / 9.0 } else { temp };
+    let temp_c = if temp > 45.0 {
+        (temp - 32.0) * 5.0 / 9.0
+    } else {
+        temp
+    };
     let (status, interp) = if temp_c < 35.0 {
-        ("critical", "Hypothermia — seek emergency care, warm gradually")
+        (
+            "critical",
+            "Hypothermia — seek emergency care, warm gradually",
+        )
     } else if temp_c < 36.1 {
         ("low", "Below normal — monitor, ensure adequate warmth")
     } else if temp_c <= 37.2 {
@@ -107,9 +124,15 @@ fn interpret_temperature(temp: f64) -> VitalSign {
     } else if temp_c <= 38.0 {
         ("elevated", "Low-grade fever — monitor, rest, hydrate")
     } else if temp_c <= 39.5 {
-        ("high", "Fever — consider antipyretics, seek medical advice if persistent")
+        (
+            "high",
+            "Fever — consider antipyretics, seek medical advice if persistent",
+        )
     } else {
-        ("critical", "High fever — seek medical attention immediately, risk of febrile seizures")
+        (
+            "critical",
+            "High fever — seek medical attention immediately, risk of febrile seizures",
+        )
     };
     VitalSign {
         name: "Temperature".into(),
@@ -124,11 +147,20 @@ fn interpret_spo2(spo2: f64) -> VitalSign {
     let (status, interp) = if spo2 >= 95.0 {
         ("normal", "Normal oxygen saturation")
     } else if spo2 >= 90.0 {
-        ("low", "Below normal — may indicate respiratory compromise, seek evaluation")
+        (
+            "low",
+            "Below normal — may indicate respiratory compromise, seek evaluation",
+        )
     } else if spo2 >= 85.0 {
-        ("critical", "Hypoxemia — supplemental oxygen needed, seek emergency care")
+        (
+            "critical",
+            "Hypoxemia — supplemental oxygen needed, seek emergency care",
+        )
     } else {
-        ("critical", "Severe hypoxemia — life-threatening, immediate emergency care required")
+        (
+            "critical",
+            "Severe hypoxemia — life-threatening, immediate emergency care required",
+        )
     };
     VitalSign {
         name: "SpO2".into(),
@@ -141,15 +173,24 @@ fn interpret_spo2(spo2: f64) -> VitalSign {
 
 fn interpret_respiratory_rate(rr: f64) -> VitalSign {
     let (status, interp) = if rr < 8.0 {
-        ("critical", "Dangerously low — possible respiratory depression, seek emergency care")
+        (
+            "critical",
+            "Dangerously low — possible respiratory depression, seek emergency care",
+        )
     } else if rr < 12.0 {
         ("low", "Below normal — monitor closely")
     } else if rr <= 20.0 {
         ("normal", "Normal respiratory rate")
     } else if rr <= 30.0 {
-        ("elevated", "Tachypnea — may indicate infection, pain, anxiety, or respiratory issue")
+        (
+            "elevated",
+            "Tachypnea — may indicate infection, pain, anxiety, or respiratory issue",
+        )
     } else {
-        ("critical", "Severe tachypnea — seek immediate medical attention")
+        (
+            "critical",
+            "Severe tachypnea — seek immediate medical attention",
+        )
     };
     VitalSign {
         name: "Respiratory Rate".into(),
@@ -168,11 +209,17 @@ fn interpret_bp_systolic(sys: f64) -> VitalSign {
     } else if sys < 130.0 {
         ("elevated", "Elevated — lifestyle modifications recommended")
     } else if sys < 140.0 {
-        ("high", "Stage 1 hypertension — medical evaluation recommended")
+        (
+            "high",
+            "Stage 1 hypertension — medical evaluation recommended",
+        )
     } else if sys < 180.0 {
         ("high", "Stage 2 hypertension — needs treatment")
     } else {
-        ("critical", "Hypertensive crisis — seek emergency care immediately")
+        (
+            "critical",
+            "Hypertensive crisis — seek emergency care immediately",
+        )
     };
     VitalSign {
         name: "Systolic BP".into(),
@@ -185,15 +232,24 @@ fn interpret_bp_systolic(sys: f64) -> VitalSign {
 
 fn interpret_bp_diastolic(dia: f64) -> VitalSign {
     let (status, interp) = if dia < 60.0 {
-        ("low", "Low diastolic — may cause dizziness, evaluate if symptomatic")
+        (
+            "low",
+            "Low diastolic — may cause dizziness, evaluate if symptomatic",
+        )
     } else if dia < 80.0 {
         ("normal", "Normal diastolic blood pressure")
     } else if dia < 90.0 {
-        ("high", "Stage 1 hypertension — medical evaluation recommended")
+        (
+            "high",
+            "Stage 1 hypertension — medical evaluation recommended",
+        )
     } else if dia < 120.0 {
         ("high", "Stage 2 hypertension — needs treatment")
     } else {
-        ("critical", "Hypertensive crisis — seek emergency care immediately")
+        (
+            "critical",
+            "Hypertensive crisis — seek emergency care immediately",
+        )
     };
     VitalSign {
         name: "Diastolic BP".into(),
@@ -209,13 +265,22 @@ fn generate_recommendations(vitals: &[VitalSign]) -> Vec<String> {
     for v in vitals {
         match v.status.as_str() {
             "critical" => {
-                recs.push(format!("🚨 {} is critical ({} {}) — {}", v.name, v.value, v.unit, v.interpretation));
+                recs.push(format!(
+                    "🚨 {} is critical ({} {}) — {}",
+                    v.name, v.value, v.unit, v.interpretation
+                ));
             }
             "high" | "elevated" => {
-                recs.push(format!("⚠️  {} is {} ({} {}) — {}", v.name, v.status, v.value, v.unit, v.interpretation));
+                recs.push(format!(
+                    "⚠️  {} is {} ({} {}) — {}",
+                    v.name, v.status, v.value, v.unit, v.interpretation
+                ));
             }
             "low" => {
-                recs.push(format!("📉 {} is low ({} {}) — {}", v.name, v.value, v.unit, v.interpretation));
+                recs.push(format!(
+                    "📉 {} is low ({} {}) — {}",
+                    v.name, v.value, v.unit, v.interpretation
+                ));
             }
             _ => {}
         }
@@ -228,13 +293,16 @@ fn generate_recommendations(vitals: &[VitalSign]) -> Vec<String> {
 
 fn overall_assessment(vitals: &[VitalSign]) -> String {
     let has_critical = vitals.iter().any(|v| v.status == "critical");
-    let has_high = vitals.iter().any(|v| v.status == "high" || v.status == "elevated");
+    let has_high = vitals
+        .iter()
+        .any(|v| v.status == "high" || v.status == "elevated");
     let has_low = vitals.iter().any(|v| v.status == "low");
 
     if has_critical {
         "🔴 CRITICAL — One or more vital signs are dangerously abnormal. Seek emergency medical care immediately.".to_string()
     } else if has_high || has_low {
-        "🟡 ABNORMAL — Some vital signs are outside normal range. Medical evaluation recommended.".to_string()
+        "🟡 ABNORMAL — Some vital signs are outside normal range. Medical evaluation recommended."
+            .to_string()
     } else {
         "🟢 NORMAL — All vital signs are within normal limits.".to_string()
     }
@@ -270,14 +338,26 @@ pub fn run(input: &str, json: bool) {
             overall_assessment: assessment,
             recommendations,
         };
-        println!("{}", serde_json::to_string_pretty(&report).unwrap_or_else(|_| "{}".to_string()));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&report).unwrap_or_else(|_| "{}".to_string())
+        );
         return;
     }
 
     println!();
-    println!("{}", "╔══════════════════════════════════════════════════════════╗".bright_cyan());
-    println!("{}", "║            💓  VITAL SIGNS ASSESSMENT                    ║".bright_cyan());
-    println!("{}", "╚══════════════════════════════════════════════════════════╝".bright_cyan());
+    println!(
+        "{}",
+        "╔══════════════════════════════════════════════════════════╗".bright_cyan()
+    );
+    println!(
+        "{}",
+        "║            💓  VITAL SIGNS ASSESSMENT                    ║".bright_cyan()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════════════╝".bright_cyan()
+    );
     println!();
 
     for v in &vitals {
@@ -288,7 +368,8 @@ pub fn run(input: &str, json: bool) {
             "low" => format!("[{}]", v.status).yellow().to_string(),
             _ => format!("[{}]", v.status).green().to_string(),
         };
-        println!("  {} {} {} {}",
+        println!(
+            "  {} {} {} {}",
             v.name.bold(),
             format!("{:.1} {}", v.value, v.unit).bright_white(),
             status_display,
@@ -301,7 +382,10 @@ pub fn run(input: &str, json: bool) {
     println!("  {assessment}");
     println!();
 
-    if recommendations.iter().any(|r| r.starts_with('🚨') || r.starts_with('⚠') || r.starts_with('📉')) {
+    if recommendations
+        .iter()
+        .any(|r| r.starts_with('🚨') || r.starts_with('⚠') || r.starts_with('📉'))
+    {
         println!("{}", "━━━ Recommendations ━━━".bold());
         for rec in &recommendations {
             println!("  {rec}");
@@ -309,8 +393,14 @@ pub fn run(input: &str, json: bool) {
         println!();
     }
 
-    println!("{}", "⚠️  This is automated vital sign interpretation, NOT a medical diagnosis.".yellow());
-    println!("{}", "   Normal ranges vary by age, sex, and medical condition.".yellow());
+    println!(
+        "{}",
+        "⚠️  This is automated vital sign interpretation, NOT a medical diagnosis.".yellow()
+    );
+    println!(
+        "{}",
+        "   Normal ranges vary by age, sex, and medical condition.".yellow()
+    );
     println!();
 }
 

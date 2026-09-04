@@ -150,8 +150,7 @@ pub fn run(weight: f64, medication_filter: Option<&str>, json: bool) {
         entries
             .iter()
             .filter(|e| {
-                e.medication.to_lowercase().contains(&f)
-                    || e.indication.to_lowercase().contains(&f)
+                e.medication.to_lowercase().contains(&f) || e.indication.to_lowercase().contains(&f)
             })
             .collect()
     } else {
@@ -213,8 +212,7 @@ pub fn run(weight: f64, medication_filter: Option<&str>, json: bool) {
     println!("{}", "═".repeat(60));
     println!(
         "{}",
-        "⚠️  For reference only — always verify with a healthcare provider"
-            .yellow()
+        "⚠️  For reference only — always verify with a healthcare provider".yellow()
     );
     println!();
 
@@ -232,15 +230,15 @@ pub fn run(weight: f64, medication_filter: Option<&str>, json: bool) {
         if capped {
             println!(
                 "    {}",
-                format!("⚠ Capped at max single dose: {}{}", entry.max_single_dose, entry.unit)
-                    .yellow()
+                format!(
+                    "⚠ Capped at max single dose: {}{}",
+                    entry.max_single_dose, entry.unit
+                )
+                .yellow()
             );
         }
         println!("    Frequency:   {}", entry.frequency);
-        println!(
-            "    Max daily:   {}{}",
-            entry.max_daily_dose, entry.unit
-        );
+        println!("    Max daily:   {}{}", entry.max_daily_dose, entry.unit);
         println!("    Note:        {}", entry.notes.dimmed());
         println!();
     }

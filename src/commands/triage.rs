@@ -1,6 +1,6 @@
+use crate::commands::profile;
 use crate::engine::scorer::{self, PatientContext};
 use crate::engine::severity::SeverityLevel;
-use crate::commands::profile;
 use colored::*;
 use rusqlite::Connection;
 use serde::Serialize;
@@ -146,9 +146,18 @@ pub fn run(conn: &Connection, input: &str, json: bool) {
 
     // Triage level
     let level_display = match triage_level {
-        SeverityLevel::Red => format!("{} {}", triage_level.emoji(), triage_level.label()).red().bold().to_string(),
-        SeverityLevel::Yellow => format!("{} {}", triage_level.emoji(), triage_level.label()).yellow().bold().to_string(),
-        SeverityLevel::Green => format!("{} {}", triage_level.emoji(), triage_level.label()).green().bold().to_string(),
+        SeverityLevel::Red => format!("{} {}", triage_level.emoji(), triage_level.label())
+            .red()
+            .bold()
+            .to_string(),
+        SeverityLevel::Yellow => format!("{} {}", triage_level.emoji(), triage_level.label())
+            .yellow()
+            .bold()
+            .to_string(),
+        SeverityLevel::Green => format!("{} {}", triage_level.emoji(), triage_level.label())
+            .green()
+            .bold()
+            .to_string(),
     };
     println!("Triage Level: {level_display}");
     println!();

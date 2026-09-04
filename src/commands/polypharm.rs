@@ -1,5 +1,5 @@
-use rusqlite::Connection;
 use colored::*;
+use rusqlite::Connection;
 
 /// Multi-drug interaction checker — checks all pairwise interactions for a list of medications.
 pub fn run(_conn: &Connection, drugs_input: &str, json: bool) {
@@ -11,9 +11,14 @@ pub fn run(_conn: &Connection, drugs_input: &str, json: bool) {
 
     if drugs.len() < 2 {
         if json {
-            println!("{{\"error\": \"Please provide at least 2 medications separated by commas\"}}");
+            println!(
+                "{{\"error\": \"Please provide at least 2 medications separated by commas\"}}"
+            );
         } else {
-            eprintln!("{}", "Please provide at least 2 medications separated by commas.".red());
+            eprintln!(
+                "{}",
+                "Please provide at least 2 medications separated by commas.".red()
+            );
         }
         return;
     }
@@ -54,10 +59,18 @@ pub fn run(_conn: &Connection, drugs_input: &str, json: bool) {
     // Check for therapeutic duplication
     let duplications = check_therapeutic_duplication(&drugs);
     if !duplications.is_empty() && !json {
-        println!("\n{}", "⚠️  Therapeutic Duplication Warnings:".yellow().bold());
+        println!(
+            "\n{}",
+            "⚠️  Therapeutic Duplication Warnings:".yellow().bold()
+        );
         for dup in &duplications {
-            println!("  {} {} and {} are both {}",
-                "•".yellow(), dup.0.bold(), dup.1.bold(), dup.2);
+            println!(
+                "  {} {} and {} are both {}",
+                "•".yellow(),
+                dup.0.bold(),
+                dup.1.bold(),
+                dup.2
+            );
         }
     }
 
@@ -107,14 +120,96 @@ fn get_interaction_database() -> Vec<DrugInteraction> {
 fn check_therapeutic_duplication<'a>(drugs: &[&'a str]) -> Vec<(&'a str, &'a str, &'static str)> {
     let mut dups = Vec::new();
     let classes: Vec<(&str, &[&str])> = vec![
-        ("NSAIDs", &["ibuprofen", "naproxen", "diclofenac", "aspirin", "celecoxib", "meloxicam", "indomethacin", "ketorolac"]),
-        ("ACE inhibitors", &["lisinopril", "enalapril", "ramipril", "captopril", "perindopril", "benazepril"]),
-        ("Statins", &["simvastatin", "atorvastatin", "rosuvastatin", "pravastatin", "lovastatin", "fluvastatin"]),
-        ("SSRIs", &["fluoxetine", "sertraline", "paroxetine", "citalopram", "escitalopram", "fluvoxamine"]),
-        ("PPIs", &["omeprazole", "pantoprazole", "esomeprazole", "lansoprazole", "rabeprazole"]),
-        ("Beta-blockers", &["metoprolol", "atenolol", "propranolol", "bisoprolol", "carvedilol", "nebivolol"]),
-        ("Benzodiazepines", &["diazepam", "lorazepam", "alprazolam", "clonazepam", "midazolam", "temazepam"]),
-        ("Opioids", &["morphine", "codeine", "oxycodone", "hydrocodone", "fentanyl", "tramadol", "methadone"]),
+        (
+            "NSAIDs",
+            &[
+                "ibuprofen",
+                "naproxen",
+                "diclofenac",
+                "aspirin",
+                "celecoxib",
+                "meloxicam",
+                "indomethacin",
+                "ketorolac",
+            ],
+        ),
+        (
+            "ACE inhibitors",
+            &[
+                "lisinopril",
+                "enalapril",
+                "ramipril",
+                "captopril",
+                "perindopril",
+                "benazepril",
+            ],
+        ),
+        (
+            "Statins",
+            &[
+                "simvastatin",
+                "atorvastatin",
+                "rosuvastatin",
+                "pravastatin",
+                "lovastatin",
+                "fluvastatin",
+            ],
+        ),
+        (
+            "SSRIs",
+            &[
+                "fluoxetine",
+                "sertraline",
+                "paroxetine",
+                "citalopram",
+                "escitalopram",
+                "fluvoxamine",
+            ],
+        ),
+        (
+            "PPIs",
+            &[
+                "omeprazole",
+                "pantoprazole",
+                "esomeprazole",
+                "lansoprazole",
+                "rabeprazole",
+            ],
+        ),
+        (
+            "Beta-blockers",
+            &[
+                "metoprolol",
+                "atenolol",
+                "propranolol",
+                "bisoprolol",
+                "carvedilol",
+                "nebivolol",
+            ],
+        ),
+        (
+            "Benzodiazepines",
+            &[
+                "diazepam",
+                "lorazepam",
+                "alprazolam",
+                "clonazepam",
+                "midazolam",
+                "temazepam",
+            ],
+        ),
+        (
+            "Opioids",
+            &[
+                "morphine",
+                "codeine",
+                "oxycodone",
+                "hydrocodone",
+                "fentanyl",
+                "tramadol",
+                "methadone",
+            ],
+        ),
     ];
 
     for (class_name, members) in &classes {
@@ -137,21 +232,51 @@ fn check_therapeutic_duplication<'a>(drugs: &[&'a str]) -> Vec<(&'a str, &'a str
 
 fn check_organ_burden(drugs: &[&str]) -> Vec<String> {
     let mut warnings = Vec::new();
-    let hepatotoxic = ["acetaminophen", "paracetamol", "methotrexate", "amiodarone", "isoniazid", "valproate", "statins", "simvastatin", "atorvastatin"];
-    let nephrotoxic = ["ibuprofen", "naproxen", "diclofenac", "gentamicin", "vancomycin", "lithium", "cisplatin", "methotrexate", "amphotericin"];
+    let hepatotoxic = [
+        "acetaminophen",
+        "paracetamol",
+        "methotrexate",
+        "amiodarone",
+        "isoniazid",
+        "valproate",
+        "statins",
+        "simvastatin",
+        "atorvastatin",
+    ];
+    let nephrotoxic = [
+        "ibuprofen",
+        "naproxen",
+        "diclofenac",
+        "gentamicin",
+        "vancomycin",
+        "lithium",
+        "cisplatin",
+        "methotrexate",
+        "amphotericin",
+    ];
 
     let mut hepato_count = 0;
     let mut nephro_count = 0;
     for drug in drugs {
         let dl = drug.to_lowercase();
-        if hepatotoxic.iter().any(|h| dl.contains(h)) { hepato_count += 1; }
-        if nephrotoxic.iter().any(|n| dl.contains(n)) { nephro_count += 1; }
+        if hepatotoxic.iter().any(|h| dl.contains(h)) {
+            hepato_count += 1;
+        }
+        if nephrotoxic.iter().any(|n| dl.contains(n)) {
+            nephro_count += 1;
+        }
     }
     if hepato_count >= 2 {
-        warnings.push(format!("{} hepatotoxic drugs detected — increased liver injury risk. Monitor LFTs.", hepato_count));
+        warnings.push(format!(
+            "{} hepatotoxic drugs detected — increased liver injury risk. Monitor LFTs.",
+            hepato_count
+        ));
     }
     if nephro_count >= 2 {
-        warnings.push(format!("{} nephrotoxic drugs detected — increased renal injury risk. Monitor creatinine/GFR.", nephro_count));
+        warnings.push(format!(
+            "{} nephrotoxic drugs detected — increased renal injury risk. Monitor creatinine/GFR.",
+            nephro_count
+        ));
     }
     warnings
 }
@@ -161,10 +286,20 @@ fn print_table(drugs: &[&str], interactions: &[(&str, &str, &DrugInteraction)], 
     println!("{}", "─".repeat(50));
     println!("{} {}", "Medications:".bold(), drugs.join(", "));
     println!("{} {}", "Total checked:".bold(), drugs.len());
-    println!("{} {}/{}", "Pairs analyzed:".bold(), drugs.len() * (drugs.len() - 1) / 2, drugs.len() * (drugs.len() - 1) / 2);
+    println!(
+        "{} {}/{}",
+        "Pairs analyzed:".bold(),
+        drugs.len() * (drugs.len() - 1) / 2,
+        drugs.len() * (drugs.len() - 1) / 2
+    );
 
     if interactions.is_empty() {
-        println!("\n{}", "✅ No known interactions found between these medications.".green().bold());
+        println!(
+            "\n{}",
+            "✅ No known interactions found between these medications."
+                .green()
+                .bold()
+        );
         println!("{}", "Note: Always consult a healthcare provider. This database does not cover all possible interactions.".dimmed());
         return;
     }
@@ -180,7 +315,13 @@ fn print_table(drugs: &[&str], interactions: &[(&str, &str, &DrugInteraction)], 
     println!("\n{}", "Interactions Found:".bold().underline());
     for (i, (a, b, inter)) in interactions.iter().enumerate() {
         let sev_display = match inter.severity {
-            "critical" => inter.severity.to_uppercase().on_red().white().bold().to_string(),
+            "critical" => inter
+                .severity
+                .to_uppercase()
+                .on_red()
+                .white()
+                .bold()
+                .to_string(),
             "high" => inter.severity.to_uppercase().red().bold().to_string(),
             "moderate" => inter.severity.to_uppercase().yellow().bold().to_string(),
             _ => inter.severity.to_uppercase().to_string(),
@@ -195,15 +336,18 @@ fn print_table(drugs: &[&str], interactions: &[(&str, &str, &DrugInteraction)], 
 }
 
 fn print_json(drugs: &[&str], interactions: &[(&str, &str, &DrugInteraction)], risk_score: u32) {
-    let inters: Vec<serde_json::Value> = interactions.iter().map(|(a, b, inter)| {
-        serde_json::json!({
-            "drug_a": a,
-            "drug_b": b,
-            "severity": inter.severity,
-            "effect": inter.effect,
-            "recommendation": inter.recommendation,
+    let inters: Vec<serde_json::Value> = interactions
+        .iter()
+        .map(|(a, b, inter)| {
+            serde_json::json!({
+                "drug_a": a,
+                "drug_b": b,
+                "severity": inter.severity,
+                "effect": inter.effect,
+                "recommendation": inter.recommendation,
+            })
         })
-    }).collect();
+        .collect();
 
     let out = serde_json::json!({
         "medications": drugs,

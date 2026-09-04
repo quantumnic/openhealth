@@ -12,7 +12,13 @@ struct FirstAidProtocol {
 const PROTOCOLS: &[FirstAidProtocol] = &[
     FirstAidProtocol {
         situation: "Choking (Adult/Child >1 year)",
-        keywords: &["choking", "choke", "airway", "can't breathe", "something stuck in throat"],
+        keywords: &[
+            "choking",
+            "choke",
+            "airway",
+            "can't breathe",
+            "something stuck in throat",
+        ],
         steps: &[
             "Encourage coughing if partial obstruction",
             "Give 5 back blows between shoulder blades",
@@ -20,7 +26,10 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "Alternate back blows and abdominal thrusts",
             "If unconscious: start CPR, check mouth before breaths",
         ],
-        do_not: &["Do NOT perform blind finger sweeps", "Do NOT give water to drink"],
+        do_not: &[
+            "Do NOT perform blind finger sweeps",
+            "Do NOT give water to drink",
+        ],
         call_emergency: true,
         source: "American Red Cross",
     },
@@ -34,13 +43,23 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "Repeat until object is expelled or infant becomes unconscious",
             "If unconscious: start infant CPR",
         ],
-        do_not: &["Do NOT perform abdominal thrusts on infants", "Do NOT perform blind finger sweeps"],
+        do_not: &[
+            "Do NOT perform abdominal thrusts on infants",
+            "Do NOT perform blind finger sweeps",
+        ],
         call_emergency: true,
         source: "American Heart Association",
     },
     FirstAidProtocol {
         situation: "CPR (Cardiopulmonary Resuscitation)",
-        keywords: &["CPR", "not breathing", "no pulse", "cardiac arrest", "heart stopped", "unresponsive"],
+        keywords: &[
+            "CPR",
+            "not breathing",
+            "no pulse",
+            "cardiac arrest",
+            "heart stopped",
+            "unresponsive",
+        ],
         steps: &[
             "Check responsiveness — tap shoulders, shout",
             "Call emergency services (or have someone call)",
@@ -49,13 +68,23 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "30 compressions, then 2 rescue breaths (if trained)",
             "Continue until help arrives or AED available",
         ],
-        do_not: &["Do NOT stop compressions unless patient responds", "Do NOT delay — brain damage begins in 4 minutes"],
+        do_not: &[
+            "Do NOT stop compressions unless patient responds",
+            "Do NOT delay — brain damage begins in 4 minutes",
+        ],
         call_emergency: true,
         source: "European Resuscitation Council",
     },
     FirstAidProtocol {
         situation: "Severe Bleeding",
-        keywords: &["bleeding", "blood", "cut", "wound", "hemorrhage", "laceration"],
+        keywords: &[
+            "bleeding",
+            "blood",
+            "cut",
+            "wound",
+            "hemorrhage",
+            "laceration",
+        ],
         steps: &[
             "Apply direct pressure with clean cloth or bandage",
             "Keep pressure firm and continuous — do not lift to check",
@@ -63,7 +92,11 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "If blood soaks through, add more material on top",
             "Apply tourniquet only if bleeding is life-threatening and won't stop (limbs only)",
         ],
-        do_not: &["Do NOT remove embedded objects", "Do NOT use a tourniquet on neck or torso", "Do NOT apply tourniquet over joints"],
+        do_not: &[
+            "Do NOT remove embedded objects",
+            "Do NOT use a tourniquet on neck or torso",
+            "Do NOT apply tourniquet over joints",
+        ],
         call_emergency: true,
         source: "WHO First Aid Guidelines",
     },
@@ -77,7 +110,11 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "Cover loosely with cling film or clean non-fluffy dressing",
             "Give paracetamol/ibuprofen for pain",
         ],
-        do_not: &["Do NOT use ice, butter, or toothpaste", "Do NOT burst blisters", "Do NOT remove clothing stuck to burn"],
+        do_not: &[
+            "Do NOT use ice, butter, or toothpaste",
+            "Do NOT burst blisters",
+            "Do NOT remove clothing stuck to burn",
+        ],
         call_emergency: true,
         source: "British Red Cross",
     },
@@ -91,13 +128,23 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "When seizure stops, place in recovery position",
             "Stay with them until fully recovered",
         ],
-        do_not: &["Do NOT restrain the person", "Do NOT put anything in their mouth", "Do NOT try to hold them down"],
+        do_not: &[
+            "Do NOT restrain the person",
+            "Do NOT put anything in their mouth",
+            "Do NOT try to hold them down",
+        ],
         call_emergency: false,
         source: "Epilepsy Foundation",
     },
     FirstAidProtocol {
         situation: "Anaphylaxis (Severe Allergic Reaction)",
-        keywords: &["anaphylaxis", "allergic reaction", "epipen", "swelling throat", "allergic shock"],
+        keywords: &[
+            "anaphylaxis",
+            "allergic reaction",
+            "epipen",
+            "swelling throat",
+            "allergic shock",
+        ],
         steps: &[
             "Use adrenaline auto-injector (EpiPen) if available — inject into outer thigh",
             "Call emergency services immediately",
@@ -105,13 +152,23 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "Give second EpiPen after 5-15 minutes if no improvement",
             "Be prepared to start CPR if breathing stops",
         ],
-        do_not: &["Do NOT delay giving adrenaline", "Do NOT make patient stand or walk", "Do NOT give antihistamines as sole treatment"],
+        do_not: &[
+            "Do NOT delay giving adrenaline",
+            "Do NOT make patient stand or walk",
+            "Do NOT give antihistamines as sole treatment",
+        ],
         call_emergency: true,
         source: "World Allergy Organization",
     },
     FirstAidProtocol {
         situation: "Stroke Recognition (FAST)",
-        keywords: &["stroke", "face drooping", "arm weakness", "speech difficulty", "FAST"],
+        keywords: &[
+            "stroke",
+            "face drooping",
+            "arm weakness",
+            "speech difficulty",
+            "FAST",
+        ],
         steps: &[
             "F — Face: Ask to smile. Does one side droop?",
             "A — Arms: Ask to raise both arms. Does one drift down?",
@@ -119,13 +176,23 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "T — Time: Note time symptoms started, call emergency immediately",
             "Keep patient comfortable, do not give food or drink",
         ],
-        do_not: &["Do NOT delay — every minute counts", "Do NOT give aspirin unless instructed", "Do NOT let patient fall asleep without monitoring"],
+        do_not: &[
+            "Do NOT delay — every minute counts",
+            "Do NOT give aspirin unless instructed",
+            "Do NOT let patient fall asleep without monitoring",
+        ],
         call_emergency: true,
         source: "American Stroke Association",
     },
     FirstAidProtocol {
         situation: "Heatstroke",
-        keywords: &["heatstroke", "heat stroke", "overheating", "heat exhaustion", "sunstroke"],
+        keywords: &[
+            "heatstroke",
+            "heat stroke",
+            "overheating",
+            "heat exhaustion",
+            "sunstroke",
+        ],
         steps: &[
             "Move to cool/shaded area immediately",
             "Remove excess clothing",
@@ -133,13 +200,23 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "Fan while misting with water",
             "Give cool water to drink if conscious and able to swallow",
         ],
-        do_not: &["Do NOT give aspirin or paracetamol", "Do NOT use ice-cold water for drinking", "Do NOT leave unattended"],
+        do_not: &[
+            "Do NOT give aspirin or paracetamol",
+            "Do NOT use ice-cold water for drinking",
+            "Do NOT leave unattended",
+        ],
         call_emergency: true,
         source: "WHO Heat Health Action Plans",
     },
     FirstAidProtocol {
         situation: "Fracture / Broken Bone",
-        keywords: &["broken bone", "fracture", "broken arm", "broken leg", "bone sticking out"],
+        keywords: &[
+            "broken bone",
+            "fracture",
+            "broken arm",
+            "broken leg",
+            "bone sticking out",
+        ],
         steps: &[
             "Keep the injured area still — do not try to realign",
             "Support the limb in the position found",
@@ -147,13 +224,23 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "Immobilize with splint if trained (padded rigid material)",
             "Monitor for shock (pale, cold, rapid pulse)",
         ],
-        do_not: &["Do NOT move the injured part unnecessarily", "Do NOT straighten a deformed limb", "Do NOT apply ice directly to skin"],
+        do_not: &[
+            "Do NOT move the injured part unnecessarily",
+            "Do NOT straighten a deformed limb",
+            "Do NOT apply ice directly to skin",
+        ],
         call_emergency: true,
         source: "American Academy of Orthopaedic Surgeons",
     },
     FirstAidProtocol {
         situation: "Poisoning / Overdose",
-        keywords: &["poisoning", "overdose", "swallowed poison", "ingested", "toxic"],
+        keywords: &[
+            "poisoning",
+            "overdose",
+            "swallowed poison",
+            "ingested",
+            "toxic",
+        ],
         steps: &[
             "Call Poison Control or emergency services",
             "Identify the substance if possible (keep container)",
@@ -161,13 +248,23 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "If unconscious: recovery position, monitor breathing",
             "Follow Poison Control instructions exactly",
         ],
-        do_not: &["Do NOT induce vomiting unless instructed", "Do NOT give activated charcoal without medical advice", "Do NOT give anything by mouth if unconscious"],
+        do_not: &[
+            "Do NOT induce vomiting unless instructed",
+            "Do NOT give activated charcoal without medical advice",
+            "Do NOT give anything by mouth if unconscious",
+        ],
         call_emergency: true,
         source: "WHO Guidelines on Poisoning Management",
     },
     FirstAidProtocol {
         situation: "Drowning / Near-Drowning",
-        keywords: &["drowning", "underwater", "submersion", "near drowning", "pulled from water"],
+        keywords: &[
+            "drowning",
+            "underwater",
+            "submersion",
+            "near drowning",
+            "pulled from water",
+        ],
         steps: &[
             "Remove from water safely (do not endanger yourself)",
             "Check for breathing and pulse",
@@ -175,7 +272,11 @@ const PROTOCOLS: &[FirstAidProtocol] = &[
             "Continue CPR until help arrives",
             "Even if patient recovers, get medical evaluation (secondary drowning risk)",
         ],
-        do_not: &["Do NOT attempt rescue beyond your ability", "Do NOT try to drain water from lungs", "Do NOT assume recovery — monitor closely"],
+        do_not: &[
+            "Do NOT attempt rescue beyond your ability",
+            "Do NOT try to drain water from lungs",
+            "Do NOT assume recovery — monitor closely",
+        ],
         call_emergency: true,
         source: "International Life Saving Federation",
     },
@@ -188,9 +289,9 @@ pub fn run(query: Option<&str>, json: bool) {
             .iter()
             .filter(|p| {
                 p.situation.to_lowercase().contains(&q_lower)
-                    || p.keywords.iter().any(|k| {
-                        k.contains(&q_lower) || q_lower.contains(k)
-                    })
+                    || p.keywords
+                        .iter()
+                        .any(|k| k.contains(&q_lower) || q_lower.contains(k))
             })
             .collect()
     } else {
@@ -215,14 +316,29 @@ pub fn run(query: Option<&str>, json: bool) {
     }
 
     if protocols.is_empty() {
-        println!("\n  ⚠️ No first-aid protocol found for {:?}", query.unwrap_or(""));
-        println!("  Run {} to see all available protocols.\n", "openhealth first-aid".bold());
+        println!(
+            "\n  ⚠️ No first-aid protocol found for {:?}",
+            query.unwrap_or("")
+        );
+        println!(
+            "  Run {} to see all available protocols.\n",
+            "openhealth first-aid".bold()
+        );
         return;
     }
 
-    println!("\n{}", "╔══════════════════════════════════════════════════╗".red());
-    println!("{}", "║         🚑 First-Aid Quick Reference            ║".red());
-    println!("{}", "╚══════════════════════════════════════════════════╝".red());
+    println!(
+        "\n{}",
+        "╔══════════════════════════════════════════════════╗".red()
+    );
+    println!(
+        "{}",
+        "║         🚑 First-Aid Quick Reference            ║".red()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════╝".red()
+    );
 
     if query.is_none() {
         println!("\n  📋 Available protocols ({}):\n", protocols.len());
@@ -230,7 +346,10 @@ pub fn run(query: Option<&str>, json: bool) {
             let emergency_marker = if p.call_emergency { "🔴" } else { "🟡" };
             println!("    {} {}", emergency_marker, p.situation);
         }
-        println!("\n  Use {} for detailed steps.", "openhealth first-aid <situation>".bold());
+        println!(
+            "\n  Use {} for detailed steps.",
+            "openhealth first-aid <situation>".bold()
+        );
         println!("  Example: {}\n", "openhealth first-aid choking".dimmed());
         return;
     }
@@ -277,8 +396,7 @@ mod tests {
         let results: Vec<&FirstAidProtocol> = PROTOCOLS
             .iter()
             .filter(|p| {
-                p.situation.to_lowercase().contains(q)
-                    || p.keywords.iter().any(|k| k.contains(q))
+                p.situation.to_lowercase().contains(q) || p.keywords.iter().any(|k| k.contains(q))
             })
             .collect();
         assert!(!results.is_empty(), "Should find choking protocol");
@@ -291,8 +409,7 @@ mod tests {
         let results: Vec<&FirstAidProtocol> = PROTOCOLS
             .iter()
             .filter(|p| {
-                p.situation.to_lowercase().contains(q)
-                    || p.keywords.iter().any(|k| k.contains(q))
+                p.situation.to_lowercase().contains(q) || p.keywords.iter().any(|k| k.contains(q))
             })
             .collect();
         assert!(!results.is_empty(), "Should find CPR protocol");
@@ -304,8 +421,7 @@ mod tests {
         let results: Vec<&FirstAidProtocol> = PROTOCOLS
             .iter()
             .filter(|p| {
-                p.situation.to_lowercase().contains(q)
-                    || p.keywords.iter().any(|k| k.contains(q))
+                p.situation.to_lowercase().contains(q) || p.keywords.iter().any(|k| k.contains(q))
             })
             .collect();
         assert!(results.is_empty());
@@ -325,8 +441,7 @@ mod tests {
         let results: Vec<&FirstAidProtocol> = PROTOCOLS
             .iter()
             .filter(|p| {
-                p.situation.to_lowercase().contains(q)
-                    || p.keywords.iter().any(|k| k.contains(q))
+                p.situation.to_lowercase().contains(q) || p.keywords.iter().any(|k| k.contains(q))
             })
             .collect();
         assert!(!results.is_empty(), "Should find burn protocol");

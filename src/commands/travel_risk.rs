@@ -161,7 +161,9 @@ pub fn run(conn: &Connection, region: Option<&str>, json: bool) {
         let regions = get_regions();
         let matched = regions.iter().find(|r| {
             r.name.to_lowercase().contains(&query_lower)
-                || r.aliases.iter().any(|a| a.contains(&query_lower) || query_lower.contains(a))
+                || r.aliases
+                    .iter()
+                    .any(|a| a.contains(&query_lower) || query_lower.contains(a))
         });
 
         if let Some(region_data) = matched {
@@ -184,16 +186,23 @@ pub fn run(conn: &Connection, region: Option<&str>, json: bool) {
         let regions = get_regions();
         if json {
             let names: Vec<&str> = regions.iter().map(|r| r.name).collect();
-            println!("{}", serde_json::to_string_pretty(&names).unwrap_or_default());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&names).unwrap_or_default()
+            );
         } else {
             println!("{}", "╔══════════════════════════════════════════╗".cyan());
-            println!("{}", "║    🌍 Travel Health Risk Regions         ║".cyan().bold());
+            println!(
+                "{}",
+                "║    🌍 Travel Health Risk Regions         ║".cyan().bold()
+            );
             println!("{}", "╚══════════════════════════════════════════╝".cyan());
             println!();
             for r in &regions {
                 let disease_count = r.disease_patterns.len();
                 let vaccine_count = r.disease_patterns.iter().filter(|d| d.1).count();
-                println!("  {} {} ({} risks, {} vaccine-preventable)",
+                println!(
+                    "  {} {} ({} risks, {} vaccine-preventable)",
                     "▸".cyan(),
                     r.name.bold(),
                     disease_count,
@@ -209,18 +218,35 @@ pub fn run(conn: &Connection, region: Option<&str>, json: bool) {
 
 fn print_region(conn: &Connection, region: &RegionData) {
     println!();
-    println!("{}", "╔══════════════════════════════════════════════════╗".to_string().cyan());
-    println!("{}", format!("║  🌍 Travel Health Risks: {:<23} ║", region.name).cyan().bold());
-    println!("{}", "╚══════════════════════════════════════════════════╝".to_string().cyan());
+    println!(
+        "{}",
+        "╔══════════════════════════════════════════════════╗"
+            .to_string()
+            .cyan()
+    );
+    println!(
+        "{}",
+        format!("║  🌍 Travel Health Risks: {:<23} ║", region.name)
+            .cyan()
+            .bold()
+    );
+    println!(
+        "{}",
+        "╚══════════════════════════════════════════════════╝"
+            .to_string()
+            .cyan()
+    );
     println!();
 
     for (disease_name, vaccine, note) in region.disease_patterns {
         // Look up severity from database
-        let severity = conn.query_row(
-            "SELECT severity FROM diseases WHERE name = ?1",
-            [disease_name],
-            |row| row.get::<_, String>(0),
-        ).unwrap_or_else(|_| "unknown".to_string());
+        let severity = conn
+            .query_row(
+                "SELECT severity FROM diseases WHERE name = ?1",
+                [disease_name],
+                |row| row.get::<_, String>(0),
+            )
+            .unwrap_or_else(|_| "unknown".to_string());
 
         let severity_icon = match severity.as_str() {
             "high" => "🔴",
@@ -230,11 +256,16 @@ fn print_region(conn: &Connection, region: &RegionData) {
 
         let vaccine_icon = if *vaccine { "💉" } else { "  " };
 
-        println!("  {} {} {} {}",
+        println!(
+            "  {} {} {} {}",
             severity_icon,
             vaccine_icon,
             disease_name.bold(),
-            if *vaccine { "(vaccine available)".green().to_string() } else { String::new() },
+            if *vaccine {
+                "(vaccine available)".green().to_string()
+            } else {
+                String::new()
+            },
         );
         println!("      {}", note.dimmed());
         println!();
@@ -250,20 +281,26 @@ fn print_region(conn: &Connection, region: &RegionData) {
 }
 
 fn print_json(conn: &Connection, region: &RegionData) {
-    let diseases: Vec<TravelDisease> = region.disease_patterns.iter().map(|(name, vaccine, note)| {
-        let severity = conn.query_row(
-            "SELECT severity FROM diseases WHERE name = ?1",
-            [name],
-            |row| row.get::<_, String>(0),
-        ).unwrap_or_else(|_| "unknown".to_string());
+    let diseases: Vec<TravelDisease> = region
+        .disease_patterns
+        .iter()
+        .map(|(name, vaccine, note)| {
+            let severity = conn
+                .query_row(
+                    "SELECT severity FROM diseases WHERE name = ?1",
+                    [name],
+                    |row| row.get::<_, String>(0),
+                )
+                .unwrap_or_else(|_| "unknown".to_string());
 
-        TravelDisease {
-            name: name.to_string(),
-            severity,
-            vaccine_available: *vaccine,
-            prophylaxis_note: note.to_string(),
-        }
-    }).collect();
+            TravelDisease {
+                name: name.to_string(),
+                severity,
+                vaccine_available: *vaccine,
+                prophylaxis_note: note.to_string(),
+            }
+        })
+        .collect();
 
     let result = TravelRisk {
         region: region.name.to_string(),
@@ -271,5 +308,8 @@ fn print_json(conn: &Connection, region: &RegionData) {
         general_advice: region.advice.iter().map(|a| a.to_string()).collect(),
     };
 
-    println!("{}", serde_json::to_string_pretty(&result).unwrap_or_default());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&result).unwrap_or_default()
+    );
 }

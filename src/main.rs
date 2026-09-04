@@ -374,7 +374,10 @@ fn main() {
         Commands::Stats => commands::stats::run(&conn),
         Commands::Update => commands::update::run(&conn),
         Commands::Search { query } => commands::search::run(&conn, &query, cli.json),
-        Commands::Diff { disease_a, disease_b } => {
+        Commands::Diff {
+            disease_a,
+            disease_b,
+        } => {
             commands::diff::run(&conn, &disease_a, &disease_b, cli.json);
         }
         Commands::History { id, limit } => match id {
@@ -384,7 +387,12 @@ fn main() {
         Commands::Export { output } => {
             commands::export::run(&conn, output.as_deref());
         }
-        Commands::Profile { age, sex, show, clear } => {
+        Commands::Profile {
+            age,
+            sex,
+            show,
+            clear,
+        } => {
             commands::profile::run(&conn, age, sex.as_deref(), show, clear, cli.json);
         }
         Commands::Similar { name, limit } => {
@@ -508,7 +516,10 @@ fn main() {
         Commands::Contagion { query } => {
             commands::contagion::run(&conn, query.as_deref(), cli.json);
         }
-        Commands::Onset { onset_type, symptoms } => {
+        Commands::Onset {
+            onset_type,
+            symptoms,
+        } => {
             commands::onset::run(&conn, &onset_type, symptoms.as_deref(), cli.json);
         }
         Commands::Glossary { query } => {

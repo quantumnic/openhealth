@@ -127,8 +127,7 @@ pub fn run(name: &str, json: bool) {
     let matches: Vec<&DrugInfo> = DRUGS
         .iter()
         .filter(|d| {
-            d.name.to_lowercase().contains(&query)
-                || d.class.to_lowercase().contains(&query)
+            d.name.to_lowercase().contains(&query) || d.class.to_lowercase().contains(&query)
         })
         .collect();
 
@@ -137,7 +136,9 @@ pub fn run(name: &str, json: bool) {
             println!("{{\"error\": \"No drug found matching '{name}'\"}}");
         } else {
             println!("❌ No drug found matching \"{name}\".");
-            println!("   Try: ibuprofen, paracetamol, amoxicillin, metformin, omeprazole, lisinopril,");
+            println!(
+                "   Try: ibuprofen, paracetamol, amoxicillin, metformin, omeprazole, lisinopril,"
+            );
             println!("        atorvastatin, salbutamol, prednisolone, metoprolol, ciprofloxacin, diazepam");
         }
         return;
@@ -166,7 +167,8 @@ pub fn run_list(json: bool) {
     }
 
     println!("💊 Drug Information Reference ({} drugs)\n", DRUGS.len());
-    let mut by_class: std::collections::BTreeMap<&str, Vec<&DrugInfo>> = std::collections::BTreeMap::new();
+    let mut by_class: std::collections::BTreeMap<&str, Vec<&DrugInfo>> =
+        std::collections::BTreeMap::new();
     for drug in DRUGS {
         by_class.entry(drug.class).or_default().push(drug);
     }
@@ -191,14 +193,20 @@ mod tests {
 
     #[test]
     fn test_drug_lookup_ibuprofen() {
-        let matches: Vec<&DrugInfo> = DRUGS.iter().filter(|d| d.name.to_lowercase().contains("ibuprofen")).collect();
+        let matches: Vec<&DrugInfo> = DRUGS
+            .iter()
+            .filter(|d| d.name.to_lowercase().contains("ibuprofen"))
+            .collect();
         assert_eq!(matches.len(), 1);
         assert!(matches[0].class.contains("NSAID"));
     }
 
     #[test]
     fn test_drug_lookup_by_class() {
-        let matches: Vec<&DrugInfo> = DRUGS.iter().filter(|d| d.class.to_lowercase().contains("antibiotic")).collect();
+        let matches: Vec<&DrugInfo> = DRUGS
+            .iter()
+            .filter(|d| d.class.to_lowercase().contains("antibiotic"))
+            .collect();
         assert!(matches.len() >= 2, "Should find at least 2 antibiotics");
     }
 

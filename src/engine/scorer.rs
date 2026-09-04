@@ -76,8 +76,10 @@ pub fn score_symptoms_with_context(
                 row.get(1)?,
                 row.get(2)?,
                 row.get(3)?,
-                row.get::<_, Option<String>>(4)?.unwrap_or_else(|| "all".into()),
-                row.get::<_, Option<String>>(5)?.unwrap_or_else(|| "general".into()),
+                row.get::<_, Option<String>>(4)?
+                    .unwrap_or_else(|| "all".into()),
+                row.get::<_, Option<String>>(5)?
+                    .unwrap_or_else(|| "general".into()),
             ))
         })
         .unwrap()
@@ -85,6 +87,9 @@ pub fn score_symptoms_with_context(
         .collect();
 
     let total_diseases = diseases.len().max(1) as f64;
+
+    // Built once; rebuilding this map inside the disease loop is wasteful.
+    let negative_map = get_negative_evidence();
 
     for (disease_id, disease_name, description, severity, age_group, _category) in &diseases {
         let mut symptom_stmt = conn
@@ -123,7 +128,9 @@ pub fn score_symptoms_with_context(
             }
 
             let sym_lower = sym_name.to_lowercase();
-            let is_match = normalized.iter().any(|input| fuzzy_match(input, &sym_lower));
+            let is_match = normalized
+                .iter()
+                .any(|input| fuzzy_match(input, &sym_lower));
 
             if is_match {
                 matched.push(sym_name.clone());
@@ -132,10 +139,8 @@ pub fn score_symptoms_with_context(
                     primary_matched += 1;
                 }
                 // Specificity: symptoms shared by fewer diseases are more informative
-                let disease_count = symptom_disease_counts
-                    .get(&sym_lower)
-                    .copied()
-                    .unwrap_or(1) as f64;
+                let disease_count =
+                    symptom_disease_counts.get(&sym_lower).copied().unwrap_or(1) as f64;
                 let base_specificity = (total_diseases / disease_count).ln().max(0.0) * 0.05;
                 // Pathognomonic bonus: symptoms unique to 1-2 diseases get extra weight
                 let rarity_multiplier = if disease_count <= 1.0 {
@@ -166,9 +171,11 @@ pub fn score_symptoms_with_context(
 
         // Precision penalty: if user gave many symptoms but only few matched,
         // the disease is less likely (user has symptoms that don't fit this disease).
-        let input_count = normalized.len() as f64;
+        // Count only what the user actually reported; synonym expansions are
+        // alternate phrasings, not additional evidence.
+        let input_count = raw_normalized.len().max(1) as f64;
         let match_precision = matched.len() as f64 / input_count;
-        let precision_factor = 0.5 + 0.5 * match_precision; // range [0.5, 1.0]
+        let precision_factor = 0.5 + 0.5 * match_precision.min(1.0); // range [0.5, 1.0]
 
         // Co-occurrence bonus: matching multiple primary symptoms together
         // is stronger evidence than matching them individually.
@@ -190,14 +197,18 @@ pub fn score_symptoms_with_context(
         };
 
         // Demographic adjustment: boost/penalize based on age/sex fit and category
-        let demographic_factor = compute_demographic_factor(context, age_group)
-            * compute_sex_factor(context, _category);
+        let demographic_factor =
+            compute_demographic_factor(context, age_group) * compute_sex_factor(context, _category);
 
         // Negative evidence: check if patient has symptoms that argue against this disease
-        let negative_map = get_negative_evidence();
         let neg_penalty = if let Some(neg_symptoms) = negative_map.get(disease_name.as_str()) {
-            let neg_count = neg_symptoms.iter()
-                .filter(|ns| normalized.iter().any(|input| fuzzy_match(input, &ns.to_lowercase())))
+            let neg_count = neg_symptoms
+                .iter()
+                .filter(|ns| {
+                    normalized
+                        .iter()
+                        .any(|input| fuzzy_match(input, &ns.to_lowercase()))
+                })
                 .count();
             // Each contradicting symptom reduces score by 15%
             (0.85_f64).powi(neg_count as i32)
@@ -328,7 +339,16 @@ fn get_symptom_disease_counts(conn: &Connection) -> std::collections::HashMap<St
 /// Fuzzy matching: checks if input contains or is contained in symptom name,
 /// if individual words overlap significantly, or if edit distance is small (typo tolerance).
 fn fuzzy_match(input: &str, symptom: &str) -> bool {
-    if input == symptom || symptom.contains(input) || input.contains(symptom) {
+    if input == symptom {
+        return true;
+    }
+    // Substring containment requires a minimum length on the shorter side,
+    // otherwise tiny inputs ("fe", "pa") match nearly every symptom and
+    // produce spurious diagnoses.
+    if input.len() >= 3 && symptom.contains(input) {
+        return true;
+    }
+    if symptom.len() >= 3 && input.contains(symptom) {
         return true;
     }
 
@@ -363,7 +383,9 @@ fn fuzzy_match(input: &str, symptom: &str) -> bool {
 
 /// Build a lookup map from synonym → canonical symptom name.
 fn build_synonym_map() -> HashMap<&'static str, &'static str> {
-    crate::db::seed::get_symptom_synonyms().into_iter().collect()
+    crate::db::seed::get_symptom_synonyms()
+        .into_iter()
+        .collect()
 }
 
 /// Negative evidence: symptoms that argue AGAINST a diagnosis.
@@ -377,7 +399,10 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     // Appendicitis: pain typically RIGHT side, no cough
     map.insert("Appendicitis", vec!["cough", "rash", "sore throat"]);
     // Common Cold: no high fever, no rash, no severe headache
-    map.insert("Common Cold", vec!["high fever", "rash", "severe headache", "confusion"]);
+    map.insert(
+        "Common Cold",
+        vec!["high fever", "rash", "severe headache", "confusion"],
+    );
     // Malaria: no cough, no sore throat typically
     map.insert("Malaria", vec!["cough", "sore throat", "rash"]);
     // Cholera: no fever typically, no rash
@@ -387,9 +412,15 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     // Asthma: no fever (unless infection), no rash
     map.insert("Asthma", vec!["fever", "rash", "diarrhea"]);
     // Lactose Intolerance: no fever, no rash
-    map.insert("Lactose Intolerance", vec!["fever", "rash", "fatigue", "weight loss"]);
+    map.insert(
+        "Lactose Intolerance",
+        vec!["fever", "rash", "fatigue", "weight loss"],
+    );
     // Tension Headache: no fever, no vision changes, no rash
-    map.insert("Tension Headache", vec!["fever", "rash", "vomiting", "vision changes"]);
+    map.insert(
+        "Tension Headache",
+        vec!["fever", "rash", "vomiting", "vision changes"],
+    );
     // Cluster Headache: no fever, no neck stiffness
     map.insert("Cluster Headache", vec!["fever", "neck stiffness", "rash"]);
     // Pneumonia: no rash typically
@@ -401,7 +432,10 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     // Gout: no bilateral, no fever usually (unless tophaceous)
     map.insert("Gout", vec!["cough", "rash", "diarrhea"]);
     // GERD: no fever, no weight loss
-    map.insert("Irritable Bowel Syndrome", vec!["fever", "bloody stool", "weight loss"]);
+    map.insert(
+        "Irritable Bowel Syndrome",
+        vec!["fever", "bloody stool", "weight loss"],
+    );
     // Conversion Disorder: no organic signs
     map.insert("Conversion Disorder", vec!["fever", "rash", "weight loss"]);
     // Hyperkalemia: no rash, no cough
@@ -409,22 +443,46 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     // DVT: typically unilateral, no rash
     map.insert("Deep Vein Thrombosis", vec!["rash", "cough", "fever"]);
     // v16 negative evidence
-    map.insert("Graves' Disease", vec!["weight gain", "cold intolerance", "constipation"]);
-    map.insert("Hashimoto's Thyroiditis", vec!["weight loss", "heat intolerance", "diarrhea"]);
+    map.insert(
+        "Graves' Disease",
+        vec!["weight gain", "cold intolerance", "constipation"],
+    );
+    map.insert(
+        "Hashimoto's Thyroiditis",
+        vec!["weight loss", "heat intolerance", "diarrhea"],
+    );
     map.insert("Cataracts", vec!["eye pain", "eye redness", "headache"]);
     // v0.19.0 negative evidence
-    map.insert("Panic Disorder", vec!["fever", "rash", "weight loss", "cough"]);
+    map.insert(
+        "Panic Disorder",
+        vec!["fever", "rash", "weight loss", "cough"],
+    );
     map.insert("Sinusitis", vec!["chest pain", "rash", "diarrhea"]);
-    map.insert("Plantar Fasciitis", vec!["fever", "rash", "swelling", "numbness"]);
-    map.insert("Vertigo (BPPV)", vec!["fever", "hearing loss", "ear discharge"]);
-    map.insert("Rosacea", vec!["fever", "joint pain", "fatigue", "weight loss"]);
+    map.insert(
+        "Plantar Fasciitis",
+        vec!["fever", "rash", "swelling", "numbness"],
+    );
+    map.insert(
+        "Vertigo (BPPV)",
+        vec!["fever", "hearing loss", "ear discharge"],
+    );
+    map.insert(
+        "Rosacea",
+        vec!["fever", "joint pain", "fatigue", "weight loss"],
+    );
     map.insert("Nephrolithiasis", vec!["rash", "cough", "sore throat"]);
     map.insert("Scurvy", vec!["fever", "cough", "diarrhea"]);
     map.insert("Frostbite", vec!["fever", "sweating", "rash"]);
     map.insert("Rabies", vec!["rash", "cough", "diarrhea"]);
-    map.insert("Bipolar Disorder", vec!["fever", "rash", "cough", "weight loss"]);
+    map.insert(
+        "Bipolar Disorder",
+        vec!["fever", "rash", "cough", "weight loss"],
+    );
     map.insert("Hypothermia", vec!["fever", "sweating", "rash"]);
-    map.insert("Spontaneous Pneumothorax", vec!["fever", "productive cough", "rash"]);
+    map.insert(
+        "Spontaneous Pneumothorax",
+        vec!["fever", "productive cough", "rash"],
+    );
     map.insert("Parkinson's Disease", vec!["fever", "rash", "diarrhea"]);
     map.insert("Alzheimer's Disease", vec!["fever", "acute pain", "rash"]);
     map.insert("Fibromyalgia", vec!["fever", "joint swelling", "rash"]);
@@ -432,142 +490,337 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Carpal Tunnel Syndrome", vec!["fever", "rash", "cough"]);
     map.insert("Endometriosis", vec!["fever", "rash", "cough"]);
     map.insert("Celiac Disease", vec!["fever", "rash", "cough"]);
-    map.insert("Bipolar Disorder", vec!["fever", "rash", "cough", "joint pain"]);
+    map.insert(
+        "Bipolar Disorder",
+        vec!["fever", "rash", "cough", "joint pain"],
+    );
     map.insert("Plantar Fasciitis", vec!["fever", "rash", "cough"]);
     map.insert("Sciatica", vec!["fever", "rash", "cough"]);
     map.insert("Postpartum Depression", vec!["fever", "rash", "cough"]);
     // v18 negative evidence
-    map.insert("Addison's Disease", vec!["weight gain", "moon face", "high blood pressure"]);
-    map.insert("Cushing's Syndrome", vec!["weight loss", "hyperpigmentation", "low blood pressure"]);
+    map.insert(
+        "Addison's Disease",
+        vec!["weight gain", "moon face", "high blood pressure"],
+    );
+    map.insert(
+        "Cushing's Syndrome",
+        vec!["weight loss", "hyperpigmentation", "low blood pressure"],
+    );
     map.insert("Aortic Dissection", vec!["rash", "fever", "gradual onset"]);
     map.insert("Myocarditis", vec!["rash", "joint pain", "diarrhea"]);
     map.insert("Multiple Sclerosis", vec!["fever", "rash", "diarrhea"]);
-    map.insert("Trigeminal Neuralgia", vec!["fever", "rash", "bilateral pain"]);
-    map.insert("Toxic Shock Syndrome", vec!["gradual onset", "joint stiffness"]);
+    map.insert(
+        "Trigeminal Neuralgia",
+        vec!["fever", "rash", "bilateral pain"],
+    );
+    map.insert(
+        "Toxic Shock Syndrome",
+        vec!["gradual onset", "joint stiffness"],
+    );
     map.insert("Sarcoidosis", vec!["high fever", "diarrhea", "vomiting"]);
     // v21 negative evidence
     map.insert("Achalasia", vec!["diarrhea", "fever", "rash"]);
     map.insert("Pheochromocytoma", vec!["rash", "diarrhea", "cough"]);
-    map.insert("Polymyalgia Rheumatica", vec!["rash", "swollen joints", "muscle weakness"]);
-    map.insert("Restless Legs Syndrome", vec!["fever", "rash", "joint swelling"]);
-    map.insert("Normal Pressure Hydrocephalus", vec!["fever", "rash", "acute onset"]);
-    map.insert("Interstitial Cystitis", vec!["fever", "blood in urine", "rash"]);
-    map.insert("Peripheral Artery Disease", vec!["rash", "fever", "bilateral arm pain"]);
-    map.insert("Thoracic Outlet Syndrome", vec!["fever", "rash", "bilateral symptoms"]);
-    map.insert("Vocal Cord Dysfunction", vec!["fever", "rash", "wheezing on exhale"]);
+    map.insert(
+        "Polymyalgia Rheumatica",
+        vec!["rash", "swollen joints", "muscle weakness"],
+    );
+    map.insert(
+        "Restless Legs Syndrome",
+        vec!["fever", "rash", "joint swelling"],
+    );
+    map.insert(
+        "Normal Pressure Hydrocephalus",
+        vec!["fever", "rash", "acute onset"],
+    );
+    map.insert(
+        "Interstitial Cystitis",
+        vec!["fever", "blood in urine", "rash"],
+    );
+    map.insert(
+        "Peripheral Artery Disease",
+        vec!["rash", "fever", "bilateral arm pain"],
+    );
+    map.insert(
+        "Thoracic Outlet Syndrome",
+        vec!["fever", "rash", "bilateral symptoms"],
+    );
+    map.insert(
+        "Vocal Cord Dysfunction",
+        vec!["fever", "rash", "wheezing on exhale"],
+    );
     map.insert("Erythema Nodosum", vec!["blisters", "itching", "scaling"]);
     // v22 negative evidence
-    map.insert("Chronic Obstructive Pulmonary Disease", vec!["rash", "joint swelling", "diarrhea"]);
-    map.insert("Pulmonary Fibrosis", vec!["rash", "diarrhea", "joint swelling"]);
-    map.insert("Schizophrenia", vec!["fever", "rash", "joint pain", "cough"]);
-    map.insert("Obsessive-Compulsive Disorder", vec!["fever", "rash", "cough", "weight loss"]);
-    map.insert("Post-Traumatic Stress Disorder", vec!["fever", "rash", "cough", "joint pain"]);
+    map.insert(
+        "Chronic Obstructive Pulmonary Disease",
+        vec!["rash", "joint swelling", "diarrhea"],
+    );
+    map.insert(
+        "Pulmonary Fibrosis",
+        vec!["rash", "diarrhea", "joint swelling"],
+    );
+    map.insert(
+        "Schizophrenia",
+        vec!["fever", "rash", "joint pain", "cough"],
+    );
+    map.insert(
+        "Obsessive-Compulsive Disorder",
+        vec!["fever", "rash", "cough", "weight loss"],
+    );
+    map.insert(
+        "Post-Traumatic Stress Disorder",
+        vec!["fever", "rash", "cough", "joint pain"],
+    );
     map.insert("Otosclerosis", vec!["fever", "ear discharge", "ear pain"]);
     map.insert("Meniere's Disease", vec!["fever", "rash", "cough"]);
     map.insert("Rheumatoid Arthritis", vec!["rash", "fever", "diarrhea"]);
     map.insert("Ankylosing Spondylitis", vec!["rash", "diarrhea", "cough"]);
     map.insert("Epiglottitis", vec!["rash", "diarrhea", "gradual onset"]);
     map.insert("Pyelonephritis", vec!["rash", "cough", "joint pain"]);
-    map.insert("Primary Biliary Cholangitis", vec!["fever", "diarrhea", "joint swelling"]);
+    map.insert(
+        "Primary Biliary Cholangitis",
+        vec!["fever", "diarrhea", "joint swelling"],
+    );
     map.insert("Actinic Keratosis", vec!["fever", "joint pain", "cough"]);
     // v0.23.0 negative evidence
-    map.insert("Atrial Fibrillation", vec!["rash", "fever", "cough", "diarrhea"]);
-    map.insert("Allergic Rhinitis", vec!["fever", "chest pain", "weight loss"]);
-    map.insert("Obstructive Sleep Apnea", vec!["fever", "rash", "weight loss", "diarrhea"]);
+    map.insert(
+        "Atrial Fibrillation",
+        vec!["rash", "fever", "cough", "diarrhea"],
+    );
+    map.insert(
+        "Allergic Rhinitis",
+        vec!["fever", "chest pain", "weight loss"],
+    );
+    map.insert(
+        "Obstructive Sleep Apnea",
+        vec!["fever", "rash", "weight loss", "diarrhea"],
+    );
     map.insert("Osteoarthritis", vec!["fever", "rash", "weight loss"]);
-    map.insert("Irritable Bowel Syndrome", vec!["fever", "bloody stool", "weight loss"]);
+    map.insert(
+        "Irritable Bowel Syndrome",
+        vec!["fever", "bloody stool", "weight loss"],
+    );
     map.insert("Peripheral Neuropathy", vec!["fever", "rash", "cough"]);
-    map.insert("Polycystic Ovary Syndrome (PCOS)", vec!["fever", "rash", "cough", "diarrhea"]);
+    map.insert(
+        "Polycystic Ovary Syndrome (PCOS)",
+        vec!["fever", "rash", "cough", "diarrhea"],
+    );
     map.insert("Psoriatic Arthritis", vec!["fever", "cough", "diarrhea"]);
     map.insert("Chronic Kidney Disease", vec!["rash", "cough", "fever"]);
     map.insert("Sepsis", vec!["rash", "chronic onset", "well-appearing"]);
-    map.insert("Thyroid Storm", vec!["rash", "chronic onset", "weight gain"]);
-    map.insert("Anaphylactic Shock", vec!["gradual onset", "fever", "chronic"]);
+    map.insert(
+        "Thyroid Storm",
+        vec!["rash", "chronic onset", "weight gain"],
+    );
+    map.insert(
+        "Anaphylactic Shock",
+        vec!["gradual onset", "fever", "chronic"],
+    );
     map.insert("Preeclampsia", vec!["rash", "diarrhea", "cough"]);
     // v0.24.0 negative evidence
     map.insert("Heat Exhaustion", vec!["rash", "cough", "diarrhea"]);
     map.insert("Retinal Detachment", vec!["fever", "rash", "pain"]);
     map.insert("Thyroid Nodule", vec!["fever", "rash", "cough", "diarrhea"]);
-    map.insert("Subdural Hematoma", vec!["rash", "cough", "diarrhea", "fever"]);
+    map.insert(
+        "Subdural Hematoma",
+        vec!["rash", "cough", "diarrhea", "fever"],
+    );
     map.insert("Cholesteatoma", vec!["rash", "cough", "joint pain"]);
-    map.insert("Toxic Epidermal Necrolysis", vec!["cough", "diarrhea", "joint pain"]);
+    map.insert(
+        "Toxic Epidermal Necrolysis",
+        vec!["cough", "diarrhea", "joint pain"],
+    );
     map.insert("Organophosphate Poisoning", vec!["rash", "joint pain"]);
     // v0.25.0 negative evidence
     map.insert("Bruxism", vec!["fever", "rash", "weight loss"]);
-    map.insert("Temporomandibular Joint Disorder", vec!["fever", "rash", "weight loss"]);
-    map.insert("Generalized Anxiety Disorder", vec!["fever", "rash", "cough", "weight loss"]);
-    map.insert("Eating Disorder (Anorexia Nervosa)", vec!["weight gain", "rash", "cough"]);
+    map.insert(
+        "Temporomandibular Joint Disorder",
+        vec!["fever", "rash", "weight loss"],
+    );
+    map.insert(
+        "Generalized Anxiety Disorder",
+        vec!["fever", "rash", "cough", "weight loss"],
+    );
+    map.insert(
+        "Eating Disorder (Anorexia Nervosa)",
+        vec!["weight gain", "rash", "cough"],
+    );
     map.insert("Rickets", vec!["rash", "cough", "fever"]);
     map.insert("Febrile Seizure", vec!["rash", "cough", "diarrhea"]);
-    map.insert("Phenylketonuria (PKU)", vec!["fever", "rash", "acute onset"]);
+    map.insert(
+        "Phenylketonuria (PKU)",
+        vec!["fever", "rash", "acute onset"],
+    );
     map.insert("Bulimia Nervosa", vec!["fever", "rash", "cough"]);
     map.insert("Impetigo", vec!["fever", "joint pain", "weight loss"]);
-    map.insert("Tinea Corporis (Ringworm)", vec!["fever", "joint pain", "weight loss"]);
+    map.insert(
+        "Tinea Corporis (Ringworm)",
+        vec!["fever", "joint pain", "weight loss"],
+    );
     map.insert("Metabolic Syndrome", vec!["rash", "cough", "fever"]);
-    map.insert("Gallstones (Cholelithiasis)", vec!["rash", "cough", "fever"]);
-    map.insert("Chronic Fatigue Syndrome", vec!["fever", "rash", "weight gain"]);
-    map.insert("Peritonsillar Abscess", vec!["rash", "diarrhea", "joint pain"]);
+    map.insert(
+        "Gallstones (Cholelithiasis)",
+        vec!["rash", "cough", "fever"],
+    );
+    map.insert(
+        "Chronic Fatigue Syndrome",
+        vec!["fever", "rash", "weight gain"],
+    );
+    map.insert(
+        "Peritonsillar Abscess",
+        vec!["rash", "diarrhea", "joint pain"],
+    );
     // v0.26.0 negative evidence
-    map.insert("Acoustic Neuroma (Vestibular Schwannoma)", vec!["fever", "rash", "bilateral hearing loss"]);
+    map.insert(
+        "Acoustic Neuroma (Vestibular Schwannoma)",
+        vec!["fever", "rash", "bilateral hearing loss"],
+    );
     map.insert("Hemochromatosis", vec!["rash", "cough", "acute onset"]);
-    map.insert("Pericarditis", vec!["rash", "diarrhea", "unilateral symptoms"]);
+    map.insert(
+        "Pericarditis",
+        vec!["rash", "diarrhea", "unilateral symptoms"],
+    );
     map.insert("Polymyositis", vec!["rash", "cough", "sensory loss"]);
     map.insert("Pyloric Stenosis", vec!["diarrhea", "rash", "bloody stool"]);
     map.insert("Osteomyelitis", vec!["rash", "diarrhea", "headache"]);
     map.insert("Placenta Previa", vec!["painful bleeding", "rash", "fever"]);
-    map.insert("Vocal Cord Polyps", vec!["fever", "rash", "difficulty breathing"]);
+    map.insert(
+        "Vocal Cord Polyps",
+        vec!["fever", "rash", "difficulty breathing"],
+    );
     map.insert("Testicular Torsion", vec!["rash", "cough", "gradual onset"]);
-    map.insert("Henoch-Schönlein Purpura (IgA Vasculitis)", vec!["cough", "chest pain", "weight loss"]);
+    map.insert(
+        "Henoch-Schönlein Purpura (IgA Vasculitis)",
+        vec!["cough", "chest pain", "weight loss"],
+    );
     map.insert("Aortic Stenosis", vec!["rash", "cough", "fever"]);
-    map.insert("Necrotizing Fasciitis", vec!["gradual onset", "painless", "joint stiffness"]);
-    map.insert("Sjogren's Syndrome", vec!["fever", "diarrhea", "weight gain"]);
-    map.insert("Carbon Monoxide Poisoning", vec!["rash", "cough", "gradual onset over weeks"]);
+    map.insert(
+        "Necrotizing Fasciitis",
+        vec!["gradual onset", "painless", "joint stiffness"],
+    );
+    map.insert(
+        "Sjogren's Syndrome",
+        vec!["fever", "diarrhea", "weight gain"],
+    );
+    map.insert(
+        "Carbon Monoxide Poisoning",
+        vec!["rash", "cough", "gradual onset over weeks"],
+    );
     map.insert("Pilonidal Cyst", vec!["cough", "nausea", "headache"]);
     // v0.27.0 negative evidence
-    map.insert("Peripartum Cardiomyopathy", vec!["rash", "joint pain", "cough"]);
-    map.insert("Wernicke Encephalopathy", vec!["rash", "diarrhea", "joint pain"]);
+    map.insert(
+        "Peripartum Cardiomyopathy",
+        vec!["rash", "joint pain", "cough"],
+    );
+    map.insert(
+        "Wernicke Encephalopathy",
+        vec!["rash", "diarrhea", "joint pain"],
+    );
     map.insert("Acute Compartment Syndrome", vec!["fever", "rash", "cough"]);
     map.insert("Lichen Planus", vec!["fever", "cough", "weight loss"]);
-    map.insert("Adhesive Capsulitis (Frozen Shoulder)", vec!["fever", "rash", "cough"]);
+    map.insert(
+        "Adhesive Capsulitis (Frozen Shoulder)",
+        vec!["fever", "rash", "cough"],
+    );
     map.insert("Acromegaly", vec!["rash", "diarrhea", "weight loss"]);
     map.insert("Pellagra", vec!["joint swelling", "cough", "chest pain"]);
     map.insert("Toxic Megacolon", vec!["rash", "cough", "joint pain"]);
     map.insert("Mastitis", vec!["cough", "diarrhea", "joint pain"]);
-    map.insert("Pelvic Inflammatory Disease", vec!["rash", "cough", "headache"]);
+    map.insert(
+        "Pelvic Inflammatory Disease",
+        vec!["rash", "cough", "headache"],
+    );
     map.insert("Placental Abruption", vec!["rash", "cough", "diarrhea"]);
-    map.insert("Dengue Shock Syndrome", vec!["cough", "sore throat", "rash"]);
+    map.insert(
+        "Dengue Shock Syndrome",
+        vec!["cough", "sore throat", "rash"],
+    );
     // v0.28.0 negative evidence
     map.insert("Chikungunya", vec!["cough", "sore throat", "diarrhea"]);
-    map.insert("Leishmaniasis (Visceral)", vec!["rash", "cough", "joint pain"]);
+    map.insert(
+        "Leishmaniasis (Visceral)",
+        vec!["rash", "cough", "joint pain"],
+    );
     map.insert("Schistosomiasis", vec!["cough", "chest pain", "joint pain"]);
     map.insert("Leptospirosis", vec!["chronic onset", "sore throat"]);
-    map.insert("Anaphylaxis (Food Allergy)", vec!["gradual onset", "fever", "chronic"]);
-    map.insert("Contact Dermatitis", vec!["fever", "joint pain", "weight loss"]);
-    map.insert("Benign Paroxysmal Positional Vertigo", vec!["hearing loss", "ear discharge", "fever"]);
-    map.insert("Chronic Hepatitis B", vec!["rash", "cough", "acute severe pain"]);
-    map.insert("Irritable Bowel Syndrome", vec!["fever", "bloody stool", "weight loss"]);
-    map.insert("Urinary Tract Infection", vec!["rash", "cough", "joint pain"]);
-    map.insert("Herpes Zoster (Shingles)", vec!["bilateral rash", "cough", "diarrhea"]);
-    map.insert("Optic Neuritis", vec!["bilateral vision loss", "rash", "joint swelling"]);
-    map.insert("Hyperaldosteronism (Conn's Syndrome)", vec!["rash", "fever", "cough"]);
-    map.insert("Mesenteric Ischemia (Acute)", vec!["rash", "cough", "chronic gradual onset"]);
-    map.insert("Thoracic Aortic Aneurysm", vec!["rash", "fever", "diarrhea"]);
+    map.insert(
+        "Anaphylaxis (Food Allergy)",
+        vec!["gradual onset", "fever", "chronic"],
+    );
+    map.insert(
+        "Contact Dermatitis",
+        vec!["fever", "joint pain", "weight loss"],
+    );
+    map.insert(
+        "Benign Paroxysmal Positional Vertigo",
+        vec!["hearing loss", "ear discharge", "fever"],
+    );
+    map.insert(
+        "Chronic Hepatitis B",
+        vec!["rash", "cough", "acute severe pain"],
+    );
+    map.insert(
+        "Irritable Bowel Syndrome",
+        vec!["fever", "bloody stool", "weight loss"],
+    );
+    map.insert(
+        "Urinary Tract Infection",
+        vec!["rash", "cough", "joint pain"],
+    );
+    map.insert(
+        "Herpes Zoster (Shingles)",
+        vec!["bilateral rash", "cough", "diarrhea"],
+    );
+    map.insert(
+        "Optic Neuritis",
+        vec!["bilateral vision loss", "rash", "joint swelling"],
+    );
+    map.insert(
+        "Hyperaldosteronism (Conn's Syndrome)",
+        vec!["rash", "fever", "cough"],
+    );
+    map.insert(
+        "Mesenteric Ischemia (Acute)",
+        vec!["rash", "cough", "chronic gradual onset"],
+    );
+    map.insert(
+        "Thoracic Aortic Aneurysm",
+        vec!["rash", "fever", "diarrhea"],
+    );
     // v0.29.0 negative evidence
     map.insert("Inguinal Hernia", vec!["fever", "rash", "diarrhea"]);
-    map.insert("Hemorrhoids", vec!["fever", "weight loss", "abdominal mass"]);
-    map.insert("Viral Conjunctivitis", vec!["vision loss", "severe eye pain", "fever"]);
+    map.insert(
+        "Hemorrhoids",
+        vec!["fever", "weight loss", "abdominal mass"],
+    );
+    map.insert(
+        "Viral Conjunctivitis",
+        vec!["vision loss", "severe eye pain", "fever"],
+    );
     map.insert("Acute Bronchitis", vec!["high fever", "rash", "chest pain"]);
-    map.insert("Viral Gastroenteritis", vec!["rash", "chest pain", "joint pain"]);
+    map.insert(
+        "Viral Gastroenteritis",
+        vec!["rash", "chest pain", "joint pain"],
+    );
     map.insert("Tonsillitis", vec!["rash", "cough", "diarrhea"]);
     map.insert("Measles", vec!["diarrhea", "joint pain", "chest pain"]);
-    map.insert("Chickenpox (Varicella)", vec!["joint pain", "cough", "diarrhea"]);
+    map.insert(
+        "Chickenpox (Varicella)",
+        vec!["joint pain", "cough", "diarrhea"],
+    );
     map.insert("Mumps", vec!["rash", "cough", "diarrhea"]);
     map.insert("Chronic Hepatitis C", vec!["rash", "cough", "diarrhea"]);
     map.insert("Tetanus", vec!["rash", "diarrhea", "cough"]);
     map.insert("Yellow Fever", vec!["rash", "cough", "joint pain"]);
-    map.insert("Chronic Urticaria", vec!["fever", "joint pain", "weight loss"]);
+    map.insert(
+        "Chronic Urticaria",
+        vec!["fever", "joint pain", "weight loss"],
+    );
     map.insert("Varicose Veins", vec!["fever", "rash", "cough"]);
-    map.insert("Benign Prostatic Hyperplasia", vec!["fever", "rash", "weight loss"]);
+    map.insert(
+        "Benign Prostatic Hyperplasia",
+        vec!["fever", "rash", "weight loss"],
+    );
     // v30 negative evidence
     map.insert("Periapical Abscess", vec!["rash", "diarrhea", "cough"]);
     map.insert("Bruxism", vec!["fever", "rash", "diarrhea", "weight loss"]);
@@ -577,14 +830,26 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Turner Syndrome", vec!["fever", "cough", "diarrhea"]);
     map.insert("Marfan Syndrome", vec!["fever", "rash", "weight gain"]);
     map.insert("Crush Syndrome", vec!["rash", "cough", "sore throat"]);
-    map.insert("Fat Embolism Syndrome", vec!["diarrhea", "sore throat", "joint pain"]);
-    map.insert("Organophosphate Poisoning", vec!["mydriasis", "dry mouth", "constipation"]);
-    map.insert("Carbon Monoxide Poisoning", vec!["rash", "diarrhea", "cough"]);
+    map.insert(
+        "Fat Embolism Syndrome",
+        vec!["diarrhea", "sore throat", "joint pain"],
+    );
+    map.insert(
+        "Organophosphate Poisoning",
+        vec!["mydriasis", "dry mouth", "constipation"],
+    );
+    map.insert(
+        "Carbon Monoxide Poisoning",
+        vec!["rash", "diarrhea", "cough"],
+    );
     map.insert("Ankylosing Spondylitis", vec!["rash", "diarrhea", "cough"]);
     map.insert("Heat Stroke", vec!["hypothermia", "shivering", "rash"]);
     // v0.31.0 negative evidence
     map.insert("Buruli Ulcer", vec!["fever", "cough", "diarrhea"]);
-    map.insert("Dracunculiasis (Guinea Worm Disease)", vec!["cough", "rash", "headache"]);
+    map.insert(
+        "Dracunculiasis (Guinea Worm Disease)",
+        vec!["cough", "rash", "headache"],
+    );
     map.insert("Noma (Cancrum Oris)", vec!["cough", "diarrhea", "rash"]);
     map.insert("Ciguatera Fish Poisoning", vec!["fever", "rash", "cough"]);
     map.insert("Ascariasis", vec!["fever", "rash", "chest pain"]);
@@ -592,38 +857,77 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     // v0.32.0 negative evidence
     map.insert("Hookworm Infection", vec!["cough", "rash", "chest pain"]);
     map.insert("Trachoma", vec!["cough", "diarrhea", "joint pain"]);
-    map.insert("Onchocerciasis (River Blindness)", vec!["fever", "diarrhea", "cough"]);
+    map.insert(
+        "Onchocerciasis (River Blindness)",
+        vec!["fever", "diarrhea", "cough"],
+    );
     map.insert("Myocardial Bridge", vec!["fever", "rash", "cough"]);
-    map.insert("Lymphatic Filariasis (Elephantiasis)", vec!["cough", "diarrhea", "rash"]);
+    map.insert(
+        "Lymphatic Filariasis (Elephantiasis)",
+        vec!["cough", "diarrhea", "rash"],
+    );
     map.insert("Acute Rheumatic Fever", vec!["diarrhea", "rash", "cough"]);
-    map.insert("African Trypanosomiasis (Sleeping Sickness)", vec!["rash", "cough", "diarrhea"]);
-    map.insert("Interstitial Lung Disease", vec!["rash", "diarrhea", "joint swelling"]);
+    map.insert(
+        "African Trypanosomiasis (Sleeping Sickness)",
+        vec!["rash", "cough", "diarrhea"],
+    );
+    map.insert(
+        "Interstitial Lung Disease",
+        vec!["rash", "diarrhea", "joint swelling"],
+    );
     // v0.33.0 negative evidence
     map.insert("Rabies Encephalitis", vec!["rash", "diarrhea", "cough"]);
     map.insert("Brucellosis", vec!["rash", "cough", "diarrhea"]);
-    map.insert("Strongyloidiasis", vec!["fever", "chest pain", "joint pain"]);
+    map.insert(
+        "Strongyloidiasis",
+        vec!["fever", "chest pain", "joint pain"],
+    );
     map.insert("Hepatorenal Syndrome", vec!["rash", "cough", "fever"]);
     map.insert("Chronic Pancreatitis", vec!["rash", "fever", "cough"]);
     map.insert("Pituitary Adenoma", vec!["fever", "rash", "diarrhea"]);
     map.insert("Myasthenic Crisis", vec!["rash", "fever", "diarrhea"]);
-    map.insert("Hemophagocytic Lymphohistiocytosis (HLH)", vec!["cough", "diarrhea", "joint pain"]);
-    map.insert("Posterior Reversible Encephalopathy Syndrome (PRES)", vec!["rash", "diarrhea", "cough"]);
+    map.insert(
+        "Hemophagocytic Lymphohistiocytosis (HLH)",
+        vec!["cough", "diarrhea", "joint pain"],
+    );
+    map.insert(
+        "Posterior Reversible Encephalopathy Syndrome (PRES)",
+        vec!["rash", "diarrhea", "cough"],
+    );
     map.insert("Beriberi", vec!["rash", "joint pain", "diarrhea"]);
     map.insert("Myxedema Coma", vec!["tachycardia", "rash", "diarrhea"]);
-    map.insert("Superior Vena Cava Syndrome", vec!["rash", "diarrhea", "lower limb swelling"]);
+    map.insert(
+        "Superior Vena Cava Syndrome",
+        vec!["rash", "diarrhea", "lower limb swelling"],
+    );
     map.insert("Dermatomyositis", vec!["fever", "diarrhea", "cough"]);
-    map.insert("Visceral Leishmaniasis (Kala-azar)", vec!["rash", "cough", "diarrhea"]);
-    map.insert("Esophageal Varices Bleeding", vec!["rash", "cough", "joint pain"]);
+    map.insert(
+        "Visceral Leishmaniasis (Kala-azar)",
+        vec!["rash", "cough", "diarrhea"],
+    );
+    map.insert(
+        "Esophageal Varices Bleeding",
+        vec!["rash", "cough", "joint pain"],
+    );
     // v0.34.0 negative evidence
     map.insert("Japanese Encephalitis", vec!["rash", "diarrhea", "cough"]);
-    map.insert("Hantavirus Pulmonary Syndrome", vec!["rash", "diarrhea", "joint pain"]);
+    map.insert(
+        "Hantavirus Pulmonary Syndrome",
+        vec!["rash", "diarrhea", "joint pain"],
+    );
     map.insert("Q Fever", vec!["rash", "diarrhea", "joint swelling"]);
     map.insert("Histoplasmosis", vec!["rash", "diarrhea", "joint pain"]);
-    map.insert("Coccidioidomycosis (Valley Fever)", vec!["diarrhea", "vomiting", "confusion"]);
+    map.insert(
+        "Coccidioidomycosis (Valley Fever)",
+        vec!["diarrhea", "vomiting", "confusion"],
+    );
     map.insert("Babesiosis", vec!["rash", "cough", "diarrhea"]);
     map.insert("Ehrlichiosis", vec!["diarrhea", "chronic onset", "rash"]);
     map.insert("Neurocysticercosis", vec!["rash", "cough", "diarrhea"]);
-    map.insert("Amebic Liver Abscess", vec!["rash", "chest pain", "joint pain"]);
+    map.insert(
+        "Amebic Liver Abscess",
+        vec!["rash", "chest pain", "joint pain"],
+    );
     map.insert("Melioidosis", vec!["rash", "chronic stable course"]);
     map.insert("Chromoblastomycosis", vec!["fever", "cough", "diarrhea"]);
     map.insert("Trichinosis", vec!["cough", "joint pain", "rash"]);
@@ -631,52 +935,127 @@ fn get_negative_evidence() -> HashMap<&'static str, Vec<&'static str>> {
     map.insert("Listeriosis", vec!["rash", "cough", "joint pain"]);
     map.insert("Whipple's Disease", vec!["rash", "cough", "acute onset"]);
     // v0.35.0 negative evidence
-    map.insert("Epidemic Typhus", vec!["diarrhea", "joint pain", "sore throat"]);
+    map.insert(
+        "Epidemic Typhus",
+        vec!["diarrhea", "joint pain", "sore throat"],
+    );
     map.insert("Anthrax", vec!["diarrhea", "joint pain", "chronic onset"]);
     map.insert("Plague", vec!["rash", "chronic onset", "diarrhea"]);
     map.insert("Diphtheria", vec!["rash", "diarrhea", "joint pain"]);
     map.insert("Poliomyelitis", vec!["rash", "diarrhea", "cough"]);
-    map.insert("Leprosy (Hansen's Disease)", vec!["fever", "acute onset", "cough"]);
+    map.insert(
+        "Leprosy (Hansen's Disease)",
+        vec!["fever", "acute onset", "cough"],
+    );
     map.insert("Chagas Disease", vec!["cough", "rash", "diarrhea"]);
     map.insert("Toxoplasmosis", vec!["rash", "diarrhea", "cough"]);
     map.insert("Giardiasis", vec!["fever", "rash", "chest pain"]);
     map.insert("Hepatitis E", vec!["rash", "cough", "chest pain"]);
-    map.insert("West Nile Virus", vec!["diarrhea", "cough", "joint swelling"]);
+    map.insert(
+        "West Nile Virus",
+        vec!["diarrhea", "cough", "joint swelling"],
+    );
     map.insert("Zika Virus", vec!["diarrhea", "cough", "high fever"]);
-    map.insert("Ebola Virus Disease", vec!["chronic onset", "joint pain", "rash"]);
+    map.insert(
+        "Ebola Virus Disease",
+        vec!["chronic onset", "joint pain", "rash"],
+    );
     map.insert("Mpox (Monkeypox)", vec!["diarrhea", "cough", "joint pain"]);
     map.insert("Tularemia", vec!["rash", "diarrhea", "chronic onset"]);
     // v0.36.0 negative evidence
-    map.insert("Rocky Mountain Spotted Fever", vec!["diarrhea", "cough", "chronic onset"]);
-    map.insert("Typhoid Fever", vec!["rash on extremities", "cough", "rapid onset"]);
-    map.insert("Norovirus Gastroenteritis", vec!["high fever", "rash", "bloody stool"]);
-    map.insert("Pertussis (Whooping Cough)", vec!["rash", "diarrhea", "high fever"]);
+    map.insert(
+        "Rocky Mountain Spotted Fever",
+        vec!["diarrhea", "cough", "chronic onset"],
+    );
+    map.insert(
+        "Typhoid Fever",
+        vec!["rash on extremities", "cough", "rapid onset"],
+    );
+    map.insert(
+        "Norovirus Gastroenteritis",
+        vec!["high fever", "rash", "bloody stool"],
+    );
+    map.insert(
+        "Pertussis (Whooping Cough)",
+        vec!["rash", "diarrhea", "high fever"],
+    );
     map.insert("Amoebic Dysentery", vec!["rash", "cough", "joint pain"]);
-    map.insert("Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)", vec!["fever", "rash", "acute onset"]);
-    map.insert("Croup (Laryngotracheobronchitis)", vec!["rash", "diarrhea", "high fever"]);
-    map.insert("Hand, Foot, and Mouth Disease", vec!["cough", "joint pain", "high fever"]);
-    map.insert("Rotavirus Gastroenteritis", vec!["rash", "cough", "bloody stool"]);
-    map.insert("Otitis Externa (Swimmer's Ear)", vec!["fever", "rash", "diarrhea"]);
+    map.insert(
+        "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)",
+        vec!["fever", "rash", "acute onset"],
+    );
+    map.insert(
+        "Croup (Laryngotracheobronchitis)",
+        vec!["rash", "diarrhea", "high fever"],
+    );
+    map.insert(
+        "Hand, Foot, and Mouth Disease",
+        vec!["cough", "joint pain", "high fever"],
+    );
+    map.insert(
+        "Rotavirus Gastroenteritis",
+        vec!["rash", "cough", "bloody stool"],
+    );
+    map.insert(
+        "Otitis Externa (Swimmer's Ear)",
+        vec!["fever", "rash", "diarrhea"],
+    );
     map.insert("Tension Pneumothorax", vec!["rash", "fever", "diarrhea"]);
     map.insert("Status Epilepticus", vec!["rash", "diarrhea", "cough"]);
     map.insert("Acute Angle-Closure Crisis", vec!["rash", "fever", "cough"]);
-    map.insert("Peritonsillar Abscess (Quinsy)", vec!["rash", "diarrhea", "cough"]);
+    map.insert(
+        "Peritonsillar Abscess (Quinsy)",
+        vec!["rash", "diarrhea", "cough"],
+    );
     // v0.37.0 negative evidence
-    map.insert("Mycoplasma Pneumonia", vec!["rash", "diarrhea", "joint pain"]);
+    map.insert(
+        "Mycoplasma Pneumonia",
+        vec!["rash", "diarrhea", "joint pain"],
+    );
     map.insert("Scarlet Fever", vec!["diarrhea", "cough", "joint pain"]);
-    map.insert("Coxsackievirus Myocarditis", vec!["rash", "diarrhea", "joint pain"]);
-    map.insert("Granulomatosis with Polyangiitis (Wegener's)", vec!["diarrhea", "rash", "chronic stable course"]);
-    map.insert("Goodpasture Syndrome", vec!["rash", "joint pain", "diarrhea"]);
-    map.insert("Primary Sclerosing Cholangitis", vec!["rash", "cough", "joint pain"]);
-    map.insert("Hemolytic Disease of the Newborn (HDN)", vec!["cough", "diarrhea", "rash"]);
+    map.insert(
+        "Coxsackievirus Myocarditis",
+        vec!["rash", "diarrhea", "joint pain"],
+    );
+    map.insert(
+        "Granulomatosis with Polyangiitis (Wegener's)",
+        vec!["diarrhea", "rash", "chronic stable course"],
+    );
+    map.insert(
+        "Goodpasture Syndrome",
+        vec!["rash", "joint pain", "diarrhea"],
+    );
+    map.insert(
+        "Primary Sclerosing Cholangitis",
+        vec!["rash", "cough", "joint pain"],
+    );
+    map.insert(
+        "Hemolytic Disease of the Newborn (HDN)",
+        vec!["cough", "diarrhea", "rash"],
+    );
     map.insert("Moyamoya Disease", vec!["fever", "rash", "diarrhea"]);
-    map.insert("Boerhaave Syndrome (Esophageal Rupture)", vec!["rash", "diarrhea", "gradual onset"]);
-    map.insert("Hereditary Angioedema", vec!["itchy rash", "fever", "hives"]);
-    map.insert("Strongyloides Hyperinfection", vec!["joint pain", "rash", "headache"]);
-    map.insert("Chronic Mesenteric Ischemia", vec!["fever", "rash", "diarrhea"]);
+    map.insert(
+        "Boerhaave Syndrome (Esophageal Rupture)",
+        vec!["rash", "diarrhea", "gradual onset"],
+    );
+    map.insert(
+        "Hereditary Angioedema",
+        vec!["itchy rash", "fever", "hives"],
+    );
+    map.insert(
+        "Strongyloides Hyperinfection",
+        vec!["joint pain", "rash", "headache"],
+    );
+    map.insert(
+        "Chronic Mesenteric Ischemia",
+        vec!["fever", "rash", "diarrhea"],
+    );
     map.insert("Cat Scratch Disease", vec!["cough", "diarrhea", "rash"]);
     map.insert("Erysipelas", vec!["diarrhea", "cough", "joint pain"]);
-    map.insert("Henoch-Schönlein Purpura Nephritis", vec!["cough", "rash on trunk", "diarrhea"]);
+    map.insert(
+        "Henoch-Schönlein Purpura Nephritis",
+        vec!["cough", "rash on trunk", "diarrhea"],
+    );
     map
 }
 
@@ -783,6 +1162,59 @@ mod tests {
     }
 
     #[test]
+    fn test_fuzzy_match_rejects_tiny_inputs() {
+        // Very short inputs must not substring-match arbitrary symptoms,
+        // otherwise garbage input produces spurious matches.
+        assert!(!fuzzy_match("fe", "high fever"));
+        assert!(!fuzzy_match("pa", "abdominal pain"));
+        assert!(!fuzzy_match("a", "abdominal pain"));
+        assert!(!fuzzy_match("e", "rash"));
+    }
+
+    #[test]
+    fn test_short_garbage_input_yields_no_results() {
+        let conn = db::init_memory_database().unwrap();
+        let results = score_symptoms(&conn, &["pa"]);
+        assert!(
+            results.is_empty(),
+            "short garbage input should not match any disease"
+        );
+    }
+
+    #[test]
+    fn test_synonym_expansion_does_not_dilute_precision() {
+        let conn = db::init_memory_database().unwrap();
+
+        // Identical clinical evidence, two phrasings: canonical ("vomiting")
+        // vs synonym ("throwing up"). Scores must be identical; counting the
+        // expanded synonym as an extra user-reported symptom would deflate
+        // the synonym phrasing by the precision factor.
+        let canonical = score_symptoms(&conn, &["vomiting"]);
+        let synonym = score_symptoms(&conn, &["throwing up"]);
+
+        let c = canonical
+            .iter()
+            .find(|r| r.disease_name == "Cholera")
+            .expect("canonical phrasing should match Cholera");
+        let s = synonym
+            .iter()
+            .find(|r| r.disease_name == "Cholera")
+            .expect("synonym phrasing should match Cholera");
+
+        assert_eq!(
+            c.matched_symptoms.len(),
+            s.matched_symptoms.len(),
+            "both phrasings must match the same symptom set"
+        );
+        assert!(
+            (c.probability - s.probability).abs() < 1e-9,
+            "synonym phrasing must not score lower than canonical: {} vs {}",
+            s.probability,
+            c.probability
+        );
+    }
+
+    #[test]
     fn test_results_sorted_by_probability() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["fever", "headache"]);
@@ -828,9 +1260,11 @@ mod tests {
         let results = score_symptoms(&conn, &["stomach ache", "fever"]);
         assert!(!results.is_empty(), "Synonym expansion should find matches");
         // Should match diseases with abdominal pain
-        let has_abdominal = results
-            .iter()
-            .any(|r| r.matched_symptoms.iter().any(|s| s.to_lowercase().contains("abdominal")));
+        let has_abdominal = results.iter().any(|r| {
+            r.matched_symptoms
+                .iter()
+                .any(|s| s.to_lowercase().contains("abdominal"))
+        });
         assert!(has_abdominal, "Should match abdominal pain via synonym");
     }
 
@@ -838,7 +1272,10 @@ mod tests {
     fn test_synonym_expansion_breathlessness() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["breathlessness", "chest pain"]);
-        assert!(!results.is_empty(), "breathlessness should match via synonym");
+        assert!(
+            !results.is_empty(),
+            "breathlessness should match via synonym"
+        );
     }
 
     #[test]
@@ -914,9 +1351,16 @@ mod tests {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(
             &conn,
-            &["sudden shortness of breath", "chest pain", "rapid heart rate", "leg swelling"],
+            &[
+                "sudden shortness of breath",
+                "chest pain",
+                "rapid heart rate",
+                "leg swelling",
+            ],
         );
-        let pe = results.iter().find(|r| r.disease_name == "Pulmonary Embolism");
+        let pe = results
+            .iter()
+            .find(|r| r.disease_name == "Pulmonary Embolism");
         assert!(pe.is_some(), "Pulmonary Embolism should appear");
         assert!(pe.unwrap().probability > 30.0);
     }
@@ -924,7 +1368,10 @@ mod tests {
     #[test]
     fn test_score_scarlet_fever() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["red rash", "strawberry tongue", "sore throat", "fever"]);
+        let results = score_symptoms(
+            &conn,
+            &["red rash", "strawberry tongue", "sore throat", "fever"],
+        );
         let sf = results.iter().find(|r| r.disease_name == "Scarlet Fever");
         assert!(sf.is_some(), "Scarlet Fever should appear");
     }
@@ -940,7 +1387,10 @@ mod tests {
     #[test]
     fn test_score_encephalitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fever", "severe headache", "confusion", "seizures"]);
+        let results = score_symptoms(
+            &conn,
+            &["fever", "severe headache", "confusion", "seizures"],
+        );
         let enc = results.iter().find(|r| r.disease_name == "Encephalitis");
         assert!(enc.is_some(), "Encephalitis should appear");
     }
@@ -948,8 +1398,13 @@ mod tests {
     #[test]
     fn test_score_ectopic_pregnancy() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sharp pelvic pain", "vaginal bleeding", "missed period"]);
-        let ep = results.iter().find(|r| r.disease_name == "Ectopic Pregnancy");
+        let results = score_symptoms(
+            &conn,
+            &["sharp pelvic pain", "vaginal bleeding", "missed period"],
+        );
+        let ep = results
+            .iter()
+            .find(|r| r.disease_name == "Ectopic Pregnancy");
         assert!(ep.is_some(), "Ectopic Pregnancy should appear");
     }
 
@@ -958,7 +1413,11 @@ mod tests {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(
             &conn,
-            &["severe intermittent abdominal pain", "red currant jelly stool", "vomiting"],
+            &[
+                "severe intermittent abdominal pain",
+                "red currant jelly stool",
+                "vomiting",
+            ],
         );
         let intus = results.iter().find(|r| r.disease_name == "Intussusception");
         assert!(intus.is_some(), "Intussusception should appear");
@@ -971,7 +1430,6 @@ mod tests {
         assert!(!results.is_empty(), "throwing up should expand to vomiting");
     }
 
-
     #[test]
     fn test_score_heatstroke() {
         let conn = db::init_memory_database().unwrap();
@@ -983,7 +1441,10 @@ mod tests {
     #[test]
     fn test_score_peritonitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe abdominal pain", "abdominal rigidity", "fever"]);
+        let results = score_symptoms(
+            &conn,
+            &["severe abdominal pain", "abdominal rigidity", "fever"],
+        );
         let pt = results.iter().find(|r| r.disease_name == "Peritonitis");
         assert!(pt.is_some(), "Peritonitis should appear");
     }
@@ -991,7 +1452,10 @@ mod tests {
     #[test]
     fn test_score_bells_palsy() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["facial drooping", "inability to close eye", "drooling"]);
+        let results = score_symptoms(
+            &conn,
+            &["facial drooping", "inability to close eye", "drooling"],
+        );
         let bp = results.iter().find(|r| r.disease_name == "Bell's Palsy");
         assert!(bp.is_some(), "Bell's Palsy should appear");
     }
@@ -999,8 +1463,17 @@ mod tests {
     #[test]
     fn test_score_necrotizing_fasciitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe pain disproportionate to appearance", "rapid skin redness spreading", "fever"]);
-        let nf = results.iter().find(|r| r.disease_name == "Necrotizing Fasciitis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe pain disproportionate to appearance",
+                "rapid skin redness spreading",
+                "fever",
+            ],
+        );
+        let nf = results
+            .iter()
+            .find(|r| r.disease_name == "Necrotizing Fasciitis");
         assert!(nf.is_some(), "Necrotizing Fasciitis should appear");
     }
 
@@ -1016,7 +1489,10 @@ mod tests {
     fn test_synonym_ringing_in_ears() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["ringing in ears", "hearing loss"]);
-        assert!(!results.is_empty(), "ringing in ears should match via synonym");
+        assert!(
+            !results.is_empty(),
+            "ringing in ears should match via synonym"
+        );
     }
 
     #[test]
@@ -1029,7 +1505,9 @@ mod tests {
     fn test_score_lupus() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["butterfly rash", "joint pain", "fatigue", "fever"]);
-        let lupus = results.iter().find(|r| r.disease_name == "Systemic Lupus Erythematosus");
+        let lupus = results
+            .iter()
+            .find(|r| r.disease_name == "Systemic Lupus Erythematosus");
         assert!(lupus.is_some(), "SLE should appear in results");
         assert!(lupus.unwrap().probability > 20.0);
     }
@@ -1037,7 +1515,10 @@ mod tests {
     #[test]
     fn test_score_gout() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe joint pain", "joint swelling", "joint redness"]);
+        let results = score_symptoms(
+            &conn,
+            &["severe joint pain", "joint swelling", "joint redness"],
+        );
         let gout = results.iter().find(|r| r.disease_name == "Gout");
         assert!(gout.is_some(), "Gout should appear in results");
         assert!(gout.unwrap().probability > 30.0);
@@ -1054,8 +1535,18 @@ mod tests {
     #[test]
     fn test_score_acute_pancreatitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe abdominal pain", "pain radiating to back", "nausea", "vomiting"]);
-        let panc = results.iter().find(|r| r.disease_name == "Acute Pancreatitis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe abdominal pain",
+                "pain radiating to back",
+                "nausea",
+                "vomiting",
+            ],
+        );
+        let panc = results
+            .iter()
+            .find(|r| r.disease_name == "Acute Pancreatitis");
         assert!(panc.is_some(), "Acute Pancreatitis should appear");
         assert!(panc.unwrap().probability > 30.0);
     }
@@ -1063,7 +1554,10 @@ mod tests {
     #[test]
     fn test_score_common_cold() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["nasal congestion", "sore throat", "cough", "sneezing"]);
+        let results = score_symptoms(
+            &conn,
+            &["nasal congestion", "sore throat", "cough", "sneezing"],
+        );
         let cold = results.iter().find(|r| r.disease_name == "Common Cold");
         assert!(cold.is_some(), "Common Cold should appear");
     }
@@ -1072,7 +1566,10 @@ mod tests {
     fn test_synonym_brain_fog() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["brain fog", "widespread pain", "fatigue"]);
-        assert!(!results.is_empty(), "brain fog should expand to cognitive difficulties");
+        assert!(
+            !results.is_empty(),
+            "brain fog should expand to cognitive difficulties"
+        );
     }
 
     #[test]
@@ -1081,12 +1578,24 @@ mod tests {
         // Many matching symptoms should get cluster bonus
         let results = score_symptoms(
             &conn,
-            &["fever", "chills", "sweating", "headache", "nausea", "vomiting", "muscle pain", "fatigue"],
+            &[
+                "fever",
+                "chills",
+                "sweating",
+                "headache",
+                "nausea",
+                "vomiting",
+                "muscle pain",
+                "fatigue",
+            ],
         );
         let malaria = results.iter().find(|r| r.disease_name == "Malaria");
         assert!(malaria.is_some());
         // With cluster bonus, should score very high
-        assert!(malaria.unwrap().probability > 60.0, "Cluster bonus should push score high");
+        assert!(
+            malaria.unwrap().probability > 60.0,
+            "Cluster bonus should push score high"
+        );
     }
 
     #[test]
@@ -1107,8 +1616,13 @@ mod tests {
     #[test]
     fn test_score_myasthenia_gravis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["muscle weakness", "drooping eyelids", "double vision"]);
-        let mg = results.iter().find(|r| r.disease_name == "Myasthenia Gravis");
+        let results = score_symptoms(
+            &conn,
+            &["muscle weakness", "drooping eyelids", "double vision"],
+        );
+        let mg = results
+            .iter()
+            .find(|r| r.disease_name == "Myasthenia Gravis");
         assert!(mg.is_some(), "Myasthenia Gravis should appear");
         assert!(mg.unwrap().probability > 20.0);
     }
@@ -1116,15 +1630,27 @@ mod tests {
     #[test]
     fn test_score_guillain_barre() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["ascending muscle weakness", "tingling", "difficulty walking"]);
-        let gbs = results.iter().find(|r| r.disease_name == "Guillain-Barré Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "ascending muscle weakness",
+                "tingling",
+                "difficulty walking",
+            ],
+        );
+        let gbs = results
+            .iter()
+            .find(|r| r.disease_name == "Guillain-Barré Syndrome");
         assert!(gbs.is_some(), "Guillain-Barré Syndrome should appear");
     }
 
     #[test]
     fn test_score_rhabdomyolysis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe muscle pain", "dark brown urine", "muscle weakness"]);
+        let results = score_symptoms(
+            &conn,
+            &["severe muscle pain", "dark brown urine", "muscle weakness"],
+        );
         let rhabdo = results.iter().find(|r| r.disease_name == "Rhabdomyolysis");
         assert!(rhabdo.is_some(), "Rhabdomyolysis should appear");
         assert!(rhabdo.unwrap().probability > 30.0);
@@ -1133,16 +1659,31 @@ mod tests {
     #[test]
     fn test_score_tension_headache() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["bilateral headache", "pressing pain", "neck stiffness"]);
-        let th = results.iter().find(|r| r.disease_name == "Tension Headache");
+        let results = score_symptoms(
+            &conn,
+            &["bilateral headache", "pressing pain", "neck stiffness"],
+        );
+        let th = results
+            .iter()
+            .find(|r| r.disease_name == "Tension Headache");
         assert!(th.is_some(), "Tension Headache should appear");
     }
 
     #[test]
     fn test_score_acute_glaucoma() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe eye pain", "blurred vision", "halos around lights", "nausea"]);
-        let gl = results.iter().find(|r| r.disease_name == "Acute Angle-Closure Glaucoma");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe eye pain",
+                "blurred vision",
+                "halos around lights",
+                "nausea",
+            ],
+        );
+        let gl = results
+            .iter()
+            .find(|r| r.disease_name == "Acute Angle-Closure Glaucoma");
         assert!(gl.is_some(), "Acute Angle-Closure Glaucoma should appear");
         assert!(gl.unwrap().probability > 30.0);
     }
@@ -1151,7 +1692,10 @@ mod tests {
     fn test_synonym_droopy_eyelid() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["droopy eyelid", "double vision"]);
-        assert!(!results.is_empty(), "droopy eyelid should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "droopy eyelid should expand via synonym"
+        );
     }
 
     #[test]
@@ -1165,7 +1709,14 @@ mod tests {
     #[test]
     fn test_score_narcolepsy() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["excessive daytime sleepiness", "cataplexy", "sleep paralysis"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "excessive daytime sleepiness",
+                "cataplexy",
+                "sleep paralysis",
+            ],
+        );
         let narc = results.iter().find(|r| r.disease_name == "Narcolepsy");
         assert!(narc.is_some(), "Narcolepsy should appear");
         assert!(narc.unwrap().probability > 30.0);
@@ -1174,7 +1725,10 @@ mod tests {
     #[test]
     fn test_score_diverticulitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["left lower abdominal pain", "fever", "abdominal tenderness"]);
+        let results = score_symptoms(
+            &conn,
+            &["left lower abdominal pain", "fever", "abdominal tenderness"],
+        );
         let div = results.iter().find(|r| r.disease_name == "Diverticulitis");
         assert!(div.is_some(), "Diverticulitis should appear");
     }
@@ -1182,8 +1736,17 @@ mod tests {
     #[test]
     fn test_score_macular_degeneration() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["blurred central vision", "distorted vision", "dark spots in central vision"]);
-        let md = results.iter().find(|r| r.disease_name == "Macular Degeneration");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "blurred central vision",
+                "distorted vision",
+                "dark spots in central vision",
+            ],
+        );
+        let md = results
+            .iter()
+            .find(|r| r.disease_name == "Macular Degeneration");
         assert!(md.is_some(), "Macular Degeneration should appear");
         assert!(md.unwrap().probability > 30.0);
     }
@@ -1191,16 +1754,30 @@ mod tests {
     #[test]
     fn test_score_pemphigus() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["painful oral blisters", "skin blisters that rupture easily", "painful erosions"]);
-        let pv = results.iter().find(|r| r.disease_name == "Pemphigus Vulgaris");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "painful oral blisters",
+                "skin blisters that rupture easily",
+                "painful erosions",
+            ],
+        );
+        let pv = results
+            .iter()
+            .find(|r| r.disease_name == "Pemphigus Vulgaris");
         assert!(pv.is_some(), "Pemphigus Vulgaris should appear");
     }
 
     #[test]
     fn test_score_takotsubo() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden chest pain", "shortness of breath", "palpitations"]);
-        let tk = results.iter().find(|r| r.disease_name == "Takotsubo Cardiomyopathy");
+        let results = score_symptoms(
+            &conn,
+            &["sudden chest pain", "shortness of breath", "palpitations"],
+        );
+        let tk = results
+            .iter()
+            .find(|r| r.disease_name == "Takotsubo Cardiomyopathy");
         assert!(tk.is_some(), "Takotsubo Cardiomyopathy should appear");
     }
 
@@ -1215,13 +1792,19 @@ mod tests {
     fn test_synonym_stuffy_nose() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["stuffy nose", "face pressure"]);
-        assert!(!results.is_empty(), "stuffy nose + face pressure should match sinusitis");
+        assert!(
+            !results.is_empty(),
+            "stuffy nose + face pressure should match sinusitis"
+        );
     }
 
     #[test]
     fn test_score_marfan() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["tall stature", "long limbs and fingers", "lens dislocation"]);
+        let results = score_symptoms(
+            &conn,
+            &["tall stature", "long limbs and fingers", "lens dislocation"],
+        );
         let mf = results.iter().find(|r| r.disease_name == "Marfan Syndrome");
         assert!(mf.is_some(), "Marfan Syndrome should appear");
     }
@@ -1229,7 +1812,10 @@ mod tests {
     #[test]
     fn test_score_hemophilia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["prolonged bleeding", "easy bruising", "joint bleeding"]);
+        let results = score_symptoms(
+            &conn,
+            &["prolonged bleeding", "easy bruising", "joint bleeding"],
+        );
         let hm = results.iter().find(|r| r.disease_name == "Hemophilia");
         assert!(hm.is_some(), "Hemophilia should appear");
     }
@@ -1269,7 +1855,9 @@ mod tests {
     fn test_score_cdiff() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["watery diarrhea", "abdominal pain", "fever"]);
-        let cdiff = results.iter().find(|r| r.disease_name == "Clostridioides difficile Infection");
+        let cdiff = results
+            .iter()
+            .find(|r| r.disease_name == "Clostridioides difficile Infection");
         assert!(cdiff.is_some(), "C. diff should appear");
     }
 
@@ -1277,15 +1865,27 @@ mod tests {
     fn test_score_carbon_monoxide() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["headache", "dizziness", "confusion", "nausea"]);
-        let co = results.iter().find(|r| r.disease_name == "Carbon Monoxide Poisoning");
+        let co = results
+            .iter()
+            .find(|r| r.disease_name == "Carbon Monoxide Poisoning");
         assert!(co.is_some(), "Carbon Monoxide Poisoning should appear");
     }
 
     #[test]
     fn test_score_dka() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["excessive thirst", "frequent urination", "fruity breath odor", "nausea"]);
-        let dka = results.iter().find(|r| r.disease_name == "Diabetic Ketoacidosis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "excessive thirst",
+                "frequent urination",
+                "fruity breath odor",
+                "nausea",
+            ],
+        );
+        let dka = results
+            .iter()
+            .find(|r| r.disease_name == "Diabetic Ketoacidosis");
         assert!(dka.is_some(), "DKA should appear");
         assert!(dka.unwrap().probability > 30.0);
     }
@@ -1293,7 +1893,14 @@ mod tests {
     #[test]
     fn test_score_botulism() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["descending paralysis", "double vision", "difficulty swallowing"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "descending paralysis",
+                "double vision",
+                "difficulty swallowing",
+            ],
+        );
         let bot = results.iter().find(|r| r.disease_name == "Botulism");
         assert!(bot.is_some(), "Botulism should appear");
     }
@@ -1301,15 +1908,28 @@ mod tests {
     #[test]
     fn test_score_cauda_equina() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["saddle anesthesia", "urinary retention", "back pain"]);
-        let ce = results.iter().find(|r| r.disease_name == "Cauda Equina Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &["saddle anesthesia", "urinary retention", "back pain"],
+        );
+        let ce = results
+            .iter()
+            .find(|r| r.disease_name == "Cauda Equina Syndrome");
         assert!(ce.is_some(), "Cauda Equina Syndrome should appear");
     }
 
     #[test]
     fn test_score_ludwig_angina() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["floor of mouth swelling", "difficulty swallowing", "drooling", "fever"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "floor of mouth swelling",
+                "difficulty swallowing",
+                "drooling",
+                "fever",
+            ],
+        );
         let la = results.iter().find(|r| r.disease_name == "Ludwig Angina");
         assert!(la.is_some(), "Ludwig Angina should appear");
     }
@@ -1318,7 +1938,15 @@ mod tests {
     #[test]
     fn test_score_graves_disease() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["weight loss", "rapid heartbeat", "bulging eyes", "heat intolerance"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "weight loss",
+                "rapid heartbeat",
+                "bulging eyes",
+                "heat intolerance",
+            ],
+        );
         let gd = results.iter().find(|r| r.disease_name == "Graves' Disease");
         assert!(gd.is_some(), "Graves' Disease should appear");
         assert!(gd.unwrap().probability > 30.0);
@@ -1327,16 +1955,31 @@ mod tests {
     #[test]
     fn test_score_hashimotos() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fatigue", "weight gain", "cold intolerance", "dry skin"]);
-        let ht = results.iter().find(|r| r.disease_name == "Hashimoto's Thyroiditis");
+        let results = score_symptoms(
+            &conn,
+            &["fatigue", "weight gain", "cold intolerance", "dry skin"],
+        );
+        let ht = results
+            .iter()
+            .find(|r| r.disease_name == "Hashimoto's Thyroiditis");
         assert!(ht.is_some(), "Hashimoto's Thyroiditis should appear");
     }
 
     #[test]
     fn test_score_septic_arthritis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["acute joint pain", "joint swelling", "fever", "inability to move joint"]);
-        let sa = results.iter().find(|r| r.disease_name == "Septic Arthritis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "acute joint pain",
+                "joint swelling",
+                "fever",
+                "inability to move joint",
+            ],
+        );
+        let sa = results
+            .iter()
+            .find(|r| r.disease_name == "Septic Arthritis");
         assert!(sa.is_some(), "Septic Arthritis should appear");
         assert!(sa.unwrap().probability > 30.0);
     }
@@ -1344,7 +1987,15 @@ mod tests {
     #[test]
     fn test_score_hypothermia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["shivering", "confusion", "loss of coordination", "cold pale skin"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "shivering",
+                "confusion",
+                "loss of coordination",
+                "cold pale skin",
+            ],
+        );
         let hypo = results.iter().find(|r| r.disease_name == "Hypothermia");
         assert!(hypo.is_some(), "Hypothermia should appear");
     }
@@ -1352,16 +2003,35 @@ mod tests {
     #[test]
     fn test_score_spontaneous_pneumothorax() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden chest pain", "shortness of breath", "decreased breath sounds"]);
-        let sp = results.iter().find(|r| r.disease_name == "Spontaneous Pneumothorax");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden chest pain",
+                "shortness of breath",
+                "decreased breath sounds",
+            ],
+        );
+        let sp = results
+            .iter()
+            .find(|r| r.disease_name == "Spontaneous Pneumothorax");
         assert!(sp.is_some(), "Spontaneous Pneumothorax should appear");
     }
 
     #[test]
     fn test_score_chronic_migraine() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["frequent headaches", "throbbing head pain", "light sensitivity", "nausea"]);
-        let cm = results.iter().find(|r| r.disease_name == "Chronic Migraine");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "frequent headaches",
+                "throbbing head pain",
+                "light sensitivity",
+                "nausea",
+            ],
+        );
+        let cm = results
+            .iter()
+            .find(|r| r.disease_name == "Chronic Migraine");
         assert!(cm.is_some(), "Chronic Migraine should appear");
         assert!(cm.unwrap().probability > 30.0);
     }
@@ -1369,16 +2039,31 @@ mod tests {
     #[test]
     fn test_score_acute_porphyria() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe abdominal pain", "dark red urine", "confusion", "rapid heart rate"]);
-        let aip = results.iter().find(|r| r.disease_name == "Acute Intermittent Porphyria");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe abdominal pain",
+                "dark red urine",
+                "confusion",
+                "rapid heart rate",
+            ],
+        );
+        let aip = results
+            .iter()
+            .find(|r| r.disease_name == "Acute Intermittent Porphyria");
         assert!(aip.is_some(), "Acute Intermittent Porphyria should appear");
     }
 
     #[test]
     fn test_score_itp() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["easy bruising", "petechiae", "purpura", "nosebleeds"]);
-        let itp = results.iter().find(|r| r.disease_name == "Idiopathic Thrombocytopenic Purpura");
+        let results = score_symptoms(
+            &conn,
+            &["easy bruising", "petechiae", "purpura", "nosebleeds"],
+        );
+        let itp = results
+            .iter()
+            .find(|r| r.disease_name == "Idiopathic Thrombocytopenic Purpura");
         assert!(itp.is_some(), "ITP should appear");
     }
 
@@ -1387,7 +2072,9 @@ mod tests {
     fn test_score_wilsons_disease() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["jaundice", "tremor", "Kayser-Fleischer rings"]);
-        let wd = results.iter().find(|r| r.disease_name == "Wilson's Disease");
+        let wd = results
+            .iter()
+            .find(|r| r.disease_name == "Wilson's Disease");
         assert!(wd.is_some(), "Wilson's Disease should appear");
         assert!(wd.unwrap().probability > 30.0);
     }
@@ -1395,7 +2082,14 @@ mod tests {
     #[test]
     fn test_score_cystic_fibrosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["persistent cough with thick mucus", "recurrent lung infections", "poor weight gain"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "persistent cough with thick mucus",
+                "recurrent lung infections",
+                "poor weight gain",
+            ],
+        );
         let cf = results.iter().find(|r| r.disease_name == "Cystic Fibrosis");
         assert!(cf.is_some(), "Cystic Fibrosis should appear");
     }
@@ -1404,7 +2098,9 @@ mod tests {
     fn test_score_carpal_tunnel() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["hand numbness", "hand tingling", "wrist pain"]);
-        let ct = results.iter().find(|r| r.disease_name == "Carpal Tunnel Syndrome");
+        let ct = results
+            .iter()
+            .find(|r| r.disease_name == "Carpal Tunnel Syndrome");
         assert!(ct.is_some(), "Carpal Tunnel Syndrome should appear");
         assert!(ct.unwrap().probability > 30.0);
     }
@@ -1412,7 +2108,14 @@ mod tests {
     #[test]
     fn test_score_endometriosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe menstrual cramps", "chronic pelvic pain", "pain during intercourse"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe menstrual cramps",
+                "chronic pelvic pain",
+                "pain during intercourse",
+            ],
+        );
         let endo = results.iter().find(|r| r.disease_name == "Endometriosis");
         assert!(endo.is_some(), "Endometriosis should appear");
     }
@@ -1420,8 +2123,13 @@ mod tests {
     #[test]
     fn test_score_testicular_torsion() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden severe scrotal pain", "scrotal swelling", "nausea"]);
-        let tt = results.iter().find(|r| r.disease_name == "Testicular Torsion");
+        let results = score_symptoms(
+            &conn,
+            &["sudden severe scrotal pain", "scrotal swelling", "nausea"],
+        );
+        let tt = results
+            .iter()
+            .find(|r| r.disease_name == "Testicular Torsion");
         assert!(tt.is_some(), "Testicular Torsion should appear");
     }
 
@@ -1429,7 +2137,9 @@ mod tests {
     fn test_score_sickle_cell_crisis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["severe bone pain", "chest pain", "fever"]);
-        let scc = results.iter().find(|r| r.disease_name == "Sickle Cell Crisis");
+        let scc = results
+            .iter()
+            .find(|r| r.disease_name == "Sickle Cell Crisis");
         assert!(scc.is_some(), "Sickle Cell Crisis should appear");
     }
 
@@ -1443,16 +2153,30 @@ mod tests {
 
     #[test]
     fn test_sex_factor_gynecological() {
-        let male_ctx = PatientContext { age: Some(30), sex: Some("male".to_string()) };
-        let female_ctx = PatientContext { age: Some(30), sex: Some("female".to_string()) };
+        let male_ctx = PatientContext {
+            age: Some(30),
+            sex: Some("male".to_string()),
+        };
+        let female_ctx = PatientContext {
+            age: Some(30),
+            sex: Some("female".to_string()),
+        };
         let male_f = compute_sex_factor(&male_ctx, "gynecological");
         let female_f = compute_sex_factor(&female_ctx, "gynecological");
-        assert!(male_f < female_f, "Gynecological should penalize males: m={} f={}", male_f, female_f);
+        assert!(
+            male_f < female_f,
+            "Gynecological should penalize males: m={} f={}",
+            male_f,
+            female_f
+        );
     }
 
     #[test]
     fn test_sex_factor_neutral() {
-        let ctx = PatientContext { age: Some(30), sex: Some("male".to_string()) };
+        let ctx = PatientContext {
+            age: Some(30),
+            sex: Some("male".to_string()),
+        };
         assert_eq!(compute_sex_factor(&ctx, "infectious"), 1.0);
     }
 
@@ -1467,15 +2191,28 @@ mod tests {
     fn test_synonym_testicle_pain() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["testicle pain", "nausea"]);
-        assert!(!results.is_empty(), "testicle pain should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "testicle pain should expand via synonym"
+        );
     }
 
     // v18 disease tests
     #[test]
     fn test_score_addisons_disease() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fatigue", "weight loss", "hyperpigmentation", "low blood pressure"]);
-        let ad = results.iter().find(|r| r.disease_name == "Addison's Disease");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "fatigue",
+                "weight loss",
+                "hyperpigmentation",
+                "low blood pressure",
+            ],
+        );
+        let ad = results
+            .iter()
+            .find(|r| r.disease_name == "Addison's Disease");
         assert!(ad.is_some(), "Addison's Disease should appear");
         assert!(ad.unwrap().probability > 30.0);
     }
@@ -1483,8 +2220,18 @@ mod tests {
     #[test]
     fn test_score_cushings_syndrome() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["weight gain", "moon face", "purple stretch marks", "easy bruising"]);
-        let cs = results.iter().find(|r| r.disease_name == "Cushing's Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "weight gain",
+                "moon face",
+                "purple stretch marks",
+                "easy bruising",
+            ],
+        );
+        let cs = results
+            .iter()
+            .find(|r| r.disease_name == "Cushing's Syndrome");
         assert!(cs.is_some(), "Cushing's Syndrome should appear");
         assert!(cs.unwrap().probability > 30.0);
     }
@@ -1492,48 +2239,94 @@ mod tests {
     #[test]
     fn test_score_aortic_dissection() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden tearing chest pain", "pain radiating to back", "weak pulse"]);
-        let ad = results.iter().find(|r| r.disease_name == "Aortic Dissection");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden tearing chest pain",
+                "pain radiating to back",
+                "weak pulse",
+            ],
+        );
+        let ad = results
+            .iter()
+            .find(|r| r.disease_name == "Aortic Dissection");
         assert!(ad.is_some(), "Aortic Dissection should appear");
     }
 
     #[test]
     fn test_score_kawasaki() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(3), sex: None };
-        let results = score_symptoms_with_context(&conn, &["high fever", "red eyes", "strawberry tongue", "rash"], &child_ctx);
-        let kd = results.iter().find(|r| r.disease_name == "Kawasaki Disease");
+        let child_ctx = PatientContext {
+            age: Some(3),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &["high fever", "red eyes", "strawberry tongue", "rash"],
+            &child_ctx,
+        );
+        let kd = results
+            .iter()
+            .find(|r| r.disease_name == "Kawasaki Disease");
         assert!(kd.is_some(), "Kawasaki Disease should appear");
     }
 
     #[test]
     fn test_score_multiple_sclerosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["vision problems", "numbness", "tingling", "fatigue"]);
-        let ms = results.iter().find(|r| r.disease_name == "Multiple Sclerosis");
+        let results = score_symptoms(
+            &conn,
+            &["vision problems", "numbness", "tingling", "fatigue"],
+        );
+        let ms = results
+            .iter()
+            .find(|r| r.disease_name == "Multiple Sclerosis");
         assert!(ms.is_some(), "Multiple Sclerosis should appear");
     }
 
     #[test]
     fn test_score_als() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["muscle weakness", "muscle twitching", "difficulty speaking"]);
-        let als = results.iter().find(|r| r.disease_name == "Amyotrophic Lateral Sclerosis");
+        let results = score_symptoms(
+            &conn,
+            &["muscle weakness", "muscle twitching", "difficulty speaking"],
+        );
+        let als = results
+            .iter()
+            .find(|r| r.disease_name == "Amyotrophic Lateral Sclerosis");
         assert!(als.is_some(), "ALS should appear");
     }
 
     #[test]
     fn test_score_toxic_shock() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "low blood pressure", "diffuse red rash", "confusion"]);
-        let tss = results.iter().find(|r| r.disease_name == "Toxic Shock Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "high fever",
+                "low blood pressure",
+                "diffuse red rash",
+                "confusion",
+            ],
+        );
+        let tss = results
+            .iter()
+            .find(|r| r.disease_name == "Toxic Shock Syndrome");
         assert!(tss.is_some(), "Toxic Shock Syndrome should appear");
     }
 
     #[test]
     fn test_score_myocarditis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["chest pain", "shortness of breath", "rapid heartbeat", "fever"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "chest pain",
+                "shortness of breath",
+                "rapid heartbeat",
+                "fever",
+            ],
+        );
         let mc = results.iter().find(|r| r.disease_name == "Myocarditis");
         assert!(mc.is_some(), "Myocarditis should appear");
     }
@@ -1551,13 +2344,18 @@ mod tests {
         let conn = db::init_memory_database().unwrap();
         // Weight gain is negative for Addison's; should favor Cushing's
         let results = score_symptoms(&conn, &["fatigue", "weight gain", "moon face"]);
-        let addison = results.iter().find(|r| r.disease_name == "Addison's Disease");
-        let cushing = results.iter().find(|r| r.disease_name == "Cushing's Syndrome");
+        let addison = results
+            .iter()
+            .find(|r| r.disease_name == "Addison's Disease");
+        let cushing = results
+            .iter()
+            .find(|r| r.disease_name == "Cushing's Syndrome");
         if let (Some(a), Some(c)) = (addison, cushing) {
             assert!(
                 c.probability >= a.probability,
                 "Cushing's should score >= Addison's with weight gain: C={} A={}",
-                c.probability, a.probability
+                c.probability,
+                a.probability
             );
         }
     }
@@ -1566,14 +2364,20 @@ mod tests {
     fn test_synonym_trouble_swallowing() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["trouble swallowing", "chest pain"]);
-        assert!(!results.is_empty(), "trouble swallowing should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "trouble swallowing should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_dark_skin_patches() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["dark skin patches", "fatigue", "weight loss"]);
-        assert!(!results.is_empty(), "dark skin patches should match via synonym");
+        assert!(
+            !results.is_empty(),
+            "dark skin patches should match via synonym"
+        );
     }
 
     #[test]
@@ -1581,12 +2385,15 @@ mod tests {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["fatigue", "goiter", "weight gain"]);
         let graves = results.iter().find(|r| r.disease_name == "Graves' Disease");
-        let hashimoto = results.iter().find(|r| r.disease_name == "Hashimoto's Thyroiditis");
+        let hashimoto = results
+            .iter()
+            .find(|r| r.disease_name == "Hashimoto's Thyroiditis");
         if let (Some(g), Some(h)) = (graves, hashimoto) {
             assert!(
                 h.probability >= g.probability,
                 "Hashimoto's should score >= Graves' with weight gain (neg evidence): H={} G={}",
-                h.probability, g.probability
+                h.probability,
+                g.probability
             );
         }
     }
@@ -1597,85 +2404,142 @@ mod tests {
     fn test_score_sinusitis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["facial pain", "nasal congestion", "headache"]);
-        assert!(results.iter().any(|r| r.disease_name == "Sinusitis"), "Sinusitis should appear for facial pain + nasal congestion");
+        assert!(
+            results.iter().any(|r| r.disease_name == "Sinusitis"),
+            "Sinusitis should appear for facial pain + nasal congestion"
+        );
     }
 
     #[test]
     fn test_score_rabies() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["hydrophobia", "agitation", "fever"]);
-        assert!(results.iter().any(|r| r.disease_name == "Rabies"), "Rabies should appear for hydrophobia");
+        assert!(
+            results.iter().any(|r| r.disease_name == "Rabies"),
+            "Rabies should appear for hydrophobia"
+        );
     }
 
     #[test]
     fn test_score_nephrolithiasis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["severe flank pain", "blood in urine", "nausea"]);
-        assert!(results.iter().any(|r| r.disease_name == "Nephrolithiasis"), "Kidney stones should appear");
+        assert!(
+            results.iter().any(|r| r.disease_name == "Nephrolithiasis"),
+            "Kidney stones should appear"
+        );
     }
 
     #[test]
     fn test_score_panic_disorder() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["palpitations", "chest tightness", "shortness of breath", "fear of dying"]);
-        assert!(results.iter().any(|r| r.disease_name == "Panic Disorder"), "Panic Disorder should appear");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "palpitations",
+                "chest tightness",
+                "shortness of breath",
+                "fear of dying",
+            ],
+        );
+        assert!(
+            results.iter().any(|r| r.disease_name == "Panic Disorder"),
+            "Panic Disorder should appear"
+        );
     }
 
     #[test]
     fn test_score_acute_otitis_media() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["ear pain", "fever", "hearing loss"]);
-        assert!(results.iter().any(|r| r.disease_name == "Acute Otitis Media"), "Otitis Media should appear");
+        assert!(
+            results
+                .iter()
+                .any(|r| r.disease_name == "Acute Otitis Media"),
+            "Otitis Media should appear"
+        );
     }
 
     #[test]
     fn test_score_dental_abscess() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["severe toothache", "facial swelling", "fever"]);
-        assert!(results.iter().any(|r| r.disease_name == "Dental Abscess"), "Dental Abscess should appear");
+        assert!(
+            results.iter().any(|r| r.disease_name == "Dental Abscess"),
+            "Dental Abscess should appear"
+        );
     }
 
     #[test]
     fn test_score_scurvy() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["bleeding gums", "bruising easily", "fatigue"]);
-        assert!(results.iter().any(|r| r.disease_name == "Scurvy"), "Scurvy should appear for bleeding gums + bruising");
+        assert!(
+            results.iter().any(|r| r.disease_name == "Scurvy"),
+            "Scurvy should appear for bleeding gums + bruising"
+        );
     }
 
     #[test]
     fn test_score_bppv() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["vertigo", "dizziness", "nausea"]);
-        assert!(results.iter().any(|r| r.disease_name == "Vertigo (BPPV)"), "BPPV should appear for vertigo + dizziness");
+        assert!(
+            results.iter().any(|r| r.disease_name == "Vertigo (BPPV)"),
+            "BPPV should appear for vertigo + dizziness"
+        );
     }
 
     #[test]
     fn test_score_rosacea() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["facial redness", "visible blood vessels", "burning sensation on face"]);
-        assert!(results.iter().any(|r| r.disease_name == "Rosacea"), "Rosacea should appear");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "facial redness",
+                "visible blood vessels",
+                "burning sensation on face",
+            ],
+        );
+        assert!(
+            results.iter().any(|r| r.disease_name == "Rosacea"),
+            "Rosacea should appear"
+        );
     }
 
     #[test]
     fn test_score_plantar_fasciitis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["heel pain", "pain worse in morning"]);
-        assert!(results.iter().any(|r| r.disease_name == "Plantar Fasciitis"), "Plantar Fasciitis should appear");
+        assert!(
+            results
+                .iter()
+                .any(|r| r.disease_name == "Plantar Fasciitis"),
+            "Plantar Fasciitis should appear"
+        );
     }
 
     #[test]
     fn test_synonym_room_spinning() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["room spinning", "nausea"]);
-        assert!(results.iter().any(|r| r.matched_symptoms.iter().any(|s| s.to_lowercase().contains("vertigo"))),
-            "room spinning should expand to vertigo");
+        assert!(
+            results.iter().any(|r| r
+                .matched_symptoms
+                .iter()
+                .any(|s| s.to_lowercase().contains("vertigo"))),
+            "room spinning should expand to vertigo"
+        );
     }
 
     #[test]
     fn test_synonym_blood_in_pee() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["kidney pain", "blood in pee"]);
-        assert!(!results.is_empty(), "kidney pain + blood in pee should match via synonyms");
+        assert!(
+            !results.is_empty(),
+            "kidney pain + blood in pee should match via synonyms"
+        );
     }
 
     #[test]
@@ -1683,11 +2547,17 @@ mod tests {
         let conn = db::init_memory_database().unwrap();
         let with_fever = score_symptoms(&conn, &["palpitations", "chest tightness", "fever"]);
         let without_fever = score_symptoms(&conn, &["palpitations", "chest tightness"]);
-        let panic_with = with_fever.iter().find(|r| r.disease_name == "Panic Disorder");
-        let panic_without = without_fever.iter().find(|r| r.disease_name == "Panic Disorder");
+        let panic_with = with_fever
+            .iter()
+            .find(|r| r.disease_name == "Panic Disorder");
+        let panic_without = without_fever
+            .iter()
+            .find(|r| r.disease_name == "Panic Disorder");
         if let (Some(pw), Some(pwo)) = (panic_with, panic_without) {
-            assert!(pwo.probability >= pw.probability,
-                "Panic Disorder should score lower with fever (negative evidence)");
+            assert!(
+                pwo.probability >= pw.probability,
+                "Panic Disorder should score lower with fever (negative evidence)"
+            );
         }
     }
 }
@@ -1702,7 +2572,10 @@ mod tests_v21 {
     #[test]
     fn test_score_achalasia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["difficulty swallowing", "regurgitation", "chest pain"]);
+        let results = score_symptoms(
+            &conn,
+            &["difficulty swallowing", "regurgitation", "chest pain"],
+        );
         let ac = results.iter().find(|r| r.disease_name == "Achalasia");
         assert!(ac.is_some(), "Achalasia should appear");
         assert!(ac.unwrap().probability > 20.0);
@@ -1711,8 +2584,18 @@ mod tests_v21 {
     #[test]
     fn test_score_pheochromocytoma() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["episodic hypertension", "severe headache", "excessive sweating", "rapid heartbeat"]);
-        let pheo = results.iter().find(|r| r.disease_name == "Pheochromocytoma");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "episodic hypertension",
+                "severe headache",
+                "excessive sweating",
+                "rapid heartbeat",
+            ],
+        );
+        let pheo = results
+            .iter()
+            .find(|r| r.disease_name == "Pheochromocytoma");
         assert!(pheo.is_some(), "Pheochromocytoma should appear");
         assert!(pheo.unwrap().probability > 30.0);
     }
@@ -1720,8 +2603,17 @@ mod tests_v21 {
     #[test]
     fn test_score_polymyalgia_rheumatica() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["shoulder pain and stiffness", "hip pain and stiffness", "fatigue"]);
-        let pmr = results.iter().find(|r| r.disease_name == "Polymyalgia Rheumatica");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "shoulder pain and stiffness",
+                "hip pain and stiffness",
+                "fatigue",
+            ],
+        );
+        let pmr = results
+            .iter()
+            .find(|r| r.disease_name == "Polymyalgia Rheumatica");
         assert!(pmr.is_some(), "Polymyalgia Rheumatica should appear");
     }
 
@@ -1737,25 +2629,48 @@ mod tests_v21 {
     #[test]
     fn test_score_interstitial_cystitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["bladder pressure", "urinary urgency", "chronic pelvic pain"]);
-        let ic = results.iter().find(|r| r.disease_name == "Interstitial Cystitis");
+        let results = score_symptoms(
+            &conn,
+            &["bladder pressure", "urinary urgency", "chronic pelvic pain"],
+        );
+        let ic = results
+            .iter()
+            .find(|r| r.disease_name == "Interstitial Cystitis");
         assert!(ic.is_some(), "Interstitial Cystitis should appear");
     }
 
     #[test]
     fn test_score_hemolytic_uremic_syndrome() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(3), sex: None };
-        let results = score_symptoms_with_context(&conn, &["bloody diarrhea", "decreased urination", "pallor"], &child_ctx);
-        let hus = results.iter().find(|r| r.disease_name == "Hemolytic Uremic Syndrome");
+        let child_ctx = PatientContext {
+            age: Some(3),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &["bloody diarrhea", "decreased urination", "pallor"],
+            &child_ctx,
+        );
+        let hus = results
+            .iter()
+            .find(|r| r.disease_name == "Hemolytic Uremic Syndrome");
         assert!(hus.is_some(), "HUS should appear");
     }
 
     #[test]
     fn test_score_restless_legs() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["urge to move legs", "uncomfortable leg sensations", "insomnia"]);
-        let rls = results.iter().find(|r| r.disease_name == "Restless Legs Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "urge to move legs",
+                "uncomfortable leg sensations",
+                "insomnia",
+            ],
+        );
+        let rls = results
+            .iter()
+            .find(|r| r.disease_name == "Restless Legs Syndrome");
         assert!(rls.is_some(), "RLS should appear");
     }
 
@@ -1763,7 +2678,9 @@ mod tests_v21 {
     fn test_score_orbital_cellulitis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["eye swelling", "eye pain", "proptosis", "fever"]);
-        let oc = results.iter().find(|r| r.disease_name == "Orbital Cellulitis");
+        let oc = results
+            .iter()
+            .find(|r| r.disease_name == "Orbital Cellulitis");
         assert!(oc.is_some(), "Orbital Cellulitis should appear");
         assert!(oc.unwrap().probability > 30.0);
     }
@@ -1771,8 +2688,17 @@ mod tests_v21 {
     #[test]
     fn test_score_normal_pressure_hydrocephalus() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["gait disturbance", "urinary incontinence", "cognitive decline"]);
-        let nph = results.iter().find(|r| r.disease_name == "Normal Pressure Hydrocephalus");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "gait disturbance",
+                "urinary incontinence",
+                "cognitive decline",
+            ],
+        );
+        let nph = results
+            .iter()
+            .find(|r| r.disease_name == "Normal Pressure Hydrocephalus");
         assert!(nph.is_some(), "NPH should appear");
         assert!(nph.unwrap().probability > 30.0);
     }
@@ -1788,16 +2714,31 @@ mod tests_v21 {
     #[test]
     fn test_score_peripheral_artery_disease() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["leg pain when walking", "leg cramping", "cold feet"]);
-        let pad = results.iter().find(|r| r.disease_name == "Peripheral Artery Disease");
+        let results = score_symptoms(
+            &conn,
+            &["leg pain when walking", "leg cramping", "cold feet"],
+        );
+        let pad = results
+            .iter()
+            .find(|r| r.disease_name == "Peripheral Artery Disease");
         assert!(pad.is_some(), "PAD should appear");
     }
 
     #[test]
     fn test_score_hyperemesis_gravidarum() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe persistent vomiting", "nausea", "weight loss", "dehydration"]);
-        let hg = results.iter().find(|r| r.disease_name == "Hyperemesis Gravidarum");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe persistent vomiting",
+                "nausea",
+                "weight loss",
+                "dehydration",
+            ],
+        );
+        let hg = results
+            .iter()
+            .find(|r| r.disease_name == "Hyperemesis Gravidarum");
         assert!(hg.is_some(), "Hyperemesis Gravidarum should appear");
     }
 
@@ -1805,28 +2746,40 @@ mod tests_v21 {
     fn test_synonym_restless_legs() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["restless legs", "insomnia"]);
-        assert!(!results.is_empty(), "restless legs should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "restless legs should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_claudication() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["claudication", "cold feet"]);
-        assert!(!results.is_empty(), "claudication should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "claudication should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_cant_swallow() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["can't swallow", "chest pain"]);
-        assert!(!results.is_empty(), "can't swallow should expand to difficulty swallowing");
+        assert!(
+            !results.is_empty(),
+            "can't swallow should expand to difficulty swallowing"
+        );
     }
 
     #[test]
     fn test_synonym_wobbly_walking() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["wobbly walking", "memory problems"]);
-        assert!(!results.is_empty(), "wobbly walking should expand to gait disturbance");
+        assert!(
+            !results.is_empty(),
+            "wobbly walking should expand to gait disturbance"
+        );
     }
 }
 
@@ -1841,7 +2794,9 @@ mod tests_v22 {
     fn test_score_copd() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["chronic cough", "shortness of breath", "wheezing"]);
-        let copd = results.iter().find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
+        let copd = results
+            .iter()
+            .find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
         assert!(copd.is_some(), "COPD should appear");
         assert!(copd.unwrap().probability > 30.0);
     }
@@ -1849,15 +2804,27 @@ mod tests_v22 {
     #[test]
     fn test_score_pulmonary_fibrosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["progressive shortness of breath", "dry cough", "clubbing of fingers"]);
-        let pf = results.iter().find(|r| r.disease_name == "Pulmonary Fibrosis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "progressive shortness of breath",
+                "dry cough",
+                "clubbing of fingers",
+            ],
+        );
+        let pf = results
+            .iter()
+            .find(|r| r.disease_name == "Pulmonary Fibrosis");
         assert!(pf.is_some(), "Pulmonary Fibrosis should appear");
     }
 
     #[test]
     fn test_score_schizophrenia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["auditory hallucinations", "delusions", "social withdrawal"]);
+        let results = score_symptoms(
+            &conn,
+            &["auditory hallucinations", "delusions", "social withdrawal"],
+        );
         let sz = results.iter().find(|r| r.disease_name == "Schizophrenia");
         assert!(sz.is_some(), "Schizophrenia should appear");
         assert!(sz.unwrap().probability > 30.0);
@@ -1866,8 +2833,13 @@ mod tests_v22 {
     #[test]
     fn test_score_ocd() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["intrusive thoughts", "compulsive behaviors", "anxiety"]);
-        let ocd = results.iter().find(|r| r.disease_name == "Obsessive-Compulsive Disorder");
+        let results = score_symptoms(
+            &conn,
+            &["intrusive thoughts", "compulsive behaviors", "anxiety"],
+        );
+        let ocd = results
+            .iter()
+            .find(|r| r.disease_name == "Obsessive-Compulsive Disorder");
         assert!(ocd.is_some(), "OCD should appear");
     }
 
@@ -1875,7 +2847,9 @@ mod tests_v22 {
     fn test_score_ptsd() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["flashbacks", "nightmares", "hypervigilance"]);
-        let ptsd = results.iter().find(|r| r.disease_name == "Post-Traumatic Stress Disorder");
+        let ptsd = results
+            .iter()
+            .find(|r| r.disease_name == "Post-Traumatic Stress Disorder");
         assert!(ptsd.is_some(), "PTSD should appear");
         assert!(ptsd.unwrap().probability > 30.0);
     }
@@ -1884,15 +2858,26 @@ mod tests_v22 {
     fn test_score_menieres() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["episodic vertigo", "tinnitus", "ear fullness"]);
-        let md = results.iter().find(|r| r.disease_name == "Meniere's Disease");
+        let md = results
+            .iter()
+            .find(|r| r.disease_name == "Meniere's Disease");
         assert!(md.is_some(), "Meniere's Disease should appear");
     }
 
     #[test]
     fn test_score_rheumatoid_arthritis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["symmetric joint pain", "morning stiffness lasting over 1 hour", "joint swelling"]);
-        let ra = results.iter().find(|r| r.disease_name == "Rheumatoid Arthritis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "symmetric joint pain",
+                "morning stiffness lasting over 1 hour",
+                "joint swelling",
+            ],
+        );
+        let ra = results
+            .iter()
+            .find(|r| r.disease_name == "Rheumatoid Arthritis");
         assert!(ra.is_some(), "Rheumatoid Arthritis should appear");
         assert!(ra.unwrap().probability > 30.0);
     }
@@ -1900,15 +2885,32 @@ mod tests_v22 {
     #[test]
     fn test_score_ankylosing_spondylitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["chronic low back pain", "morning stiffness improving with exercise", "reduced spinal mobility"]);
-        let as_ = results.iter().find(|r| r.disease_name == "Ankylosing Spondylitis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "chronic low back pain",
+                "morning stiffness improving with exercise",
+                "reduced spinal mobility",
+            ],
+        );
+        let as_ = results
+            .iter()
+            .find(|r| r.disease_name == "Ankylosing Spondylitis");
         assert!(as_.is_some(), "Ankylosing Spondylitis should appear");
     }
 
     #[test]
     fn test_score_epiglottitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe sore throat", "difficulty swallowing", "drooling", "high fever"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe sore throat",
+                "difficulty swallowing",
+                "drooling",
+                "high fever",
+            ],
+        );
         let ep = results.iter().find(|r| r.disease_name == "Epiglottitis");
         assert!(ep.is_some(), "Epiglottitis should appear");
         assert!(ep.unwrap().probability > 30.0);
@@ -1917,7 +2919,10 @@ mod tests_v22 {
     #[test]
     fn test_score_pyelonephritis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["flank pain", "high fever", "chills", "painful urination"]);
+        let results = score_symptoms(
+            &conn,
+            &["flank pain", "high fever", "chills", "painful urination"],
+        );
         let pyelo = results.iter().find(|r| r.disease_name == "Pyelonephritis");
         assert!(pyelo.is_some(), "Pyelonephritis should appear");
         assert!(pyelo.unwrap().probability > 30.0);
@@ -1926,8 +2931,13 @@ mod tests_v22 {
     #[test]
     fn test_score_actinic_keratosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["rough scaly skin patches", "sandpaper-like texture"]);
-        let ak = results.iter().find(|r| r.disease_name == "Actinic Keratosis");
+        let results = score_symptoms(
+            &conn,
+            &["rough scaly skin patches", "sandpaper-like texture"],
+        );
+        let ak = results
+            .iter()
+            .find(|r| r.disease_name == "Actinic Keratosis");
         assert!(ak.is_some(), "Actinic Keratosis should appear");
     }
 
@@ -1935,14 +2945,20 @@ mod tests_v22 {
     fn test_synonym_hearing_voices() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["hearing voices", "paranoid"]);
-        assert!(!results.is_empty(), "hearing voices should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "hearing voices should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_cant_breathe() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["can't breathe", "wheezing"]);
-        assert!(!results.is_empty(), "can't breathe should expand to shortness of breath");
+        assert!(
+            !results.is_empty(),
+            "can't breathe should expand to shortness of breath"
+        );
     }
 
     #[test]
@@ -1964,11 +2980,17 @@ mod tests_v22 {
         let conn = db::init_memory_database().unwrap();
         let with_rash = score_symptoms(&conn, &["chronic cough", "shortness of breath", "rash"]);
         let without_rash = score_symptoms(&conn, &["chronic cough", "shortness of breath"]);
-        let copd_with = with_rash.iter().find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
-        let copd_without = without_rash.iter().find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
+        let copd_with = with_rash
+            .iter()
+            .find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
+        let copd_without = without_rash
+            .iter()
+            .find(|r| r.disease_name == "Chronic Obstructive Pulmonary Disease");
         if let (Some(cw), Some(cwo)) = (copd_with, copd_without) {
-            assert!(cwo.probability >= cw.probability,
-                "COPD should score same or lower with rash (negative evidence)");
+            assert!(
+                cwo.probability >= cw.probability,
+                "COPD should score same or lower with rash (negative evidence)"
+            );
         }
     }
 
@@ -1977,9 +2999,20 @@ mod tests_v22 {
     #[test]
     fn test_score_sepsis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "rapid heart rate", "confusion", "rapid breathing"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "high fever",
+                "rapid heart rate",
+                "confusion",
+                "rapid breathing",
+            ],
+        );
         let sepsis = results.iter().find(|r| r.disease_name == "Sepsis");
-        assert!(sepsis.is_some(), "Sepsis should appear for fever+tachycardia+confusion+tachypnea");
+        assert!(
+            sepsis.is_some(),
+            "Sepsis should appear for fever+tachycardia+confusion+tachypnea"
+        );
         assert!(sepsis.unwrap().probability > 0.3);
     }
 
@@ -1987,25 +3020,50 @@ mod tests_v22 {
     fn test_score_atrial_fibrillation() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["irregular heartbeat", "palpitations", "fatigue"]);
-        let afib = results.iter().find(|r| r.disease_name == "Atrial Fibrillation");
-        assert!(afib.is_some(), "AFib should appear for irregular heartbeat+palpitations");
+        let afib = results
+            .iter()
+            .find(|r| r.disease_name == "Atrial Fibrillation");
+        assert!(
+            afib.is_some(),
+            "AFib should appear for irregular heartbeat+palpitations"
+        );
         assert!(afib.unwrap().probability > 0.2);
     }
 
     #[test]
     fn test_score_whooping_cough() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe coughing fits", "whoop sound on inspiration", "vomiting"]);
-        let pertussis = results.iter().find(|r| r.disease_name == "Whooping Cough (Pertussis)");
-        assert!(pertussis.is_some(), "Pertussis should match coughing fits + whoop");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe coughing fits",
+                "whoop sound on inspiration",
+                "vomiting",
+            ],
+        );
+        let pertussis = results
+            .iter()
+            .find(|r| r.disease_name == "Whooping Cough (Pertussis)");
+        assert!(
+            pertussis.is_some(),
+            "Pertussis should match coughing fits + whoop"
+        );
     }
 
     #[test]
     fn test_score_allergic_rhinitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sneezing", "runny nose", "itchy eyes", "nasal congestion"]);
-        let rhinitis = results.iter().find(|r| r.disease_name == "Allergic Rhinitis");
-        assert!(rhinitis.is_some(), "Allergic rhinitis should match sneezing+runny nose+itchy eyes");
+        let results = score_symptoms(
+            &conn,
+            &["sneezing", "runny nose", "itchy eyes", "nasal congestion"],
+        );
+        let rhinitis = results
+            .iter()
+            .find(|r| r.disease_name == "Allergic Rhinitis");
+        assert!(
+            rhinitis.is_some(),
+            "Allergic rhinitis should match sneezing+runny nose+itchy eyes"
+        );
     }
 
     #[test]
@@ -2013,63 +3071,142 @@ mod tests_v22 {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["joint pain", "joint stiffness", "crepitus"]);
         let oa = results.iter().find(|r| r.disease_name == "Osteoarthritis");
-        assert!(oa.is_some(), "OA should appear for joint pain + stiffness + crepitus");
+        assert!(
+            oa.is_some(),
+            "OA should appear for joint pain + stiffness + crepitus"
+        );
     }
 
     #[test]
     fn test_score_sleep_apnea() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["loud snoring", "excessive daytime sleepiness", "gasping during sleep"]);
-        let osa = results.iter().find(|r| r.disease_name == "Obstructive Sleep Apnea");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "loud snoring",
+                "excessive daytime sleepiness",
+                "gasping during sleep",
+            ],
+        );
+        let osa = results
+            .iter()
+            .find(|r| r.disease_name == "Obstructive Sleep Apnea");
         assert!(osa.is_some(), "OSA should match snoring+sleepiness+gasping");
     }
 
     #[test]
     fn test_score_peripheral_neuropathy() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["numbness in hands and feet", "tingling", "burning pain"]);
-        let pn = results.iter().find(|r| r.disease_name == "Peripheral Neuropathy");
-        assert!(pn.is_some(), "Peripheral neuropathy should match numbness+tingling+burning");
+        let results = score_symptoms(
+            &conn,
+            &["numbness in hands and feet", "tingling", "burning pain"],
+        );
+        let pn = results
+            .iter()
+            .find(|r| r.disease_name == "Peripheral Neuropathy");
+        assert!(
+            pn.is_some(),
+            "Peripheral neuropathy should match numbness+tingling+burning"
+        );
     }
 
     #[test]
     fn test_score_thyroid_storm() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "rapid heart rate", "agitation", "tremor", "sweating"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "high fever",
+                "rapid heart rate",
+                "agitation",
+                "tremor",
+                "sweating",
+            ],
+        );
         let ts = results.iter().find(|r| r.disease_name == "Thyroid Storm");
-        assert!(ts.is_some(), "Thyroid storm should match fever+tachycardia+agitation");
+        assert!(
+            ts.is_some(),
+            "Thyroid storm should match fever+tachycardia+agitation"
+        );
     }
 
     #[test]
     fn test_score_pcos() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["irregular periods", "excess hair growth", "acne", "weight gain"]);
-        let pcos = results.iter().find(|r| r.disease_name == "Polycystic Ovary Syndrome (PCOS)");
-        assert!(pcos.is_some(), "PCOS should match irregular periods+hirsutism+acne");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "irregular periods",
+                "excess hair growth",
+                "acne",
+                "weight gain",
+            ],
+        );
+        let pcos = results
+            .iter()
+            .find(|r| r.disease_name == "Polycystic Ovary Syndrome (PCOS)");
+        assert!(
+            pcos.is_some(),
+            "PCOS should match irregular periods+hirsutism+acne"
+        );
     }
 
     #[test]
     fn test_score_stemi() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe chest pain", "chest pain radiating to left arm", "sweating", "shortness of breath"]);
-        let stemi = results.iter().find(|r| r.disease_name == "Myocardial Infarction (STEMI)");
-        assert!(stemi.is_some(), "STEMI should match severe chest pain + radiation + diaphoresis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe chest pain",
+                "chest pain radiating to left arm",
+                "sweating",
+                "shortness of breath",
+            ],
+        );
+        let stemi = results
+            .iter()
+            .find(|r| r.disease_name == "Myocardial Infarction (STEMI)");
+        assert!(
+            stemi.is_some(),
+            "STEMI should match severe chest pain + radiation + diaphoresis"
+        );
         assert!(stemi.unwrap().probability > 0.3);
     }
 
     #[test]
     fn test_score_preeclampsia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high blood pressure", "proteinuria", "headache", "visual disturbances"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "high blood pressure",
+                "proteinuria",
+                "headache",
+                "visual disturbances",
+            ],
+        );
         let pe = results.iter().find(|r| r.disease_name == "Preeclampsia");
-        assert!(pe.is_some(), "Preeclampsia should match hypertension+proteinuria+headache");
+        assert!(
+            pe.is_some(),
+            "Preeclampsia should match hypertension+proteinuria+headache"
+        );
     }
 
     #[test]
     fn test_score_chronic_kidney_disease() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fatigue", "decreased urine output", "swelling in legs", "nausea"]);
-        let ckd = results.iter().find(|r| r.disease_name == "Chronic Kidney Disease");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "fatigue",
+                "decreased urine output",
+                "swelling in legs",
+                "nausea",
+            ],
+        );
+        let ckd = results
+            .iter()
+            .find(|r| r.disease_name == "Chronic Kidney Disease");
         assert!(ckd.is_some(), "CKD should match fatigue+oliguria+edema");
     }
 
@@ -2092,11 +3229,17 @@ mod tests_v22 {
         let conn = db::init_memory_database().unwrap();
         let with_fever = score_symptoms(&conn, &["irregular heartbeat", "palpitations", "fever"]);
         let without_fever = score_symptoms(&conn, &["irregular heartbeat", "palpitations"]);
-        let afib_with = with_fever.iter().find(|r| r.disease_name == "Atrial Fibrillation");
-        let afib_without = without_fever.iter().find(|r| r.disease_name == "Atrial Fibrillation");
+        let afib_with = with_fever
+            .iter()
+            .find(|r| r.disease_name == "Atrial Fibrillation");
+        let afib_without = without_fever
+            .iter()
+            .find(|r| r.disease_name == "Atrial Fibrillation");
         if let (Some(aw), Some(awo)) = (afib_with, afib_without) {
-            assert!(awo.probability >= aw.probability,
-                "AFib should score same or lower with fever (negative evidence)");
+            assert!(
+                awo.probability >= aw.probability,
+                "AFib should score same or lower with fever (negative evidence)"
+            );
         }
     }
 }
@@ -2111,8 +3254,13 @@ mod tests_v24 {
     #[test]
     fn test_score_toxic_epidermal_necrolysis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["widespread skin peeling", "painful red skin", "fever"]);
-        let ten = results.iter().find(|r| r.disease_name == "Toxic Epidermal Necrolysis");
+        let results = score_symptoms(
+            &conn,
+            &["widespread skin peeling", "painful red skin", "fever"],
+        );
+        let ten = results
+            .iter()
+            .find(|r| r.disease_name == "Toxic Epidermal Necrolysis");
         assert!(ten.is_some(), "TEN should appear");
         assert!(ten.unwrap().probability > 30.0);
     }
@@ -2120,7 +3268,10 @@ mod tests_v24 {
     #[test]
     fn test_score_heat_exhaustion() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["heavy sweating", "weakness", "dizziness", "nausea"]);
+        let results = score_symptoms(
+            &conn,
+            &["heavy sweating", "weakness", "dizziness", "nausea"],
+        );
         let he = results.iter().find(|r| r.disease_name == "Heat Exhaustion");
         assert!(he.is_some(), "Heat Exhaustion should appear");
     }
@@ -2128,8 +3279,18 @@ mod tests_v24 {
     #[test]
     fn test_score_organophosphate_poisoning() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["excessive salivation", "miosis", "diarrhea", "muscle twitching"]);
-        let op = results.iter().find(|r| r.disease_name == "Organophosphate Poisoning");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "excessive salivation",
+                "miosis",
+                "diarrhea",
+                "muscle twitching",
+            ],
+        );
+        let op = results
+            .iter()
+            .find(|r| r.disease_name == "Organophosphate Poisoning");
         assert!(op.is_some(), "Organophosphate Poisoning should appear");
         assert!(op.unwrap().probability > 30.0);
     }
@@ -2137,17 +3298,35 @@ mod tests_v24 {
     #[test]
     fn test_score_infantile_spasms() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(0), sex: None };
-        let results = score_symptoms_with_context(&conn, &["sudden body flexion spasms", "developmental regression"], &child_ctx);
-        let is = results.iter().find(|r| r.disease_name == "Infantile Spasms");
+        let child_ctx = PatientContext {
+            age: Some(0),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &["sudden body flexion spasms", "developmental regression"],
+            &child_ctx,
+        );
+        let is = results
+            .iter()
+            .find(|r| r.disease_name == "Infantile Spasms");
         assert!(is.is_some(), "Infantile Spasms should appear");
     }
 
     #[test]
     fn test_score_retinal_detachment() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden floaters", "flashes of light", "shadow or curtain over vision"]);
-        let rd = results.iter().find(|r| r.disease_name == "Retinal Detachment");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden floaters",
+                "flashes of light",
+                "shadow or curtain over vision",
+            ],
+        );
+        let rd = results
+            .iter()
+            .find(|r| r.disease_name == "Retinal Detachment");
         assert!(rd.is_some(), "Retinal Detachment should appear");
         assert!(rd.unwrap().probability > 30.0);
     }
@@ -2156,16 +3335,31 @@ mod tests_v24 {
     fn test_score_periorbital_cellulitis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["eyelid swelling", "eyelid redness", "fever"]);
-        let pc = results.iter().find(|r| r.disease_name == "Periorbital Cellulitis");
+        let pc = results
+            .iter()
+            .find(|r| r.disease_name == "Periorbital Cellulitis");
         assert!(pc.is_some(), "Periorbital Cellulitis should appear");
     }
 
     #[test]
     fn test_score_henoch_schonlein_purpura() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(6), sex: None };
-        let results = score_symptoms_with_context(&conn, &["palpable purpura on legs and buttocks", "joint pain", "abdominal pain"], &child_ctx);
-        let hsp = results.iter().find(|r| r.disease_name == "Henoch-Schönlein Purpura");
+        let child_ctx = PatientContext {
+            age: Some(6),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &[
+                "palpable purpura on legs and buttocks",
+                "joint pain",
+                "abdominal pain",
+            ],
+            &child_ctx,
+        );
+        let hsp = results
+            .iter()
+            .find(|r| r.disease_name == "Henoch-Schönlein Purpura");
         assert!(hsp.is_some(), "HSP should appear");
         assert!(hsp.unwrap().probability > 30.0);
     }
@@ -2174,7 +3368,9 @@ mod tests_v24 {
     fn test_score_subdural_hematoma() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["headache", "confusion", "weakness on one side"]);
-        let sdh = results.iter().find(|r| r.disease_name == "Subdural Hematoma");
+        let sdh = results
+            .iter()
+            .find(|r| r.disease_name == "Subdural Hematoma");
         assert!(sdh.is_some(), "Subdural Hematoma should appear");
     }
 
@@ -2198,7 +3394,10 @@ mod tests_v24 {
     fn test_synonym_eye_floaters() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["eye floaters", "seeing flashes"]);
-        assert!(!results.is_empty(), "eye floaters + seeing flashes should match via synonyms");
+        assert!(
+            !results.is_empty(),
+            "eye floaters + seeing flashes should match via synonyms"
+        );
     }
 
     #[test]
@@ -2212,7 +3411,10 @@ mod tests_v24 {
     fn test_synonym_smelly_ear() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["smelly ear discharge", "hearing loss"]);
-        assert!(!results.is_empty(), "smelly ear discharge should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "smelly ear discharge should expand via synonym"
+        );
     }
 
     #[test]
@@ -2220,11 +3422,17 @@ mod tests_v24 {
         let conn = db::init_memory_database().unwrap();
         let with_cough = score_symptoms(&conn, &["heavy sweating", "weakness", "cough"]);
         let without_cough = score_symptoms(&conn, &["heavy sweating", "weakness"]);
-        let he_with = with_cough.iter().find(|r| r.disease_name == "Heat Exhaustion");
-        let he_without = without_cough.iter().find(|r| r.disease_name == "Heat Exhaustion");
+        let he_with = with_cough
+            .iter()
+            .find(|r| r.disease_name == "Heat Exhaustion");
+        let he_without = without_cough
+            .iter()
+            .find(|r| r.disease_name == "Heat Exhaustion");
         if let (Some(hw), Some(hwo)) = (he_with, he_without) {
-            assert!(hwo.probability >= hw.probability,
-                "Heat Exhaustion should score same or lower with cough (negative evidence)");
+            assert!(
+                hwo.probability >= hw.probability,
+                "Heat Exhaustion should score same or lower with cough (negative evidence)"
+            );
         }
     }
 }
@@ -2248,8 +3456,13 @@ mod tests_v25 {
     #[test]
     fn test_score_tmj() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["jaw pain", "clicking or popping jaw", "difficulty chewing"]);
-        let tmj = results.iter().find(|r| r.disease_name == "Temporomandibular Joint Disorder");
+        let results = score_symptoms(
+            &conn,
+            &["jaw pain", "clicking or popping jaw", "difficulty chewing"],
+        );
+        let tmj = results
+            .iter()
+            .find(|r| r.disease_name == "Temporomandibular Joint Disorder");
         assert!(tmj.is_some(), "TMJ should appear");
         assert!(tmj.unwrap().probability > 30.0);
     }
@@ -2257,8 +3470,18 @@ mod tests_v25 {
     #[test]
     fn test_score_gad() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["persistent worry", "restlessness", "insomnia", "muscle tension"]);
-        let gad = results.iter().find(|r| r.disease_name == "Generalized Anxiety Disorder");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "persistent worry",
+                "restlessness",
+                "insomnia",
+                "muscle tension",
+            ],
+        );
+        let gad = results
+            .iter()
+            .find(|r| r.disease_name == "Generalized Anxiety Disorder");
         assert!(gad.is_some(), "GAD should appear");
         assert!(gad.unwrap().probability > 30.0);
     }
@@ -2266,8 +3489,17 @@ mod tests_v25 {
     #[test]
     fn test_score_anorexia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["extreme weight loss", "fear of gaining weight", "restricted food intake"]);
-        let an = results.iter().find(|r| r.disease_name == "Eating Disorder (Anorexia Nervosa)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "extreme weight loss",
+                "fear of gaining weight",
+                "restricted food intake",
+            ],
+        );
+        let an = results
+            .iter()
+            .find(|r| r.disease_name == "Eating Disorder (Anorexia Nervosa)");
         assert!(an.is_some(), "Anorexia should appear");
         assert!(an.unwrap().probability > 30.0);
     }
@@ -2275,8 +3507,15 @@ mod tests_v25 {
     #[test]
     fn test_score_rickets() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(3), sex: None };
-        let results = score_symptoms_with_context(&conn, &["bowed legs", "bone pain", "delayed growth"], &child_ctx);
+        let child_ctx = PatientContext {
+            age: Some(3),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &["bowed legs", "bone pain", "delayed growth"],
+            &child_ctx,
+        );
         let rick = results.iter().find(|r| r.disease_name == "Rickets");
         assert!(rick.is_some(), "Rickets should appear");
     }
@@ -2284,8 +3523,15 @@ mod tests_v25 {
     #[test]
     fn test_score_febrile_seizure() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(2), sex: None };
-        let results = score_symptoms_with_context(&conn, &["seizure with fever", "high fever", "loss of consciousness"], &child_ctx);
+        let child_ctx = PatientContext {
+            age: Some(2),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &["seizure with fever", "high fever", "loss of consciousness"],
+            &child_ctx,
+        );
         let fs = results.iter().find(|r| r.disease_name == "Febrile Seizure");
         assert!(fs.is_some(), "Febrile Seizure should appear");
     }
@@ -2293,15 +3539,27 @@ mod tests_v25 {
     #[test]
     fn test_score_pku() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["intellectual disability", "musty body odor", "seizures"]);
-        let pku = results.iter().find(|r| r.disease_name == "Phenylketonuria (PKU)");
+        let results = score_symptoms(
+            &conn,
+            &["intellectual disability", "musty body odor", "seizures"],
+        );
+        let pku = results
+            .iter()
+            .find(|r| r.disease_name == "Phenylketonuria (PKU)");
         assert!(pku.is_some(), "PKU should appear");
     }
 
     #[test]
     fn test_score_bulimia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["binge eating episodes", "self-induced vomiting", "dental erosion"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "binge eating episodes",
+                "self-induced vomiting",
+                "dental erosion",
+            ],
+        );
         let bul = results.iter().find(|r| r.disease_name == "Bulimia Nervosa");
         assert!(bul.is_some(), "Bulimia should appear");
         assert!(bul.unwrap().probability > 30.0);
@@ -2310,7 +3568,14 @@ mod tests_v25 {
     #[test]
     fn test_score_impetigo() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["honey-colored crusted sores", "red sores around mouth and nose", "itching"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "honey-colored crusted sores",
+                "red sores around mouth and nose",
+                "itching",
+            ],
+        );
         let imp = results.iter().find(|r| r.disease_name == "Impetigo");
         assert!(imp.is_some(), "Impetigo should appear");
         assert!(imp.unwrap().probability > 30.0);
@@ -2319,8 +3584,13 @@ mod tests_v25 {
     #[test]
     fn test_score_ringworm() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["ring-shaped rash", "itchy red patches", "scaly skin"]);
-        let rw = results.iter().find(|r| r.disease_name == "Tinea Corporis (Ringworm)");
+        let results = score_symptoms(
+            &conn,
+            &["ring-shaped rash", "itchy red patches", "scaly skin"],
+        );
+        let rw = results
+            .iter()
+            .find(|r| r.disease_name == "Tinea Corporis (Ringworm)");
         assert!(rw.is_some(), "Ringworm should appear");
         assert!(rw.unwrap().probability > 30.0);
     }
@@ -2328,8 +3598,17 @@ mod tests_v25 {
     #[test]
     fn test_score_metabolic_syndrome() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["large waist circumference", "high blood pressure", "high blood sugar"]);
-        let ms = results.iter().find(|r| r.disease_name == "Metabolic Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "large waist circumference",
+                "high blood pressure",
+                "high blood sugar",
+            ],
+        );
+        let ms = results
+            .iter()
+            .find(|r| r.disease_name == "Metabolic Syndrome");
         assert!(ms.is_some(), "Metabolic Syndrome should appear");
         assert!(ms.unwrap().probability > 30.0);
     }
@@ -2337,8 +3616,17 @@ mod tests_v25 {
     #[test]
     fn test_score_gallstones() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden right upper abdominal pain", "pain after fatty meals", "nausea"]);
-        let gs = results.iter().find(|r| r.disease_name == "Gallstones (Cholelithiasis)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden right upper abdominal pain",
+                "pain after fatty meals",
+                "nausea",
+            ],
+        );
+        let gs = results
+            .iter()
+            .find(|r| r.disease_name == "Gallstones (Cholelithiasis)");
         assert!(gs.is_some(), "Gallstones should appear");
         assert!(gs.unwrap().probability > 30.0);
     }
@@ -2346,8 +3634,17 @@ mod tests_v25 {
     #[test]
     fn test_score_chronic_fatigue() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe persistent fatigue", "post-exertional malaise", "unrefreshing sleep"]);
-        let cfs = results.iter().find(|r| r.disease_name == "Chronic Fatigue Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe persistent fatigue",
+                "post-exertional malaise",
+                "unrefreshing sleep",
+            ],
+        );
+        let cfs = results
+            .iter()
+            .find(|r| r.disease_name == "Chronic Fatigue Syndrome");
         assert!(cfs.is_some(), "CFS should appear");
         assert!(cfs.unwrap().probability > 30.0);
     }
@@ -2355,8 +3652,18 @@ mod tests_v25 {
     #[test]
     fn test_score_peritonsillar_abscess() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe sore throat usually one-sided", "difficulty swallowing", "trismus", "high fever"]);
-        let pta = results.iter().find(|r| r.disease_name == "Peritonsillar Abscess");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe sore throat usually one-sided",
+                "difficulty swallowing",
+                "trismus",
+                "high fever",
+            ],
+        );
+        let pta = results
+            .iter()
+            .find(|r| r.disease_name == "Peritonsillar Abscess");
         assert!(pta.is_some(), "Peritonsillar Abscess should appear");
         assert!(pta.unwrap().probability > 30.0);
     }
@@ -2365,7 +3672,10 @@ mod tests_v25 {
     fn test_synonym_grinding_teeth() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["grinding teeth", "jaw pain"]);
-        assert!(!results.is_empty(), "grinding teeth should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "grinding teeth should expand via synonym"
+        );
     }
 
     #[test]
@@ -2379,14 +3689,20 @@ mod tests_v25 {
     fn test_synonym_always_tired() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["always tired", "crash after activity"]);
-        assert!(!results.is_empty(), "always tired + crash after activity should match CFS via synonyms");
+        assert!(
+            !results.is_empty(),
+            "always tired + crash after activity should match CFS via synonyms"
+        );
     }
 
     #[test]
     fn test_synonym_circular_rash() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["circular rash", "itchy"]);
-        assert!(!results.is_empty(), "circular rash should expand to ring-shaped rash");
+        assert!(
+            !results.is_empty(),
+            "circular rash should expand to ring-shaped rash"
+        );
     }
 
     #[test]
@@ -2397,16 +3713,23 @@ mod tests_v25 {
         let br_with = with_fever.iter().find(|r| r.disease_name == "Bruxism");
         let br_without = without_fever.iter().find(|r| r.disease_name == "Bruxism");
         if let (Some(bw), Some(bwo)) = (br_with, br_without) {
-            assert!(bwo.probability >= bw.probability,
-                "Bruxism should score same or lower with fever (negative evidence)");
+            assert!(
+                bwo.probability >= bw.probability,
+                "Bruxism should score same or lower with fever (negative evidence)"
+            );
         }
     }
 
     #[test]
     fn test_score_acoustic_neuroma() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["unilateral hearing loss", "tinnitus", "balance problems"]);
-        let an = results.iter().find(|r| r.disease_name == "Acoustic Neuroma (Vestibular Schwannoma)");
+        let results = score_symptoms(
+            &conn,
+            &["unilateral hearing loss", "tinnitus", "balance problems"],
+        );
+        let an = results
+            .iter()
+            .find(|r| r.disease_name == "Acoustic Neuroma (Vestibular Schwannoma)");
         assert!(an.is_some(), "Acoustic Neuroma should appear");
         assert!(an.unwrap().probability > 30.0);
     }
@@ -2414,7 +3737,14 @@ mod tests_v25 {
     #[test]
     fn test_score_pericarditis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sharp chest pain worse with breathing", "chest pain improves leaning forward", "fever"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sharp chest pain worse with breathing",
+                "chest pain improves leaning forward",
+                "fever",
+            ],
+        );
         let pc = results.iter().find(|r| r.disease_name == "Pericarditis");
         assert!(pc.is_some(), "Pericarditis should appear");
         assert!(pc.unwrap().probability > 30.0);
@@ -2423,8 +3753,17 @@ mod tests_v25 {
     #[test]
     fn test_score_testicular_torsion() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden severe testicular pain", "testicular swelling", "nausea"]);
-        let tt = results.iter().find(|r| r.disease_name == "Testicular Torsion");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden severe testicular pain",
+                "testicular swelling",
+                "nausea",
+            ],
+        );
+        let tt = results
+            .iter()
+            .find(|r| r.disease_name == "Testicular Torsion");
         assert!(tt.is_some(), "Testicular Torsion should appear");
         assert!(tt.unwrap().probability > 30.0);
     }
@@ -2432,8 +3771,17 @@ mod tests_v25 {
     #[test]
     fn test_score_necrotizing_fasciitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["pain out of proportion to exam findings", "rapidly spreading erythema", "crepitus"]);
-        let nf = results.iter().find(|r| r.disease_name == "Necrotizing Fasciitis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "pain out of proportion to exam findings",
+                "rapidly spreading erythema",
+                "crepitus",
+            ],
+        );
+        let nf = results
+            .iter()
+            .find(|r| r.disease_name == "Necrotizing Fasciitis");
         assert!(nf.is_some(), "Necrotizing Fasciitis should appear");
         assert!(nf.unwrap().probability > 30.0);
     }
@@ -2441,8 +3789,13 @@ mod tests_v25 {
     #[test]
     fn test_score_carbon_monoxide() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["headache", "dizziness", "confusion", "cherry red skin"]);
-        let co = results.iter().find(|r| r.disease_name == "Carbon Monoxide Poisoning");
+        let results = score_symptoms(
+            &conn,
+            &["headache", "dizziness", "confusion", "cherry red skin"],
+        );
+        let co = results
+            .iter()
+            .find(|r| r.disease_name == "Carbon Monoxide Poisoning");
         assert!(co.is_some(), "CO Poisoning should appear");
         assert!(co.unwrap().probability > 30.0);
     }
@@ -2450,7 +3803,14 @@ mod tests_v25 {
     #[test]
     fn test_score_aortic_stenosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["exertional dyspnea", "syncope with exertion", "systolic ejection murmur"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "exertional dyspnea",
+                "syncope with exertion",
+                "systolic ejection murmur",
+            ],
+        );
         let as_result = results.iter().find(|r| r.disease_name == "Aortic Stenosis");
         assert!(as_result.is_some(), "Aortic Stenosis should appear");
         assert!(as_result.unwrap().probability > 30.0);
@@ -2461,11 +3821,17 @@ mod tests_v25 {
         let conn = db::init_memory_database().unwrap();
         let with_cough = score_symptoms(&conn, &["persistent worry", "restlessness", "cough"]);
         let without_cough = score_symptoms(&conn, &["persistent worry", "restlessness"]);
-        let gad_with = with_cough.iter().find(|r| r.disease_name == "Generalized Anxiety Disorder");
-        let gad_without = without_cough.iter().find(|r| r.disease_name == "Generalized Anxiety Disorder");
+        let gad_with = with_cough
+            .iter()
+            .find(|r| r.disease_name == "Generalized Anxiety Disorder");
+        let gad_without = without_cough
+            .iter()
+            .find(|r| r.disease_name == "Generalized Anxiety Disorder");
         if let (Some(gw), Some(gwo)) = (gad_with, gad_without) {
-            assert!(gwo.probability >= gw.probability,
-                "GAD should score same or lower with cough (negative evidence)");
+            assert!(
+                gwo.probability >= gw.probability,
+                "GAD should score same or lower with cough (negative evidence)"
+            );
         }
     }
 }
@@ -2481,7 +3847,9 @@ mod tests_v27 {
     fn test_score_wernicke_encephalopathy() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["confusion", "balance problems", "nystagmus"]);
-        let we = results.iter().find(|r| r.disease_name == "Wernicke Encephalopathy");
+        let we = results
+            .iter()
+            .find(|r| r.disease_name == "Wernicke Encephalopathy");
         assert!(we.is_some(), "Wernicke Encephalopathy should appear");
         assert!(we.unwrap().probability > 30.0);
     }
@@ -2489,8 +3857,17 @@ mod tests_v27 {
     #[test]
     fn test_score_compartment_syndrome() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe pain disproportionate to injury", "pain with passive stretch", "tense compartment"]);
-        let cs = results.iter().find(|r| r.disease_name == "Acute Compartment Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe pain disproportionate to injury",
+                "pain with passive stretch",
+                "tense compartment",
+            ],
+        );
+        let cs = results
+            .iter()
+            .find(|r| r.disease_name == "Acute Compartment Syndrome");
         assert!(cs.is_some(), "Acute Compartment Syndrome should appear");
         assert!(cs.unwrap().probability > 30.0);
     }
@@ -2498,8 +3875,17 @@ mod tests_v27 {
     #[test]
     fn test_score_frozen_shoulder() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["shoulder pain", "shoulder stiffness", "limited range of motion"]);
-        let fs = results.iter().find(|r| r.disease_name == "Adhesive Capsulitis (Frozen Shoulder)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "shoulder pain",
+                "shoulder stiffness",
+                "limited range of motion",
+            ],
+        );
+        let fs = results
+            .iter()
+            .find(|r| r.disease_name == "Adhesive Capsulitis (Frozen Shoulder)");
         assert!(fs.is_some(), "Frozen Shoulder should appear");
         assert!(fs.unwrap().probability > 30.0);
     }
@@ -2507,7 +3893,10 @@ mod tests_v27 {
     #[test]
     fn test_score_pellagra() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["skin rash in sun-exposed areas", "diarrhea", "confusion"]);
+        let results = score_symptoms(
+            &conn,
+            &["skin rash in sun-exposed areas", "diarrhea", "confusion"],
+        );
         let pl = results.iter().find(|r| r.disease_name == "Pellagra");
         assert!(pl.is_some(), "Pellagra should appear");
         assert!(pl.unwrap().probability > 30.0);
@@ -2516,7 +3905,14 @@ mod tests_v27 {
     #[test]
     fn test_score_acromegaly() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["enlarged hands", "enlarged feet", "coarsened facial features"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "enlarged hands",
+                "enlarged feet",
+                "coarsened facial features",
+            ],
+        );
         let ac = results.iter().find(|r| r.disease_name == "Acromegaly");
         assert!(ac.is_some(), "Acromegaly should appear");
         assert!(ac.unwrap().probability > 30.0);
@@ -2525,15 +3921,27 @@ mod tests_v27 {
     #[test]
     fn test_score_pelvic_inflammatory_disease() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["lower abdominal pain", "abnormal vaginal discharge", "painful intercourse"]);
-        let pid = results.iter().find(|r| r.disease_name == "Pelvic Inflammatory Disease");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "lower abdominal pain",
+                "abnormal vaginal discharge",
+                "painful intercourse",
+            ],
+        );
+        let pid = results
+            .iter()
+            .find(|r| r.disease_name == "Pelvic Inflammatory Disease");
         assert!(pid.is_some(), "PID should appear");
     }
 
     #[test]
     fn test_score_toxic_megacolon() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe abdominal distension", "abdominal pain", "fever"]);
+        let results = score_symptoms(
+            &conn,
+            &["severe abdominal distension", "abdominal pain", "fever"],
+        );
         let tm = results.iter().find(|r| r.disease_name == "Toxic Megacolon");
         assert!(tm.is_some(), "Toxic Megacolon should appear");
     }
@@ -2550,7 +3958,14 @@ mod tests_v27 {
     #[test]
     fn test_score_lichen_planus() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["purple flat-topped bumps", "itchy skin", "white lacy patches in mouth"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "purple flat-topped bumps",
+                "itchy skin",
+                "white lacy patches in mouth",
+            ],
+        );
         let lp = results.iter().find(|r| r.disease_name == "Lichen Planus");
         assert!(lp.is_some(), "Lichen Planus should appear");
         assert!(lp.unwrap().probability > 30.0);
@@ -2559,8 +3974,18 @@ mod tests_v27 {
     #[test]
     fn test_score_dengue_shock() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe abdominal pain", "persistent vomiting", "cold clammy skin", "rapid weak pulse"]);
-        let ds = results.iter().find(|r| r.disease_name == "Dengue Shock Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe abdominal pain",
+                "persistent vomiting",
+                "cold clammy skin",
+                "rapid weak pulse",
+            ],
+        );
+        let ds = results
+            .iter()
+            .find(|r| r.disease_name == "Dengue Shock Syndrome");
         assert!(ds.is_some(), "Dengue Shock Syndrome should appear");
         assert!(ds.unwrap().probability > 30.0);
     }
@@ -2568,8 +3993,17 @@ mod tests_v27 {
     #[test]
     fn test_score_placental_abruption() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["vaginal bleeding", "severe abdominal pain", "uterine tenderness"]);
-        let pa = results.iter().find(|r| r.disease_name == "Placental Abruption");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "vaginal bleeding",
+                "severe abdominal pain",
+                "uterine tenderness",
+            ],
+        );
+        let pa = results
+            .iter()
+            .find(|r| r.disease_name == "Placental Abruption");
         assert!(pa.is_some(), "Placental Abruption should appear");
     }
 
@@ -2577,21 +4011,30 @@ mod tests_v27 {
     fn test_synonym_frozen_shoulder() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["frozen shoulder", "pain worse at night"]);
-        assert!(!results.is_empty(), "frozen shoulder should match via synonym");
+        assert!(
+            !results.is_empty(),
+            "frozen shoulder should match via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_big_hands() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["big hands", "big feet", "headache"]);
-        assert!(!results.is_empty(), "big hands/feet should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "big hands/feet should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_breast_infection() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["breast infection", "fever"]);
-        assert!(!results.is_empty(), "breast infection should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "breast infection should expand via synonym"
+        );
     }
 
     #[test]
@@ -2599,19 +4042,35 @@ mod tests_v27 {
         let conn = db::init_memory_database().unwrap();
         let with_rash = score_symptoms(&conn, &["confusion", "balance problems", "rash"]);
         let without_rash = score_symptoms(&conn, &["confusion", "balance problems"]);
-        let we_with = with_rash.iter().find(|r| r.disease_name == "Wernicke Encephalopathy");
-        let we_without = without_rash.iter().find(|r| r.disease_name == "Wernicke Encephalopathy");
+        let we_with = with_rash
+            .iter()
+            .find(|r| r.disease_name == "Wernicke Encephalopathy");
+        let we_without = without_rash
+            .iter()
+            .find(|r| r.disease_name == "Wernicke Encephalopathy");
         if let (Some(ww), Some(wwo)) = (we_with, we_without) {
-            assert!(wwo.probability >= ww.probability,
-                "Wernicke should score same or lower with rash (negative evidence)");
+            assert!(
+                wwo.probability >= ww.probability,
+                "Wernicke should score same or lower with rash (negative evidence)"
+            );
         }
     }
 
     #[test]
     fn test_score_peripartum_cardiomyopathy() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["shortness of breath", "fatigue", "swelling in legs", "difficulty breathing when lying down"]);
-        let pc = results.iter().find(|r| r.disease_name == "Peripartum Cardiomyopathy");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "shortness of breath",
+                "fatigue",
+                "swelling in legs",
+                "difficulty breathing when lying down",
+            ],
+        );
+        let pc = results
+            .iter()
+            .find(|r| r.disease_name == "Peripartum Cardiomyopathy");
         assert!(pc.is_some(), "Peripartum Cardiomyopathy should appear");
     }
 }
@@ -2626,7 +4085,10 @@ mod tests_v28 {
     #[test]
     fn test_score_chikungunya() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "severe joint pain", "joint swelling", "rash"]);
+        let results = score_symptoms(
+            &conn,
+            &["high fever", "severe joint pain", "joint swelling", "rash"],
+        );
         let ck = results.iter().find(|r| r.disease_name == "Chikungunya");
         assert!(ck.is_some(), "Chikungunya should appear");
         assert!(ck.unwrap().probability > 30.0);
@@ -2635,8 +4097,13 @@ mod tests_v28 {
     #[test]
     fn test_score_visceral_leishmaniasis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["prolonged fever", "weight loss", "enlarged spleen"]);
-        let vl = results.iter().find(|r| r.disease_name == "Leishmaniasis (Visceral)");
+        let results = score_symptoms(
+            &conn,
+            &["prolonged fever", "weight loss", "enlarged spleen"],
+        );
+        let vl = results
+            .iter()
+            .find(|r| r.disease_name == "Leishmaniasis (Visceral)");
         assert!(vl.is_some(), "Visceral Leishmaniasis should appear");
         assert!(vl.unwrap().probability > 30.0);
     }
@@ -2653,7 +4120,10 @@ mod tests_v28 {
     #[test]
     fn test_score_leptospirosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "muscle pain", "jaundice", "red eyes"]);
+        let results = score_symptoms(
+            &conn,
+            &["high fever", "muscle pain", "jaundice", "red eyes"],
+        );
         let lp = results.iter().find(|r| r.disease_name == "Leptospirosis");
         assert!(lp.is_some(), "Leptospirosis should appear");
         assert!(lp.unwrap().probability > 30.0);
@@ -2662,8 +4132,17 @@ mod tests_v28 {
     #[test]
     fn test_score_food_anaphylaxis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["throat swelling", "difficulty breathing", "widespread hives"]);
-        let fa = results.iter().find(|r| r.disease_name == "Anaphylaxis (Food Allergy)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "throat swelling",
+                "difficulty breathing",
+                "widespread hives",
+            ],
+        );
+        let fa = results
+            .iter()
+            .find(|r| r.disease_name == "Anaphylaxis (Food Allergy)");
         assert!(fa.is_some(), "Food Anaphylaxis should appear");
         assert!(fa.unwrap().probability > 30.0);
     }
@@ -2672,15 +4151,26 @@ mod tests_v28 {
     fn test_score_contact_dermatitis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["itchy rash", "red skin", "dry cracked skin"]);
-        let cd = results.iter().find(|r| r.disease_name == "Contact Dermatitis");
+        let cd = results
+            .iter()
+            .find(|r| r.disease_name == "Contact Dermatitis");
         assert!(cd.is_some(), "Contact Dermatitis should appear");
     }
 
     #[test]
     fn test_score_uti() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["painful urination", "frequent urination", "urgency to urinate"]);
-        let uti = results.iter().find(|r| r.disease_name == "Urinary Tract Infection");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "painful urination",
+                "frequent urination",
+                "urgency to urinate",
+            ],
+        );
+        let uti = results
+            .iter()
+            .find(|r| r.disease_name == "Urinary Tract Infection");
         assert!(uti.is_some(), "UTI should appear");
         assert!(uti.unwrap().probability > 30.0);
     }
@@ -2688,8 +4178,17 @@ mod tests_v28 {
     #[test]
     fn test_score_shingles() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["painful unilateral rash", "vesicular blisters in band pattern", "burning or tingling pain before rash"]);
-        let hz = results.iter().find(|r| r.disease_name == "Herpes Zoster (Shingles)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "painful unilateral rash",
+                "vesicular blisters in band pattern",
+                "burning or tingling pain before rash",
+            ],
+        );
+        let hz = results
+            .iter()
+            .find(|r| r.disease_name == "Herpes Zoster (Shingles)");
         assert!(hz.is_some(), "Shingles should appear");
         assert!(hz.unwrap().probability > 30.0);
     }
@@ -2697,7 +4196,14 @@ mod tests_v28 {
     #[test]
     fn test_score_optic_neuritis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["vision loss in one eye", "pain with eye movement", "color vision impairment"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "vision loss in one eye",
+                "pain with eye movement",
+                "color vision impairment",
+            ],
+        );
         let on = results.iter().find(|r| r.disease_name == "Optic Neuritis");
         assert!(on.is_some(), "Optic Neuritis should appear");
         assert!(on.unwrap().probability > 30.0);
@@ -2706,24 +4212,47 @@ mod tests_v28 {
     #[test]
     fn test_score_mesenteric_ischemia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe abdominal pain out of proportion to exam", "nausea", "vomiting"]);
-        let mi = results.iter().find(|r| r.disease_name == "Mesenteric Ischemia (Acute)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe abdominal pain out of proportion to exam",
+                "nausea",
+                "vomiting",
+            ],
+        );
+        let mi = results
+            .iter()
+            .find(|r| r.disease_name == "Mesenteric Ischemia (Acute)");
         assert!(mi.is_some(), "Mesenteric Ischemia should appear");
     }
 
     #[test]
     fn test_score_hyperaldosteronism() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["resistant hypertension", "muscle weakness", "muscle cramps"]);
-        let ha = results.iter().find(|r| r.disease_name == "Hyperaldosteronism (Conn's Syndrome)");
+        let results = score_symptoms(
+            &conn,
+            &["resistant hypertension", "muscle weakness", "muscle cramps"],
+        );
+        let ha = results
+            .iter()
+            .find(|r| r.disease_name == "Hyperaldosteronism (Conn's Syndrome)");
         assert!(ha.is_some(), "Conn's Syndrome should appear");
     }
 
     #[test]
     fn test_score_thoracic_aneurysm() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["back pain between shoulder blades", "chest pain", "shortness of breath"]);
-        let ta = results.iter().find(|r| r.disease_name == "Thoracic Aortic Aneurysm");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "back pain between shoulder blades",
+                "chest pain",
+                "shortness of breath",
+            ],
+        );
+        let ta = results
+            .iter()
+            .find(|r| r.disease_name == "Thoracic Aortic Aneurysm");
         assert!(ta.is_some(), "Thoracic Aortic Aneurysm should appear");
     }
 
@@ -2731,15 +4260,26 @@ mod tests_v28 {
     fn test_score_chronic_hep_b() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["fatigue", "right upper quadrant pain", "jaundice"]);
-        let hb = results.iter().find(|r| r.disease_name == "Chronic Hepatitis B");
+        let hb = results
+            .iter()
+            .find(|r| r.disease_name == "Chronic Hepatitis B");
         assert!(hb.is_some(), "Chronic Hepatitis B should appear");
     }
 
     #[test]
     fn test_score_ibs() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["recurrent abdominal pain", "bloating", "altered bowel habits"]);
-        let ibs = results.iter().find(|r| r.disease_name == "Irritable Bowel Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "recurrent abdominal pain",
+                "bloating",
+                "altered bowel habits",
+            ],
+        );
+        let ibs = results
+            .iter()
+            .find(|r| r.disease_name == "Irritable Bowel Syndrome");
         assert!(ibs.is_some(), "IBS should appear");
         assert!(ibs.unwrap().probability > 30.0);
     }
@@ -2748,7 +4288,10 @@ mod tests_v28 {
     fn test_synonym_burning_pee() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["burning pee", "peeing a lot"]);
-        assert!(!results.is_empty(), "burning pee + peeing a lot should expand via synonyms");
+        assert!(
+            !results.is_empty(),
+            "burning pee + peeing a lot should expand via synonyms"
+        );
     }
 
     #[test]
@@ -2762,7 +4305,10 @@ mod tests_v28 {
     fn test_synonym_throat_closing() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["throat closing", "hives"]);
-        assert!(!results.is_empty(), "throat closing should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "throat closing should expand via synonym"
+        );
     }
 
     #[test]
@@ -2771,17 +4317,28 @@ mod tests_v28 {
         let with_cough = score_symptoms(&conn, &["high fever", "severe joint pain", "cough"]);
         let without_cough = score_symptoms(&conn, &["high fever", "severe joint pain"]);
         let ck_with = with_cough.iter().find(|r| r.disease_name == "Chikungunya");
-        let ck_without = without_cough.iter().find(|r| r.disease_name == "Chikungunya");
+        let ck_without = without_cough
+            .iter()
+            .find(|r| r.disease_name == "Chikungunya");
         if let (Some(cw), Some(cwo)) = (ck_with, ck_without) {
-            assert!(cwo.probability >= cw.probability,
-                "Chikungunya should score same or lower with cough (negative evidence)");
+            assert!(
+                cwo.probability >= cw.probability,
+                "Chikungunya should score same or lower with cough (negative evidence)"
+            );
         }
     }
 
     #[test]
     fn test_score_inguinal_hernia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["groin bulge", "groin pain", "pain with coughing or straining"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "groin bulge",
+                "groin pain",
+                "pain with coughing or straining",
+            ],
+        );
         let ih = results.iter().find(|r| r.disease_name == "Inguinal Hernia");
         assert!(ih.is_some(), "Inguinal Hernia should appear");
         assert!(ih.unwrap().probability > 30.0);
@@ -2790,7 +4347,14 @@ mod tests_v28 {
     #[test]
     fn test_score_hemorrhoids() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["rectal bleeding", "anal itching", "pain during bowel movements"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "rectal bleeding",
+                "anal itching",
+                "pain during bowel movements",
+            ],
+        );
         let hm = results.iter().find(|r| r.disease_name == "Hemorrhoids");
         assert!(hm.is_some(), "Hemorrhoids should appear");
         assert!(hm.unwrap().probability > 30.0);
@@ -2799,8 +4363,13 @@ mod tests_v28 {
     #[test]
     fn test_score_viral_conjunctivitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["red eye", "watery eye discharge", "gritty feeling in eye"]);
-        let vc = results.iter().find(|r| r.disease_name == "Viral Conjunctivitis");
+        let results = score_symptoms(
+            &conn,
+            &["red eye", "watery eye discharge", "gritty feeling in eye"],
+        );
+        let vc = results
+            .iter()
+            .find(|r| r.disease_name == "Viral Conjunctivitis");
         assert!(vc.is_some(), "Viral Conjunctivitis should appear");
         assert!(vc.unwrap().probability > 30.0);
     }
@@ -2808,8 +4377,13 @@ mod tests_v28 {
     #[test]
     fn test_score_acute_bronchitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["persistent cough", "mucus production", "chest discomfort"]);
-        let ab = results.iter().find(|r| r.disease_name == "Acute Bronchitis");
+        let results = score_symptoms(
+            &conn,
+            &["persistent cough", "mucus production", "chest discomfort"],
+        );
+        let ab = results
+            .iter()
+            .find(|r| r.disease_name == "Acute Bronchitis");
         assert!(ab.is_some(), "Acute Bronchitis should appear");
         assert!(ab.unwrap().probability > 30.0);
     }
@@ -2817,8 +4391,13 @@ mod tests_v28 {
     #[test]
     fn test_score_viral_gastroenteritis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["watery diarrhea", "nausea", "vomiting", "abdominal cramps"]);
-        let vg = results.iter().find(|r| r.disease_name == "Viral Gastroenteritis");
+        let results = score_symptoms(
+            &conn,
+            &["watery diarrhea", "nausea", "vomiting", "abdominal cramps"],
+        );
+        let vg = results
+            .iter()
+            .find(|r| r.disease_name == "Viral Gastroenteritis");
         assert!(vg.is_some(), "Viral Gastroenteritis should appear");
         assert!(vg.unwrap().probability > 30.0);
     }
@@ -2826,7 +4405,15 @@ mod tests_v28 {
     #[test]
     fn test_score_tonsillitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sore throat", "difficulty swallowing", "swollen tonsils", "fever"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sore throat",
+                "difficulty swallowing",
+                "swollen tonsils",
+                "fever",
+            ],
+        );
         let tn = results.iter().find(|r| r.disease_name == "Tonsillitis");
         assert!(tn.is_some(), "Tonsillitis should appear");
         assert!(tn.unwrap().probability > 30.0);
@@ -2835,8 +4422,19 @@ mod tests_v28 {
     #[test]
     fn test_score_measles() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(5), sex: None };
-        let results = score_symptoms_with_context(&conn, &["high fever", "maculopapular rash spreading head to toe", "Koplik spots"], &child_ctx);
+        let child_ctx = PatientContext {
+            age: Some(5),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &[
+                "high fever",
+                "maculopapular rash spreading head to toe",
+                "Koplik spots",
+            ],
+            &child_ctx,
+        );
         let ms = results.iter().find(|r| r.disease_name == "Measles");
         assert!(ms.is_some(), "Measles should appear");
         assert!(ms.unwrap().probability > 30.0);
@@ -2845,8 +4443,17 @@ mod tests_v28 {
     #[test]
     fn test_score_chickenpox() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["itchy rash progressing to blisters", "vesicular rash in different stages", "fever"]);
-        let cp = results.iter().find(|r| r.disease_name == "Chickenpox (Varicella)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "itchy rash progressing to blisters",
+                "vesicular rash in different stages",
+                "fever",
+            ],
+        );
+        let cp = results
+            .iter()
+            .find(|r| r.disease_name == "Chickenpox (Varicella)");
         assert!(cp.is_some(), "Chickenpox should appear");
         assert!(cp.unwrap().probability > 30.0);
     }
@@ -2863,7 +4470,14 @@ mod tests_v28 {
     #[test]
     fn test_score_tetanus() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["jaw stiffness (lockjaw)", "muscle spasms", "difficulty swallowing"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "jaw stiffness (lockjaw)",
+                "muscle spasms",
+                "difficulty swallowing",
+            ],
+        );
         let tt = results.iter().find(|r| r.disease_name == "Tetanus");
         assert!(tt.is_some(), "Tetanus should appear");
         assert!(tt.unwrap().probability > 30.0);
@@ -2872,7 +4486,10 @@ mod tests_v28 {
     #[test]
     fn test_score_yellow_fever() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "jaundice", "bleeding from gums or nose"]);
+        let results = score_symptoms(
+            &conn,
+            &["high fever", "jaundice", "bleeding from gums or nose"],
+        );
         let yf = results.iter().find(|r| r.disease_name == "Yellow Fever");
         assert!(yf.is_some(), "Yellow Fever should appear");
         assert!(yf.unwrap().probability > 30.0);
@@ -2881,8 +4498,16 @@ mod tests_v28 {
     #[test]
     fn test_score_chronic_urticaria() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["recurrent raised itchy welts", "hives lasting less than 24 hours each"]);
-        let cu = results.iter().find(|r| r.disease_name == "Chronic Urticaria");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "recurrent raised itchy welts",
+                "hives lasting less than 24 hours each",
+            ],
+        );
+        let cu = results
+            .iter()
+            .find(|r| r.disease_name == "Chronic Urticaria");
         assert!(cu.is_some(), "Chronic Urticaria should appear");
         assert!(cu.unwrap().probability > 30.0);
     }
@@ -2890,7 +4515,14 @@ mod tests_v28 {
     #[test]
     fn test_score_varicose_veins() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["visible enlarged twisted veins in legs", "leg heaviness", "leg aching"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "visible enlarged twisted veins in legs",
+                "leg heaviness",
+                "leg aching",
+            ],
+        );
         let vv = results.iter().find(|r| r.disease_name == "Varicose Veins");
         assert!(vv.is_some(), "Varicose Veins should appear");
         assert!(vv.unwrap().probability > 30.0);
@@ -2899,8 +4531,13 @@ mod tests_v28 {
     #[test]
     fn test_score_bph() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["frequent urination", "weak urine stream", "nocturia"]);
-        let bph = results.iter().find(|r| r.disease_name == "Benign Prostatic Hyperplasia");
+        let results = score_symptoms(
+            &conn,
+            &["frequent urination", "weak urine stream", "nocturia"],
+        );
+        let bph = results
+            .iter()
+            .find(|r| r.disease_name == "Benign Prostatic Hyperplasia");
         assert!(bph.is_some(), "BPH should appear");
         assert!(bph.unwrap().probability > 30.0);
     }
@@ -2937,7 +4574,10 @@ mod tests_v28 {
     fn test_synonym_heavy_legs() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["heavy legs", "bulging veins"]);
-        assert!(!results.is_empty(), "heavy legs + bulging veins should expand via synonyms");
+        assert!(
+            !results.is_empty(),
+            "heavy legs + bulging veins should expand via synonyms"
+        );
     }
 
     #[test]
@@ -2953,23 +4593,34 @@ mod tests_v28 {
         let with_fever = score_symptoms(&conn, &["rectal bleeding", "anal itching", "fever"]);
         let without_fever = score_symptoms(&conn, &["rectal bleeding", "anal itching"]);
         let hm_with = with_fever.iter().find(|r| r.disease_name == "Hemorrhoids");
-        let hm_without = without_fever.iter().find(|r| r.disease_name == "Hemorrhoids");
+        let hm_without = without_fever
+            .iter()
+            .find(|r| r.disease_name == "Hemorrhoids");
         if let (Some(hw), Some(hwo)) = (hm_with, hm_without) {
-            assert!(hwo.probability >= hw.probability,
-                "Hemorrhoids should score same or lower with fever (negative evidence)");
+            assert!(
+                hwo.probability >= hw.probability,
+                "Hemorrhoids should score same or lower with fever (negative evidence)"
+            );
         }
     }
 
     #[test]
     fn test_negative_evidence_conjunctivitis() {
         let conn = db::init_memory_database().unwrap();
-        let with_vision_loss = score_symptoms(&conn, &["red eye", "watery eye discharge", "vision loss"]);
+        let with_vision_loss =
+            score_symptoms(&conn, &["red eye", "watery eye discharge", "vision loss"]);
         let without_vision_loss = score_symptoms(&conn, &["red eye", "watery eye discharge"]);
-        let vc_with = with_vision_loss.iter().find(|r| r.disease_name == "Viral Conjunctivitis");
-        let vc_without = without_vision_loss.iter().find(|r| r.disease_name == "Viral Conjunctivitis");
+        let vc_with = with_vision_loss
+            .iter()
+            .find(|r| r.disease_name == "Viral Conjunctivitis");
+        let vc_without = without_vision_loss
+            .iter()
+            .find(|r| r.disease_name == "Viral Conjunctivitis");
         if let (Some(vw), Some(vwo)) = (vc_with, vc_without) {
-            assert!(vwo.probability >= vw.probability,
-                "Conjunctivitis should score same or lower with vision loss (negative evidence)");
+            assert!(
+                vwo.probability >= vw.probability,
+                "Conjunctivitis should score same or lower with vision loss (negative evidence)"
+            );
         }
     }
 
@@ -2978,11 +4629,17 @@ mod tests_v28 {
         let conn = db::init_memory_database().unwrap();
         let with_fever = score_symptoms(&conn, &["itchy rash", "red skin", "fever"]);
         let without_fever = score_symptoms(&conn, &["itchy rash", "red skin"]);
-        let cd_with = with_fever.iter().find(|r| r.disease_name == "Contact Dermatitis");
-        let cd_without = without_fever.iter().find(|r| r.disease_name == "Contact Dermatitis");
+        let cd_with = with_fever
+            .iter()
+            .find(|r| r.disease_name == "Contact Dermatitis");
+        let cd_without = without_fever
+            .iter()
+            .find(|r| r.disease_name == "Contact Dermatitis");
         if let (Some(cw), Some(cwo)) = (cd_with, cd_without) {
-            assert!(cwo.probability >= cw.probability,
-                "Contact Dermatitis should score same or lower with fever (negative evidence)");
+            assert!(
+                cwo.probability >= cw.probability,
+                "Contact Dermatitis should score same or lower with fever (negative evidence)"
+            );
         }
     }
 
@@ -2990,8 +4647,13 @@ mod tests_v28 {
     #[test]
     fn test_score_periapical_abscess() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe toothache", "facial swelling", "foul taste in mouth"]);
-        let pa = results.iter().find(|r| r.disease_name == "Periapical Abscess");
+        let results = score_symptoms(
+            &conn,
+            &["severe toothache", "facial swelling", "foul taste in mouth"],
+        );
+        let pa = results
+            .iter()
+            .find(|r| r.disease_name == "Periapical Abscess");
         assert!(pa.is_some(), "Periapical Abscess should appear");
         assert!(pa.unwrap().probability > 30.0);
     }
@@ -3000,7 +4662,9 @@ mod tests_v28 {
     fn test_score_dvt() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["leg swelling", "calf pain", "leg warmth"]);
-        let dvt = results.iter().find(|r| r.disease_name == "Deep Vein Thrombosis");
+        let dvt = results
+            .iter()
+            .find(|r| r.disease_name == "Deep Vein Thrombosis");
         assert!(dvt.is_some(), "DVT should appear");
         assert!(dvt.unwrap().probability > 30.0);
     }
@@ -3008,8 +4672,18 @@ mod tests_v28 {
     #[test]
     fn test_score_organophosphate() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["excessive salivation", "miosis", "muscle fasciculations", "lacrimation"]);
-        let op = results.iter().find(|r| r.disease_name == "Organophosphate Poisoning");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "excessive salivation",
+                "miosis",
+                "muscle fasciculations",
+                "lacrimation",
+            ],
+        );
+        let op = results
+            .iter()
+            .find(|r| r.disease_name == "Organophosphate Poisoning");
         assert!(op.is_some(), "Organophosphate Poisoning should appear");
         assert!(op.unwrap().probability > 30.0);
     }
@@ -3017,7 +4691,14 @@ mod tests_v28 {
     #[test]
     fn test_score_heat_stroke() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["core temperature > 40C", "altered mental status", "hot dry skin"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "core temperature > 40C",
+                "altered mental status",
+                "hot dry skin",
+            ],
+        );
         let hs = results.iter().find(|r| r.disease_name == "Heat Stroke");
         assert!(hs.is_some(), "Heat Stroke should appear");
         assert!(hs.unwrap().probability > 30.0);
@@ -3026,8 +4707,17 @@ mod tests_v28 {
     #[test]
     fn test_score_ankylosing_spondylitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["chronic lower back pain", "morning stiffness lasting > 30 min", "reduced spinal mobility"]);
-        let as_ = results.iter().find(|r| r.disease_name == "Ankylosing Spondylitis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "chronic lower back pain",
+                "morning stiffness lasting > 30 min",
+                "reduced spinal mobility",
+            ],
+        );
+        let as_ = results
+            .iter()
+            .find(|r| r.disease_name == "Ankylosing Spondylitis");
         assert!(as_.is_some(), "Ankylosing Spondylitis should appear");
         assert!(as_.unwrap().probability > 30.0);
     }
@@ -3035,8 +4725,13 @@ mod tests_v28 {
     #[test]
     fn test_score_carbon_monoxide() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["headache", "dizziness", "confusion", "cherry-red skin"]);
-        let co = results.iter().find(|r| r.disease_name == "Carbon Monoxide Poisoning");
+        let results = score_symptoms(
+            &conn,
+            &["headache", "dizziness", "confusion", "cherry-red skin"],
+        );
+        let co = results
+            .iter()
+            .find(|r| r.disease_name == "Carbon Monoxide Poisoning");
         assert!(co.is_some(), "Carbon Monoxide Poisoning should appear");
         assert!(co.unwrap().probability > 30.0);
     }
@@ -3044,7 +4739,14 @@ mod tests_v28 {
     #[test]
     fn test_score_crush_syndrome() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["dark brown urine", "muscle weakness after compression", "swollen extremity"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "dark brown urine",
+                "muscle weakness after compression",
+                "swollen extremity",
+            ],
+        );
         let cs = results.iter().find(|r| r.disease_name == "Crush Syndrome");
         assert!(cs.is_some(), "Crush Syndrome should appear");
         assert!(cs.unwrap().probability > 30.0);
@@ -3061,7 +4763,13 @@ mod tests_v31 {
     #[test]
     fn test_score_buruli_ulcer() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["painless skin nodule", "large painless ulcer with undermined edges"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "painless skin nodule",
+                "large painless ulcer with undermined edges",
+            ],
+        );
         let bu = results.iter().find(|r| r.disease_name == "Buruli Ulcer");
         assert!(bu.is_some(), "Buruli Ulcer should appear");
         assert!(bu.unwrap().probability > 30.0);
@@ -3070,8 +4778,13 @@ mod tests_v31 {
     #[test]
     fn test_score_guinea_worm() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["painful blister on lower limb", "worm emerging from skin"]);
-        let gw = results.iter().find(|r| r.disease_name == "Dracunculiasis (Guinea Worm Disease)");
+        let results = score_symptoms(
+            &conn,
+            &["painful blister on lower limb", "worm emerging from skin"],
+        );
+        let gw = results
+            .iter()
+            .find(|r| r.disease_name == "Dracunculiasis (Guinea Worm Disease)");
         assert!(gw.is_some(), "Guinea Worm should appear");
         assert!(gw.unwrap().probability > 30.0);
     }
@@ -3079,9 +4792,18 @@ mod tests_v31 {
     #[test]
     fn test_score_noma() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(4), sex: None };
-        let results = score_symptoms_with_context(&conn, &["gum ulceration", "tissue necrosis of face", "fever"], &child_ctx);
-        let nm = results.iter().find(|r| r.disease_name == "Noma (Cancrum Oris)");
+        let child_ctx = PatientContext {
+            age: Some(4),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &["gum ulceration", "tissue necrosis of face", "fever"],
+            &child_ctx,
+        );
+        let nm = results
+            .iter()
+            .find(|r| r.disease_name == "Noma (Cancrum Oris)");
         assert!(nm.is_some(), "Noma should appear");
         assert!(nm.unwrap().probability > 30.0);
     }
@@ -3089,8 +4811,17 @@ mod tests_v31 {
     #[test]
     fn test_score_ciguatera() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["nausea", "diarrhea", "temperature reversal (cold feels hot)"]);
-        let cig = results.iter().find(|r| r.disease_name == "Ciguatera Fish Poisoning");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "nausea",
+                "diarrhea",
+                "temperature reversal (cold feels hot)",
+            ],
+        );
+        let cig = results
+            .iter()
+            .find(|r| r.disease_name == "Ciguatera Fish Poisoning");
         assert!(cig.is_some(), "Ciguatera should appear");
         assert!(cig.unwrap().probability > 30.0);
     }
@@ -3098,7 +4829,14 @@ mod tests_v31 {
     #[test]
     fn test_score_ascariasis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["abdominal pain", "visible worms in stool", "abdominal distension"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "abdominal pain",
+                "visible worms in stool",
+                "abdominal distension",
+            ],
+        );
         let asc = results.iter().find(|r| r.disease_name == "Ascariasis");
         assert!(asc.is_some(), "Ascariasis should appear");
         assert!(asc.unwrap().probability > 30.0);
@@ -3107,8 +4845,19 @@ mod tests_v31 {
     #[test]
     fn test_score_kwashiorkor() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(3), sex: None };
-        let results = score_symptoms_with_context(&conn, &["bilateral pedal edema", "distended abdomen", "hair discoloration (reddish-orange)"], &child_ctx);
+        let child_ctx = PatientContext {
+            age: Some(3),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &[
+                "bilateral pedal edema",
+                "distended abdomen",
+                "hair discoloration (reddish-orange)",
+            ],
+            &child_ctx,
+        );
         let kw = results.iter().find(|r| r.disease_name == "Kwashiorkor");
         assert!(kw.is_some(), "Kwashiorkor should appear");
         assert!(kw.unwrap().probability > 30.0);
@@ -3118,7 +4867,10 @@ mod tests_v31 {
     fn test_synonym_worms_in_poop() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["worms in poop", "belly pain"]);
-        assert!(!results.is_empty(), "worms in poop + belly pain should match via synonyms");
+        assert!(
+            !results.is_empty(),
+            "worms in poop + belly pain should match via synonyms"
+        );
     }
 
     #[test]
@@ -3132,19 +4884,43 @@ mod tests_v31 {
     fn test_synonym_swollen_belly() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["swollen belly", "edema"]);
-        assert!(!results.is_empty(), "swollen belly should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "swollen belly should expand via synonym"
+        );
     }
 
     #[test]
     fn test_negative_evidence_ciguatera() {
         let conn = db::init_memory_database().unwrap();
-        let with_fever = score_symptoms(&conn, &["nausea", "diarrhea", "temperature reversal (cold feels hot)", "fever"]);
-        let without_fever = score_symptoms(&conn, &["nausea", "diarrhea", "temperature reversal (cold feels hot)"]);
-        let cig_with = with_fever.iter().find(|r| r.disease_name == "Ciguatera Fish Poisoning");
-        let cig_without = without_fever.iter().find(|r| r.disease_name == "Ciguatera Fish Poisoning");
+        let with_fever = score_symptoms(
+            &conn,
+            &[
+                "nausea",
+                "diarrhea",
+                "temperature reversal (cold feels hot)",
+                "fever",
+            ],
+        );
+        let without_fever = score_symptoms(
+            &conn,
+            &[
+                "nausea",
+                "diarrhea",
+                "temperature reversal (cold feels hot)",
+            ],
+        );
+        let cig_with = with_fever
+            .iter()
+            .find(|r| r.disease_name == "Ciguatera Fish Poisoning");
+        let cig_without = without_fever
+            .iter()
+            .find(|r| r.disease_name == "Ciguatera Fish Poisoning");
         if let (Some(cw), Some(cwo)) = (cig_with, cig_without) {
-            assert!(cwo.probability >= cw.probability,
-                "Ciguatera should score same or lower with fever (negative evidence)");
+            assert!(
+                cwo.probability >= cw.probability,
+                "Ciguatera should score same or lower with fever (negative evidence)"
+            );
         }
     }
 }
@@ -3159,8 +4935,13 @@ mod tests_v32 {
     #[test]
     fn test_score_hookworm() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["abdominal pain", "fatigue", "iron-deficiency anemia"]);
-        let hw = results.iter().find(|r| r.disease_name == "Hookworm Infection");
+        let results = score_symptoms(
+            &conn,
+            &["abdominal pain", "fatigue", "iron-deficiency anemia"],
+        );
+        let hw = results
+            .iter()
+            .find(|r| r.disease_name == "Hookworm Infection");
         assert!(hw.is_some(), "Hookworm Infection should appear");
         assert!(hw.unwrap().probability > 30.0);
     }
@@ -3168,7 +4949,14 @@ mod tests_v32 {
     #[test]
     fn test_score_trachoma() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["eye itching and irritation", "eye discharge", "progressive vision loss"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "eye itching and irritation",
+                "eye discharge",
+                "progressive vision loss",
+            ],
+        );
         let tr = results.iter().find(|r| r.disease_name == "Trachoma");
         assert!(tr.is_some(), "Trachoma should appear");
         assert!(tr.unwrap().probability > 30.0);
@@ -3177,8 +4965,17 @@ mod tests_v32 {
     #[test]
     fn test_score_onchocerciasis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe itching", "subcutaneous nodules (onchocercomas)", "visual impairment"]);
-        let oncho = results.iter().find(|r| r.disease_name == "Onchocerciasis (River Blindness)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe itching",
+                "subcutaneous nodules (onchocercomas)",
+                "visual impairment",
+            ],
+        );
+        let oncho = results
+            .iter()
+            .find(|r| r.disease_name == "Onchocerciasis (River Blindness)");
         assert!(oncho.is_some(), "Onchocerciasis should appear");
         assert!(oncho.unwrap().probability > 30.0);
     }
@@ -3186,8 +4983,17 @@ mod tests_v32 {
     #[test]
     fn test_score_myocardial_bridge() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["chest pain during exercise", "chest pain relieved by rest", "palpitations"]);
-        let mb = results.iter().find(|r| r.disease_name == "Myocardial Bridge");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "chest pain during exercise",
+                "chest pain relieved by rest",
+                "palpitations",
+            ],
+        );
+        let mb = results
+            .iter()
+            .find(|r| r.disease_name == "Myocardial Bridge");
         assert!(mb.is_some(), "Myocardial Bridge should appear");
         assert!(mb.unwrap().probability > 30.0);
     }
@@ -3195,8 +5001,16 @@ mod tests_v32 {
     #[test]
     fn test_score_lymphatic_filariasis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["chronic limb swelling (lymphedema)", "thickened skin on limbs"]);
-        let lf = results.iter().find(|r| r.disease_name == "Lymphatic Filariasis (Elephantiasis)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "chronic limb swelling (lymphedema)",
+                "thickened skin on limbs",
+            ],
+        );
+        let lf = results
+            .iter()
+            .find(|r| r.disease_name == "Lymphatic Filariasis (Elephantiasis)");
         assert!(lf.is_some(), "Lymphatic Filariasis should appear");
         assert!(lf.unwrap().probability > 30.0);
     }
@@ -3204,9 +5018,22 @@ mod tests_v32 {
     #[test]
     fn test_score_acute_rheumatic_fever() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(8), sex: None };
-        let results = score_symptoms_with_context(&conn, &["migratory joint pain (polyarthritis)", "fever", "heart murmur"], &child_ctx);
-        let arf = results.iter().find(|r| r.disease_name == "Acute Rheumatic Fever");
+        let child_ctx = PatientContext {
+            age: Some(8),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &[
+                "migratory joint pain (polyarthritis)",
+                "fever",
+                "heart murmur",
+            ],
+            &child_ctx,
+        );
+        let arf = results
+            .iter()
+            .find(|r| r.disease_name == "Acute Rheumatic Fever");
         assert!(arf.is_some(), "Acute Rheumatic Fever should appear");
         assert!(arf.unwrap().probability > 30.0);
     }
@@ -3214,8 +5041,17 @@ mod tests_v32 {
     #[test]
     fn test_score_sleeping_sickness() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["intermittent fever", "sleep disturbance (day sleeping, night insomnia)", "confusion"]);
-        let ss = results.iter().find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "intermittent fever",
+                "sleep disturbance (day sleeping, night insomnia)",
+                "confusion",
+            ],
+        );
+        let ss = results
+            .iter()
+            .find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
         assert!(ss.is_some(), "African Trypanosomiasis should appear");
         assert!(ss.unwrap().probability > 30.0);
     }
@@ -3223,8 +5059,17 @@ mod tests_v32 {
     #[test]
     fn test_score_interstitial_lung_disease() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["progressive shortness of breath", "dry persistent cough", "clubbing of fingers and toes"]);
-        let ild = results.iter().find(|r| r.disease_name == "Interstitial Lung Disease");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "progressive shortness of breath",
+                "dry persistent cough",
+                "clubbing of fingers and toes",
+            ],
+        );
+        let ild = results
+            .iter()
+            .find(|r| r.disease_name == "Interstitial Lung Disease");
         assert!(ild.is_some(), "Interstitial Lung Disease should appear");
         assert!(ild.unwrap().probability > 30.0);
     }
@@ -3240,28 +5085,40 @@ mod tests_v32 {
     fn test_synonym_elephant_leg() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["elephant leg", "thick skin on legs"]);
-        assert!(!results.is_empty(), "elephant leg should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "elephant leg should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_exercise_chest_pain() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["exercise chest pain", "palpitations"]);
-        assert!(!results.is_empty(), "exercise chest pain should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "exercise chest pain should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_wandering_joint_pain() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["wandering joint pain", "fever"]);
-        assert!(!results.is_empty(), "wandering joint pain should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "wandering joint pain should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_finger_clubbing() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["finger clubbing", "cough"]);
-        assert!(!results.is_empty(), "finger clubbing should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "finger clubbing should expand via synonym"
+        );
     }
 
     #[test]
@@ -3269,11 +5126,17 @@ mod tests_v32 {
         let conn = db::init_memory_database().unwrap();
         let with_cough = score_symptoms(&conn, &["abdominal pain", "fatigue", "cough"]);
         let without_cough = score_symptoms(&conn, &["abdominal pain", "fatigue"]);
-        let hw_with = with_cough.iter().find(|r| r.disease_name == "Hookworm Infection");
-        let hw_without = without_cough.iter().find(|r| r.disease_name == "Hookworm Infection");
+        let hw_with = with_cough
+            .iter()
+            .find(|r| r.disease_name == "Hookworm Infection");
+        let hw_without = without_cough
+            .iter()
+            .find(|r| r.disease_name == "Hookworm Infection");
         if let (Some(hww), Some(hwo)) = (hw_with, hw_without) {
-            assert!(hwo.probability >= hww.probability,
-                "Hookworm should score same or lower with cough (negative evidence)");
+            assert!(
+                hwo.probability >= hww.probability,
+                "Hookworm should score same or lower with cough (negative evidence)"
+            );
         }
     }
 
@@ -3290,7 +5153,9 @@ mod tests_v32 {
     fn test_score_hepatorenal_syndrome() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["decreased urine output", "jaundice", "ascites"]);
-        let hrs = results.iter().find(|r| r.disease_name == "Hepatorenal Syndrome");
+        let hrs = results
+            .iter()
+            .find(|r| r.disease_name == "Hepatorenal Syndrome");
         assert!(hrs.is_some(), "Hepatorenal Syndrome should appear");
         assert!(hrs.unwrap().probability > 30.0);
     }
@@ -3298,8 +5163,17 @@ mod tests_v32 {
     #[test]
     fn test_score_chronic_pancreatitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["chronic abdominal pain", "pain radiating to back", "steatorrhea"]);
-        let cp = results.iter().find(|r| r.disease_name == "Chronic Pancreatitis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "chronic abdominal pain",
+                "pain radiating to back",
+                "steatorrhea",
+            ],
+        );
+        let cp = results
+            .iter()
+            .find(|r| r.disease_name == "Chronic Pancreatitis");
         assert!(cp.is_some(), "Chronic Pancreatitis should appear");
         assert!(cp.unwrap().probability > 30.0);
     }
@@ -3308,7 +5182,9 @@ mod tests_v32 {
     fn test_score_pituitary_adenoma() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["headache", "visual field defects", "galactorrhea"]);
-        let pa = results.iter().find(|r| r.disease_name == "Pituitary Adenoma");
+        let pa = results
+            .iter()
+            .find(|r| r.disease_name == "Pituitary Adenoma");
         assert!(pa.is_some(), "Pituitary Adenoma should appear");
         assert!(pa.unwrap().probability > 30.0);
     }
@@ -3316,7 +5192,14 @@ mod tests_v32 {
     #[test]
     fn test_score_beriberi() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["bilateral lower limb edema", "shortness of breath", "peripheral neuropathy"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "bilateral lower limb edema",
+                "shortness of breath",
+                "peripheral neuropathy",
+            ],
+        );
         let bb = results.iter().find(|r| r.disease_name == "Beriberi");
         assert!(bb.is_some(), "Beriberi should appear");
         assert!(bb.unwrap().probability > 30.0);
@@ -3325,7 +5208,10 @@ mod tests_v32 {
     #[test]
     fn test_score_myxedema_coma() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["hypothermia", "altered mental status", "bradycardia"]);
+        let results = score_symptoms(
+            &conn,
+            &["hypothermia", "altered mental status", "bradycardia"],
+        );
         let mc = results.iter().find(|r| r.disease_name == "Myxedema Coma");
         assert!(mc.is_some(), "Myxedema Coma should appear");
         assert!(mc.unwrap().probability > 30.0);
@@ -3334,7 +5220,14 @@ mod tests_v32 {
     #[test]
     fn test_score_dermatomyositis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["proximal muscle weakness", "heliotrope rash", "Gottron's papules"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "proximal muscle weakness",
+                "heliotrope rash",
+                "Gottron's papules",
+            ],
+        );
         let dm = results.iter().find(|r| r.disease_name == "Dermatomyositis");
         assert!(dm.is_some(), "Dermatomyositis should appear");
         assert!(dm.unwrap().probability > 30.0);
@@ -3344,7 +5237,9 @@ mod tests_v32 {
     fn test_score_esophageal_varices() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["hematemesis", "melena", "tachycardia"]);
-        let ev = results.iter().find(|r| r.disease_name == "Esophageal Varices Bleeding");
+        let ev = results
+            .iter()
+            .find(|r| r.disease_name == "Esophageal Varices Bleeding");
         assert!(ev.is_some(), "Esophageal Varices Bleeding should appear");
         assert!(ev.unwrap().probability > 30.0);
     }
@@ -3353,7 +5248,10 @@ mod tests_v32 {
     fn test_synonym_vomiting_blood() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["vomiting blood", "black stool"]);
-        assert!(!results.is_empty(), "vomiting blood + black stool should match via synonyms");
+        assert!(
+            !results.is_empty(),
+            "vomiting blood + black stool should match via synonyms"
+        );
     }
 
     #[test]
@@ -3367,26 +5265,41 @@ mod tests_v32 {
     fn test_synonym_slow_heartbeat() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["slow heartbeat", "hypothermia"]);
-        assert!(!results.is_empty(), "slow heartbeat should expand to bradycardia");
+        assert!(
+            !results.is_empty(),
+            "slow heartbeat should expand to bradycardia"
+        );
     }
 
     #[test]
     fn test_synonym_purple_eyelids() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["purple eyelids", "muscle weakness"]);
-        assert!(!results.is_empty(), "purple eyelids should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "purple eyelids should expand via synonym"
+        );
     }
 
     #[test]
     fn test_negative_evidence_myxedema_vs_tachycardia() {
         let conn = db::init_memory_database().unwrap();
-        let with_tachy = score_symptoms(&conn, &["hypothermia", "altered mental status", "tachycardia"]);
+        let with_tachy = score_symptoms(
+            &conn,
+            &["hypothermia", "altered mental status", "tachycardia"],
+        );
         let without_tachy = score_symptoms(&conn, &["hypothermia", "altered mental status"]);
-        let mc_with = with_tachy.iter().find(|r| r.disease_name == "Myxedema Coma");
-        let mc_without = without_tachy.iter().find(|r| r.disease_name == "Myxedema Coma");
+        let mc_with = with_tachy
+            .iter()
+            .find(|r| r.disease_name == "Myxedema Coma");
+        let mc_without = without_tachy
+            .iter()
+            .find(|r| r.disease_name == "Myxedema Coma");
         if let (Some(mw), Some(mwo)) = (mc_with, mc_without) {
-            assert!(mwo.probability >= mw.probability,
-                "Myxedema Coma should score same or lower with tachycardia (negative evidence)");
+            assert!(
+                mwo.probability >= mw.probability,
+                "Myxedema Coma should score same or lower with tachycardia (negative evidence)"
+            );
         }
     }
 
@@ -3395,8 +5308,18 @@ mod tests_v32 {
     #[test]
     fn test_score_japanese_encephalitis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "severe headache", "neck stiffness", "confusion"]);
-        let je = results.iter().find(|r| r.disease_name == "Japanese Encephalitis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "high fever",
+                "severe headache",
+                "neck stiffness",
+                "confusion",
+            ],
+        );
+        let je = results
+            .iter()
+            .find(|r| r.disease_name == "Japanese Encephalitis");
         assert!(je.is_some(), "Japanese Encephalitis should appear");
         assert!(je.unwrap().probability > 30.0);
     }
@@ -3404,8 +5327,18 @@ mod tests_v32 {
     #[test]
     fn test_score_hantavirus() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fever", "muscle pain", "shortness of breath", "rapid breathing"]);
-        let hps = results.iter().find(|r| r.disease_name == "Hantavirus Pulmonary Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "fever",
+                "muscle pain",
+                "shortness of breath",
+                "rapid breathing",
+            ],
+        );
+        let hps = results
+            .iter()
+            .find(|r| r.disease_name == "Hantavirus Pulmonary Syndrome");
         assert!(hps.is_some(), "Hantavirus should appear");
         assert!(hps.unwrap().probability > 30.0);
     }
@@ -3413,7 +5346,10 @@ mod tests_v32 {
     #[test]
     fn test_score_q_fever() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "severe headache", "fatigue", "chills"]);
+        let results = score_symptoms(
+            &conn,
+            &["high fever", "severe headache", "fatigue", "chills"],
+        );
         let qf = results.iter().find(|r| r.disease_name == "Q Fever");
         assert!(qf.is_some(), "Q Fever should appear");
     }
@@ -3429,15 +5365,23 @@ mod tests_v32 {
     #[test]
     fn test_score_valley_fever() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fever", "cough", "joint pain", "fatigue", "night sweats"]);
-        let vf = results.iter().find(|r| r.disease_name == "Coccidioidomycosis (Valley Fever)");
+        let results = score_symptoms(
+            &conn,
+            &["fever", "cough", "joint pain", "fatigue", "night sweats"],
+        );
+        let vf = results
+            .iter()
+            .find(|r| r.disease_name == "Coccidioidomycosis (Valley Fever)");
         assert!(vf.is_some(), "Valley Fever should appear");
     }
 
     #[test]
     fn test_score_babesiosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fever", "chills", "sweating", "fatigue", "dark urine"]);
+        let results = score_symptoms(
+            &conn,
+            &["fever", "chills", "sweating", "fatigue", "dark urine"],
+        );
         let bb = results.iter().find(|r| r.disease_name == "Babesiosis");
         assert!(bb.is_some(), "Babesiosis should appear");
     }
@@ -3454,7 +5398,9 @@ mod tests_v32 {
     fn test_score_neurocysticercosis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["seizures", "headache", "nausea"]);
-        let nc = results.iter().find(|r| r.disease_name == "Neurocysticercosis");
+        let nc = results
+            .iter()
+            .find(|r| r.disease_name == "Neurocysticercosis");
         assert!(nc.is_some(), "Neurocysticercosis should appear");
         assert!(nc.unwrap().probability > 20.0);
     }
@@ -3462,8 +5408,13 @@ mod tests_v32 {
     #[test]
     fn test_score_amebic_liver_abscess() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["right upper quadrant pain", "fever", "hepatomegaly"]);
-        let ala = results.iter().find(|r| r.disease_name == "Amebic Liver Abscess");
+        let results = score_symptoms(
+            &conn,
+            &["right upper quadrant pain", "fever", "hepatomegaly"],
+        );
+        let ala = results
+            .iter()
+            .find(|r| r.disease_name == "Amebic Liver Abscess");
         assert!(ala.is_some(), "Amebic Liver Abscess should appear");
         assert!(ala.unwrap().probability > 30.0);
     }
@@ -3489,14 +5440,19 @@ mod tests_v32 {
     fn test_score_cryptosporidiosis() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["watery diarrhea", "abdominal cramps", "nausea"]);
-        let cr = results.iter().find(|r| r.disease_name == "Cryptosporidiosis");
+        let cr = results
+            .iter()
+            .find(|r| r.disease_name == "Cryptosporidiosis");
         assert!(cr.is_some(), "Cryptosporidiosis should appear");
     }
 
     #[test]
     fn test_score_listeriosis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fever", "muscle pain", "headache", "neck stiffness"]);
+        let results = score_symptoms(
+            &conn,
+            &["fever", "muscle pain", "headache", "neck stiffness"],
+        );
         let ls = results.iter().find(|r| r.disease_name == "Listeriosis");
         assert!(ls.is_some(), "Listeriosis should appear");
     }
@@ -3505,7 +5461,9 @@ mod tests_v32 {
     fn test_score_whipples_disease() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["diarrhea", "weight loss", "joint pain"]);
-        let wd = results.iter().find(|r| r.disease_name == "Whipple's Disease");
+        let wd = results
+            .iter()
+            .find(|r| r.disease_name == "Whipple's Disease");
         assert!(wd.is_some(), "Whipple's Disease should appear");
         assert!(wd.unwrap().probability > 30.0);
     }
@@ -3515,11 +5473,17 @@ mod tests_v32 {
         let conn = db::init_memory_database().unwrap();
         let with_rash = score_symptoms(&conn, &["fever", "shortness of breath", "rash"]);
         let without_rash = score_symptoms(&conn, &["fever", "shortness of breath"]);
-        let hps_with = with_rash.iter().find(|r| r.disease_name == "Hantavirus Pulmonary Syndrome");
-        let hps_without = without_rash.iter().find(|r| r.disease_name == "Hantavirus Pulmonary Syndrome");
+        let hps_with = with_rash
+            .iter()
+            .find(|r| r.disease_name == "Hantavirus Pulmonary Syndrome");
+        let hps_without = without_rash
+            .iter()
+            .find(|r| r.disease_name == "Hantavirus Pulmonary Syndrome");
         if let (Some(hw), Some(hwo)) = (hps_with, hps_without) {
-            assert!(hwo.probability >= hw.probability,
-                "Hantavirus should score same or lower with rash (negative evidence)");
+            assert!(
+                hwo.probability >= hw.probability,
+                "Hantavirus should score same or lower with rash (negative evidence)"
+            );
         }
     }
 
@@ -3528,11 +5492,17 @@ mod tests_v32 {
         let conn = db::init_memory_database().unwrap();
         let with_rash = score_symptoms(&conn, &["intermittent fever", "confusion", "rash"]);
         let without_rash = score_symptoms(&conn, &["intermittent fever", "confusion"]);
-        let ss_with = with_rash.iter().find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
-        let ss_without = without_rash.iter().find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
+        let ss_with = with_rash
+            .iter()
+            .find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
+        let ss_without = without_rash
+            .iter()
+            .find(|r| r.disease_name == "African Trypanosomiasis (Sleeping Sickness)");
         if let (Some(sw), Some(swo)) = (ss_with, ss_without) {
-            assert!(swo.probability >= sw.probability,
-                "Sleeping Sickness should score same or lower with rash (negative evidence)");
+            assert!(
+                swo.probability >= sw.probability,
+                "Sleeping Sickness should score same or lower with rash (negative evidence)"
+            );
         }
     }
 }
@@ -3547,7 +5517,10 @@ mod tests_v35 {
     #[test]
     fn test_score_epidemic_typhus() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["high fever", "severe headache", "maculopapular rash"]);
+        let results = score_symptoms(
+            &conn,
+            &["high fever", "severe headache", "maculopapular rash"],
+        );
         let et = results.iter().find(|r| r.disease_name == "Epidemic Typhus");
         assert!(et.is_some(), "Epidemic Typhus should appear");
         assert!(et.unwrap().probability > 30.0);
@@ -3556,7 +5529,14 @@ mod tests_v35 {
     #[test]
     fn test_score_anthrax() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["painless skin ulcer with black eschar", "fever", "swollen lymph nodes"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "painless skin ulcer with black eschar",
+                "fever",
+                "swollen lymph nodes",
+            ],
+        );
         let an = results.iter().find(|r| r.disease_name == "Anthrax");
         assert!(an.is_some(), "Anthrax should appear");
         assert!(an.unwrap().probability > 30.0);
@@ -3565,7 +5545,14 @@ mod tests_v35 {
     #[test]
     fn test_score_plague() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden high fever", "painful swollen lymph nodes (buboes)", "chills"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden high fever",
+                "painful swollen lymph nodes (buboes)",
+                "chills",
+            ],
+        );
         let pl = results.iter().find(|r| r.disease_name == "Plague");
         assert!(pl.is_some(), "Plague should appear");
         assert!(pl.unwrap().probability > 30.0);
@@ -3574,7 +5561,14 @@ mod tests_v35 {
     #[test]
     fn test_score_diphtheria() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sore throat", "grey-white pseudomembrane on tonsils/pharynx", "swollen neck (bull neck)"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sore throat",
+                "grey-white pseudomembrane on tonsils/pharynx",
+                "swollen neck (bull neck)",
+            ],
+        );
         let dp = results.iter().find(|r| r.disease_name == "Diphtheria");
         assert!(dp.is_some(), "Diphtheria should appear");
         assert!(dp.unwrap().probability > 30.0);
@@ -3583,8 +5577,15 @@ mod tests_v35 {
     #[test]
     fn test_score_polio() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(5), sex: None };
-        let results = score_symptoms_with_context(&conn, &["fever", "neck stiffness", "acute flaccid paralysis"], &child_ctx);
+        let child_ctx = PatientContext {
+            age: Some(5),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &["fever", "neck stiffness", "acute flaccid paralysis"],
+            &child_ctx,
+        );
         let po = results.iter().find(|r| r.disease_name == "Poliomyelitis");
         assert!(po.is_some(), "Poliomyelitis should appear");
         assert!(po.unwrap().probability > 30.0);
@@ -3593,8 +5594,17 @@ mod tests_v35 {
     #[test]
     fn test_score_leprosy() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["hypopigmented skin patches with loss of sensation", "thickened peripheral nerves", "numbness in hands or feet"]);
-        let lep = results.iter().find(|r| r.disease_name == "Leprosy (Hansen's Disease)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "hypopigmented skin patches with loss of sensation",
+                "thickened peripheral nerves",
+                "numbness in hands or feet",
+            ],
+        );
+        let lep = results
+            .iter()
+            .find(|r| r.disease_name == "Leprosy (Hansen's Disease)");
         assert!(lep.is_some(), "Leprosy should appear");
         assert!(lep.unwrap().probability > 30.0);
     }
@@ -3602,7 +5612,14 @@ mod tests_v35 {
     #[test]
     fn test_score_chagas() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["unilateral eyelid swelling (Romaña sign)", "fever", "palpitations"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "unilateral eyelid swelling (Romaña sign)",
+                "fever",
+                "palpitations",
+            ],
+        );
         let ch = results.iter().find(|r| r.disease_name == "Chagas Disease");
         assert!(ch.is_some(), "Chagas Disease should appear");
         assert!(ch.unwrap().probability > 30.0);
@@ -3619,7 +5636,14 @@ mod tests_v35 {
     #[test]
     fn test_score_giardiasis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["watery diarrhea", "greasy foul-smelling stool", "abdominal cramps"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "watery diarrhea",
+                "greasy foul-smelling stool",
+                "abdominal cramps",
+            ],
+        );
         let gi = results.iter().find(|r| r.disease_name == "Giardiasis");
         assert!(gi.is_some(), "Giardiasis should appear");
         assert!(gi.unwrap().probability > 30.0);
@@ -3644,7 +5668,15 @@ mod tests_v35 {
     #[test]
     fn test_score_zika() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["maculopapular rash", "joint pain", "conjunctivitis (non-purulent)", "low-grade fever"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "maculopapular rash",
+                "joint pain",
+                "conjunctivitis (non-purulent)",
+                "low-grade fever",
+            ],
+        );
         let zk = results.iter().find(|r| r.disease_name == "Zika Virus");
         assert!(zk.is_some(), "Zika Virus should appear");
         assert!(zk.unwrap().probability > 30.0);
@@ -3653,8 +5685,18 @@ mod tests_v35 {
     #[test]
     fn test_score_ebola() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden high fever", "vomiting", "diarrhea", "unexplained bleeding or bruising"]);
-        let eb = results.iter().find(|r| r.disease_name == "Ebola Virus Disease");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden high fever",
+                "vomiting",
+                "diarrhea",
+                "unexplained bleeding or bruising",
+            ],
+        );
+        let eb = results
+            .iter()
+            .find(|r| r.disease_name == "Ebola Virus Disease");
         assert!(eb.is_some(), "Ebola should appear");
         assert!(eb.unwrap().probability > 30.0);
     }
@@ -3662,8 +5704,17 @@ mod tests_v35 {
     #[test]
     fn test_score_mpox() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["fever", "swollen lymph nodes", "skin rash progressing: macules → papules → vesicles → pustules → crusts"]);
-        let mp = results.iter().find(|r| r.disease_name == "Mpox (Monkeypox)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "fever",
+                "swollen lymph nodes",
+                "skin rash progressing: macules → papules → vesicles → pustules → crusts",
+            ],
+        );
+        let mp = results
+            .iter()
+            .find(|r| r.disease_name == "Mpox (Monkeypox)");
         assert!(mp.is_some(), "Mpox should appear");
         assert!(mp.unwrap().probability > 30.0);
     }
@@ -3671,7 +5722,14 @@ mod tests_v35 {
     #[test]
     fn test_score_tularemia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden fever", "skin ulcer at inoculation site", "swollen painful lymph nodes"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden fever",
+                "skin ulcer at inoculation site",
+                "swollen painful lymph nodes",
+            ],
+        );
         let tu = results.iter().find(|r| r.disease_name == "Tularemia");
         assert!(tu.is_some(), "Tularemia should appear");
         assert!(tu.unwrap().probability > 30.0);
@@ -3695,14 +5753,20 @@ mod tests_v35 {
     fn test_synonym_greasy_poop() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["greasy poop", "bloated"]);
-        assert!(!results.is_empty(), "greasy poop + bloated should match via synonyms");
+        assert!(
+            !results.is_empty(),
+            "greasy poop + bloated should match via synonyms"
+        );
     }
 
     #[test]
     fn test_synonym_numb_patches_on_skin() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["numb patches on skin", "muscle weakness"]);
-        assert!(!results.is_empty(), "numb patches on skin should match via synonym");
+        assert!(
+            !results.is_empty(),
+            "numb patches on skin should match via synonym"
+        );
     }
 
     #[test]
@@ -3710,11 +5774,17 @@ mod tests_v35 {
         let conn = db::init_memory_database().unwrap();
         let with_diarrhea = score_symptoms(&conn, &["high fever", "severe headache", "diarrhea"]);
         let without_diarrhea = score_symptoms(&conn, &["high fever", "severe headache"]);
-        let et_with = with_diarrhea.iter().find(|r| r.disease_name == "Epidemic Typhus");
-        let et_without = without_diarrhea.iter().find(|r| r.disease_name == "Epidemic Typhus");
+        let et_with = with_diarrhea
+            .iter()
+            .find(|r| r.disease_name == "Epidemic Typhus");
+        let et_without = without_diarrhea
+            .iter()
+            .find(|r| r.disease_name == "Epidemic Typhus");
         if let (Some(ew), Some(ewo)) = (et_with, et_without) {
-            assert!(ewo.probability >= ew.probability,
-                "Typhus should score same or lower with diarrhea (negative evidence)");
+            assert!(
+                ewo.probability >= ew.probability,
+                "Typhus should score same or lower with diarrhea (negative evidence)"
+            );
         }
     }
 
@@ -3724,10 +5794,14 @@ mod tests_v35 {
         let with_fever = score_symptoms(&conn, &["watery diarrhea", "bloating", "fever"]);
         let without_fever = score_symptoms(&conn, &["watery diarrhea", "bloating"]);
         let gi_with = with_fever.iter().find(|r| r.disease_name == "Giardiasis");
-        let gi_without = without_fever.iter().find(|r| r.disease_name == "Giardiasis");
+        let gi_without = without_fever
+            .iter()
+            .find(|r| r.disease_name == "Giardiasis");
         if let (Some(gw), Some(gwo)) = (gi_with, gi_without) {
-            assert!(gwo.probability >= gw.probability,
-                "Giardiasis should score same or lower with fever (negative evidence)");
+            assert!(
+                gwo.probability >= gw.probability,
+                "Giardiasis should score same or lower with fever (negative evidence)"
+            );
         }
     }
 }
@@ -3742,8 +5816,17 @@ mod tests_v36 {
     #[test]
     fn test_score_rmsf() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden high fever", "severe headache", "petechial rash spreading from wrists and ankles"]);
-        let rmsf = results.iter().find(|r| r.disease_name == "Rocky Mountain Spotted Fever");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden high fever",
+                "severe headache",
+                "petechial rash spreading from wrists and ankles",
+            ],
+        );
+        let rmsf = results
+            .iter()
+            .find(|r| r.disease_name == "Rocky Mountain Spotted Fever");
         assert!(rmsf.is_some(), "RMSF should appear");
         assert!(rmsf.unwrap().probability > 30.0);
     }
@@ -3751,7 +5834,14 @@ mod tests_v36 {
     #[test]
     fn test_score_typhoid() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sustained high fever (stepladder pattern)", "abdominal pain", "rose spots on trunk"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sustained high fever (stepladder pattern)",
+                "abdominal pain",
+                "rose spots on trunk",
+            ],
+        );
         let tf = results.iter().find(|r| r.disease_name == "Typhoid Fever");
         assert!(tf.is_some(), "Typhoid Fever should appear");
         assert!(tf.unwrap().probability > 30.0);
@@ -3760,8 +5850,13 @@ mod tests_v36 {
     #[test]
     fn test_score_norovirus() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden onset vomiting", "watery diarrhea", "nausea"]);
-        let nv = results.iter().find(|r| r.disease_name == "Norovirus Gastroenteritis");
+        let results = score_symptoms(
+            &conn,
+            &["sudden onset vomiting", "watery diarrhea", "nausea"],
+        );
+        let nv = results
+            .iter()
+            .find(|r| r.disease_name == "Norovirus Gastroenteritis");
         assert!(nv.is_some(), "Norovirus should appear");
         assert!(nv.unwrap().probability > 30.0);
     }
@@ -3769,7 +5864,15 @@ mod tests_v36 {
     #[test]
     fn test_score_scarlet_fever() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sandpaper-like red rash", "strawberry tongue", "sore throat", "high fever"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sandpaper-like red rash",
+                "strawberry tongue",
+                "sore throat",
+                "high fever",
+            ],
+        );
         let sf = results.iter().find(|r| r.disease_name == "Scarlet Fever");
         assert!(sf.is_some(), "Scarlet Fever should appear");
         assert!(sf.unwrap().probability > 30.0);
@@ -3778,8 +5881,17 @@ mod tests_v36 {
     #[test]
     fn test_score_pertussis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["paroxysmal coughing fits", "inspiratory whoop", "post-tussive vomiting"]);
-        let pt = results.iter().find(|r| r.disease_name == "Pertussis (Whooping Cough)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "paroxysmal coughing fits",
+                "inspiratory whoop",
+                "post-tussive vomiting",
+            ],
+        );
+        let pt = results
+            .iter()
+            .find(|r| r.disease_name == "Pertussis (Whooping Cough)");
         assert!(pt.is_some(), "Pertussis should appear");
         assert!(pt.unwrap().probability > 30.0);
     }
@@ -3787,8 +5899,17 @@ mod tests_v36 {
     #[test]
     fn test_score_amoebic_dysentery() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["bloody diarrhea", "abdominal pain and cramping", "tenesmus (rectal straining)"]);
-        let ad = results.iter().find(|r| r.disease_name == "Amoebic Dysentery");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "bloody diarrhea",
+                "abdominal pain and cramping",
+                "tenesmus (rectal straining)",
+            ],
+        );
+        let ad = results
+            .iter()
+            .find(|r| r.disease_name == "Amoebic Dysentery");
         assert!(ad.is_some(), "Amoebic Dysentery should appear");
         assert!(ad.unwrap().probability > 30.0);
     }
@@ -3796,8 +5917,17 @@ mod tests_v36 {
     #[test]
     fn test_score_me_cfs() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["profound debilitating fatigue >6 months", "post-exertional malaise (PEM)", "unrefreshing sleep"]);
-        let me = results.iter().find(|r| r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "profound debilitating fatigue >6 months",
+                "post-exertional malaise (PEM)",
+                "unrefreshing sleep",
+            ],
+        );
+        let me = results.iter().find(|r| {
+            r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)"
+        });
         assert!(me.is_some(), "ME/CFS should appear");
         assert!(me.unwrap().probability > 30.0);
     }
@@ -3805,9 +5935,18 @@ mod tests_v36 {
     #[test]
     fn test_score_croup() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(2), sex: None };
-        let results = score_symptoms_with_context(&conn, &["barking cough", "inspiratory stridor", "hoarse voice"], &child_ctx);
-        let cr = results.iter().find(|r| r.disease_name == "Croup (Laryngotracheobronchitis)");
+        let child_ctx = PatientContext {
+            age: Some(2),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &["barking cough", "inspiratory stridor", "hoarse voice"],
+            &child_ctx,
+        );
+        let cr = results
+            .iter()
+            .find(|r| r.disease_name == "Croup (Laryngotracheobronchitis)");
         assert!(cr.is_some(), "Croup should appear");
         assert!(cr.unwrap().probability > 30.0);
     }
@@ -3815,9 +5954,23 @@ mod tests_v36 {
     #[test]
     fn test_score_hfmd() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(3), sex: None };
-        let results = score_symptoms_with_context(&conn, &["painful mouth sores (enanthem)", "rash on palms of hands", "rash on soles of feet", "fever"], &child_ctx);
-        let hfmd = results.iter().find(|r| r.disease_name == "Hand, Foot, and Mouth Disease");
+        let child_ctx = PatientContext {
+            age: Some(3),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &[
+                "painful mouth sores (enanthem)",
+                "rash on palms of hands",
+                "rash on soles of feet",
+                "fever",
+            ],
+            &child_ctx,
+        );
+        let hfmd = results
+            .iter()
+            .find(|r| r.disease_name == "Hand, Foot, and Mouth Disease");
         assert!(hfmd.is_some(), "HFMD should appear");
         assert!(hfmd.unwrap().probability > 30.0);
     }
@@ -3825,9 +5978,23 @@ mod tests_v36 {
     #[test]
     fn test_score_rotavirus() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(1), sex: None };
-        let results = score_symptoms_with_context(&conn, &["profuse watery diarrhea", "vomiting", "fever", "dehydration"], &child_ctx);
-        let rv = results.iter().find(|r| r.disease_name == "Rotavirus Gastroenteritis");
+        let child_ctx = PatientContext {
+            age: Some(1),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &[
+                "profuse watery diarrhea",
+                "vomiting",
+                "fever",
+                "dehydration",
+            ],
+            &child_ctx,
+        );
+        let rv = results
+            .iter()
+            .find(|r| r.disease_name == "Rotavirus Gastroenteritis");
         assert!(rv.is_some(), "Rotavirus should appear");
         assert!(rv.unwrap().probability > 30.0);
     }
@@ -3835,8 +6002,17 @@ mod tests_v36 {
     #[test]
     fn test_score_otitis_externa() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["ear pain worsened by pulling outer ear", "ear canal itching", "ear discharge"]);
-        let oe = results.iter().find(|r| r.disease_name == "Otitis Externa (Swimmer's Ear)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "ear pain worsened by pulling outer ear",
+                "ear canal itching",
+                "ear discharge",
+            ],
+        );
+        let oe = results
+            .iter()
+            .find(|r| r.disease_name == "Otitis Externa (Swimmer's Ear)");
         assert!(oe.is_some(), "Otitis Externa should appear");
         assert!(oe.unwrap().probability > 30.0);
     }
@@ -3844,8 +6020,17 @@ mod tests_v36 {
     #[test]
     fn test_score_tension_pneumothorax() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe shortness of breath", "unilateral absent breath sounds", "tracheal deviation away from affected side"]);
-        let tp = results.iter().find(|r| r.disease_name == "Tension Pneumothorax");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe shortness of breath",
+                "unilateral absent breath sounds",
+                "tracheal deviation away from affected side",
+            ],
+        );
+        let tp = results
+            .iter()
+            .find(|r| r.disease_name == "Tension Pneumothorax");
         assert!(tp.is_some(), "Tension Pneumothorax should appear");
         assert!(tp.unwrap().probability > 30.0);
     }
@@ -3853,8 +6038,17 @@ mod tests_v36 {
     #[test]
     fn test_score_status_epilepticus() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["continuous seizure activity >5 minutes", "loss of consciousness", "repetitive convulsions without recovery"]);
-        let se = results.iter().find(|r| r.disease_name == "Status Epilepticus");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "continuous seizure activity >5 minutes",
+                "loss of consciousness",
+                "repetitive convulsions without recovery",
+            ],
+        );
+        let se = results
+            .iter()
+            .find(|r| r.disease_name == "Status Epilepticus");
         assert!(se.is_some(), "Status Epilepticus should appear");
         assert!(se.unwrap().probability > 30.0);
     }
@@ -3862,8 +6056,18 @@ mod tests_v36 {
     #[test]
     fn test_score_angle_closure_crisis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sudden severe eye pain", "blurred vision", "halos around lights", "fixed mid-dilated pupil"]);
-        let acc = results.iter().find(|r| r.disease_name == "Acute Angle-Closure Crisis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sudden severe eye pain",
+                "blurred vision",
+                "halos around lights",
+                "fixed mid-dilated pupil",
+            ],
+        );
+        let acc = results
+            .iter()
+            .find(|r| r.disease_name == "Acute Angle-Closure Crisis");
         assert!(acc.is_some(), "Acute Angle-Closure Crisis should appear");
         assert!(acc.unwrap().probability > 30.0);
     }
@@ -3871,8 +6075,17 @@ mod tests_v36 {
     #[test]
     fn test_score_quinsy() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe unilateral sore throat", "trismus (difficulty opening mouth)", "uvula deviation"]);
-        let qs = results.iter().find(|r| r.disease_name == "Peritonsillar Abscess (Quinsy)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe unilateral sore throat",
+                "trismus (difficulty opening mouth)",
+                "uvula deviation",
+            ],
+        );
+        let qs = results
+            .iter()
+            .find(|r| r.disease_name == "Peritonsillar Abscess (Quinsy)");
         assert!(qs.is_some(), "Quinsy should appear");
         assert!(qs.unwrap().probability > 30.0);
     }
@@ -3888,80 +6101,134 @@ mod tests_v36 {
     fn test_synonym_whooping_cough() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["whooping cough", "vomiting"]);
-        assert!(!results.is_empty(), "whooping cough should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "whooping cough should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_sandpaper_rash() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["sandpaper rash", "sore throat", "fever"]);
-        assert!(!results.is_empty(), "sandpaper rash should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "sandpaper rash should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_seal_bark_cough() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["seal bark cough", "stridor"]);
-        assert!(!results.is_empty(), "seal bark cough should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "seal bark cough should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_swimmers_ear() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["swimmers ear", "ear discharge"]);
-        assert!(!results.is_empty(), "swimmers ear should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "swimmers ear should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_prolonged_seizure() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["prolonged seizure", "unconscious"]);
-        assert!(!results.is_empty(), "prolonged seizure should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "prolonged seizure should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_seeing_rainbow_halos() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["seeing rainbow halos", "eye pain"]);
-        assert!(!results.is_empty(), "seeing rainbow halos should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "seeing rainbow halos should expand via synonym"
+        );
     }
 
     #[test]
     fn test_negative_evidence_norovirus() {
         let conn = db::init_memory_database().unwrap();
-        let with_rash = score_symptoms(&conn, &["sudden onset vomiting", "watery diarrhea", "rash"]);
+        let with_rash =
+            score_symptoms(&conn, &["sudden onset vomiting", "watery diarrhea", "rash"]);
         let without_rash = score_symptoms(&conn, &["sudden onset vomiting", "watery diarrhea"]);
-        let nv_with = with_rash.iter().find(|r| r.disease_name == "Norovirus Gastroenteritis");
-        let nv_without = without_rash.iter().find(|r| r.disease_name == "Norovirus Gastroenteritis");
+        let nv_with = with_rash
+            .iter()
+            .find(|r| r.disease_name == "Norovirus Gastroenteritis");
+        let nv_without = without_rash
+            .iter()
+            .find(|r| r.disease_name == "Norovirus Gastroenteritis");
         if let (Some(nw), Some(nwo)) = (nv_with, nv_without) {
-            assert!(nwo.probability >= nw.probability,
-                "Norovirus should score same or lower with rash (negative evidence)");
+            assert!(
+                nwo.probability >= nw.probability,
+                "Norovirus should score same or lower with rash (negative evidence)"
+            );
         }
     }
 
     #[test]
     fn test_negative_evidence_pertussis() {
         let conn = db::init_memory_database().unwrap();
-        let with_rash = score_symptoms(&conn, &["paroxysmal coughing fits", "inspiratory whoop", "rash"]);
-        let without_rash = score_symptoms(&conn, &["paroxysmal coughing fits", "inspiratory whoop"]);
-        let pt_with = with_rash.iter().find(|r| r.disease_name == "Pertussis (Whooping Cough)");
-        let pt_without = without_rash.iter().find(|r| r.disease_name == "Pertussis (Whooping Cough)");
+        let with_rash = score_symptoms(
+            &conn,
+            &["paroxysmal coughing fits", "inspiratory whoop", "rash"],
+        );
+        let without_rash =
+            score_symptoms(&conn, &["paroxysmal coughing fits", "inspiratory whoop"]);
+        let pt_with = with_rash
+            .iter()
+            .find(|r| r.disease_name == "Pertussis (Whooping Cough)");
+        let pt_without = without_rash
+            .iter()
+            .find(|r| r.disease_name == "Pertussis (Whooping Cough)");
         if let (Some(pw), Some(pwo)) = (pt_with, pt_without) {
-            assert!(pwo.probability >= pw.probability,
-                "Pertussis should score same or lower with rash (negative evidence)");
+            assert!(
+                pwo.probability >= pw.probability,
+                "Pertussis should score same or lower with rash (negative evidence)"
+            );
         }
     }
 
     #[test]
     fn test_negative_evidence_me_cfs() {
         let conn = db::init_memory_database().unwrap();
-        let with_fever = score_symptoms(&conn, &["profound debilitating fatigue >6 months", "post-exertional malaise (PEM)", "fever"]);
-        let without_fever = score_symptoms(&conn, &["profound debilitating fatigue >6 months", "post-exertional malaise (PEM)"]);
-        let me_with = with_fever.iter().find(|r| r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)");
-        let me_without = without_fever.iter().find(|r| r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)");
+        let with_fever = score_symptoms(
+            &conn,
+            &[
+                "profound debilitating fatigue >6 months",
+                "post-exertional malaise (PEM)",
+                "fever",
+            ],
+        );
+        let without_fever = score_symptoms(
+            &conn,
+            &[
+                "profound debilitating fatigue >6 months",
+                "post-exertional malaise (PEM)",
+            ],
+        );
+        let me_with = with_fever.iter().find(|r| {
+            r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)"
+        });
+        let me_without = without_fever.iter().find(|r| {
+            r.disease_name == "Myalgic Encephalomyelitis/Chronic Fatigue Syndrome (ME/CFS)"
+        });
         if let (Some(mw), Some(mwo)) = (me_with, me_without) {
-            assert!(mwo.probability >= mw.probability,
-                "ME/CFS should score same or lower with fever (negative evidence)");
+            assert!(
+                mwo.probability >= mw.probability,
+                "ME/CFS should score same or lower with fever (negative evidence)"
+            );
         }
     }
 }
@@ -3976,8 +6243,18 @@ mod tests_v37 {
     #[test]
     fn test_score_mycoplasma_pneumonia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["gradual onset dry cough", "low-grade fever", "headache", "fatigue"]);
-        let mp = results.iter().find(|r| r.disease_name == "Mycoplasma Pneumonia");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "gradual onset dry cough",
+                "low-grade fever",
+                "headache",
+                "fatigue",
+            ],
+        );
+        let mp = results
+            .iter()
+            .find(|r| r.disease_name == "Mycoplasma Pneumonia");
         assert!(mp.is_some(), "Mycoplasma Pneumonia should appear");
         assert!(mp.unwrap().probability > 30.0);
     }
@@ -3985,8 +6262,20 @@ mod tests_v37 {
     #[test]
     fn test_score_scarlet_fever_v37() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(7), sex: None };
-        let results = score_symptoms_with_context(&conn, &["sandpaper-like red rash", "strawberry tongue", "sore throat", "high fever"], &child_ctx);
+        let child_ctx = PatientContext {
+            age: Some(7),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &[
+                "sandpaper-like red rash",
+                "strawberry tongue",
+                "sore throat",
+                "high fever",
+            ],
+            &child_ctx,
+        );
         let sf = results.iter().find(|r| r.disease_name == "Scarlet Fever");
         assert!(sf.is_some(), "Scarlet Fever should appear");
         assert!(sf.unwrap().probability > 30.0);
@@ -3995,8 +6284,19 @@ mod tests_v37 {
     #[test]
     fn test_score_coxsackievirus_myocarditis() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["chest pain", "shortness of breath", "fatigue", "palpitations", "fever"]);
-        let cm = results.iter().find(|r| r.disease_name == "Coxsackievirus Myocarditis");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "chest pain",
+                "shortness of breath",
+                "fatigue",
+                "palpitations",
+                "fever",
+            ],
+        );
+        let cm = results
+            .iter()
+            .find(|r| r.disease_name == "Coxsackievirus Myocarditis");
         assert!(cm.is_some(), "Coxsackievirus Myocarditis should appear");
         assert!(cm.unwrap().probability > 30.0);
     }
@@ -4004,8 +6304,17 @@ mod tests_v37 {
     #[test]
     fn test_score_gpa_wegeners() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["chronic sinusitis unresponsive to treatment", "bloody nasal discharge", "cough with hemoptysis"]);
-        let gpa = results.iter().find(|r| r.disease_name == "Granulomatosis with Polyangiitis (Wegener's)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "chronic sinusitis unresponsive to treatment",
+                "bloody nasal discharge",
+                "cough with hemoptysis",
+            ],
+        );
+        let gpa = results
+            .iter()
+            .find(|r| r.disease_name == "Granulomatosis with Polyangiitis (Wegener's)");
         assert!(gpa.is_some(), "GPA should appear");
         assert!(gpa.unwrap().probability > 30.0);
     }
@@ -4013,8 +6322,17 @@ mod tests_v37 {
     #[test]
     fn test_score_goodpasture() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["hemoptysis (coughing blood)", "hematuria (blood in urine)", "shortness of breath"]);
-        let gp = results.iter().find(|r| r.disease_name == "Goodpasture Syndrome");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "hemoptysis (coughing blood)",
+                "hematuria (blood in urine)",
+                "shortness of breath",
+            ],
+        );
+        let gp = results
+            .iter()
+            .find(|r| r.disease_name == "Goodpasture Syndrome");
         assert!(gp.is_some(), "Goodpasture Syndrome should appear");
         assert!(gp.unwrap().probability > 30.0);
     }
@@ -4023,7 +6341,9 @@ mod tests_v37 {
     fn test_score_psc() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["jaundice", "pruritus (itching)", "fatigue"]);
-        let psc = results.iter().find(|r| r.disease_name == "Primary Sclerosing Cholangitis");
+        let psc = results
+            .iter()
+            .find(|r| r.disease_name == "Primary Sclerosing Cholangitis");
         assert!(psc.is_some(), "PSC should appear");
         assert!(psc.unwrap().probability > 30.0);
     }
@@ -4031,16 +6351,34 @@ mod tests_v37 {
     #[test]
     fn test_score_moyamoya() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["recurrent transient ischemic attacks (TIAs)", "headache", "seizures"]);
-        let mm = results.iter().find(|r| r.disease_name == "Moyamoya Disease");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "recurrent transient ischemic attacks (TIAs)",
+                "headache",
+                "seizures",
+            ],
+        );
+        let mm = results
+            .iter()
+            .find(|r| r.disease_name == "Moyamoya Disease");
         assert!(mm.is_some(), "Moyamoya Disease should appear");
     }
 
     #[test]
     fn test_score_boerhaave() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["severe retrosternal chest pain after vomiting", "subcutaneous emphysema (crepitus in neck/chest)", "vomiting (preceding event)"]);
-        let bs = results.iter().find(|r| r.disease_name == "Boerhaave Syndrome (Esophageal Rupture)");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "severe retrosternal chest pain after vomiting",
+                "subcutaneous emphysema (crepitus in neck/chest)",
+                "vomiting (preceding event)",
+            ],
+        );
+        let bs = results
+            .iter()
+            .find(|r| r.disease_name == "Boerhaave Syndrome (Esophageal Rupture)");
         assert!(bs.is_some(), "Boerhaave Syndrome should appear");
         assert!(bs.unwrap().probability > 30.0);
     }
@@ -4048,8 +6386,17 @@ mod tests_v37 {
     #[test]
     fn test_score_hereditary_angioedema() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["recurrent swelling of face, lips, or tongue", "abdominal pain and swelling", "laryngeal edema (throat swelling, stridor)"]);
-        let hae = results.iter().find(|r| r.disease_name == "Hereditary Angioedema");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "recurrent swelling of face, lips, or tongue",
+                "abdominal pain and swelling",
+                "laryngeal edema (throat swelling, stridor)",
+            ],
+        );
+        let hae = results
+            .iter()
+            .find(|r| r.disease_name == "Hereditary Angioedema");
         assert!(hae.is_some(), "Hereditary Angioedema should appear");
         assert!(hae.unwrap().probability > 30.0);
     }
@@ -4057,8 +6404,17 @@ mod tests_v37 {
     #[test]
     fn test_score_chronic_mesenteric_ischemia() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["postprandial abdominal pain (intestinal angina)", "food aversion / fear of eating (sitophobia)", "unintentional weight loss"]);
-        let cmi = results.iter().find(|r| r.disease_name == "Chronic Mesenteric Ischemia");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "postprandial abdominal pain (intestinal angina)",
+                "food aversion / fear of eating (sitophobia)",
+                "unintentional weight loss",
+            ],
+        );
+        let cmi = results
+            .iter()
+            .find(|r| r.disease_name == "Chronic Mesenteric Ischemia");
         assert!(cmi.is_some(), "Chronic Mesenteric Ischemia should appear");
         assert!(cmi.unwrap().probability > 30.0);
     }
@@ -4066,8 +6422,17 @@ mod tests_v37 {
     #[test]
     fn test_score_cat_scratch_disease() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["papule or pustule at scratch site", "regional lymph node swelling (lymphadenopathy)", "low-grade fever"]);
-        let csd = results.iter().find(|r| r.disease_name == "Cat Scratch Disease");
+        let results = score_symptoms(
+            &conn,
+            &[
+                "papule or pustule at scratch site",
+                "regional lymph node swelling (lymphadenopathy)",
+                "low-grade fever",
+            ],
+        );
+        let csd = results
+            .iter()
+            .find(|r| r.disease_name == "Cat Scratch Disease");
         assert!(csd.is_some(), "Cat Scratch Disease should appear");
         assert!(csd.unwrap().probability > 30.0);
     }
@@ -4075,7 +6440,14 @@ mod tests_v37 {
     #[test]
     fn test_score_erysipelas() {
         let conn = db::init_memory_database().unwrap();
-        let results = score_symptoms(&conn, &["sharply demarcated raised red skin area", "skin warmth and tenderness", "fever and chills"]);
+        let results = score_symptoms(
+            &conn,
+            &[
+                "sharply demarcated raised red skin area",
+                "skin warmth and tenderness",
+                "fever and chills",
+            ],
+        );
         let er = results.iter().find(|r| r.disease_name == "Erysipelas");
         assert!(er.is_some(), "Erysipelas should appear");
         assert!(er.unwrap().probability > 30.0);
@@ -4084,9 +6456,22 @@ mod tests_v37 {
     #[test]
     fn test_score_hsp_nephritis() {
         let conn = db::init_memory_database().unwrap();
-        let child_ctx = PatientContext { age: Some(8), sex: None };
-        let results = score_symptoms_with_context(&conn, &["palpable purpura (non-blanching rash on legs/buttocks)", "hematuria (blood in urine)", "proteinuria"], &child_ctx);
-        let hspn = results.iter().find(|r| r.disease_name == "Henoch-Schönlein Purpura Nephritis");
+        let child_ctx = PatientContext {
+            age: Some(8),
+            sex: None,
+        };
+        let results = score_symptoms_with_context(
+            &conn,
+            &[
+                "palpable purpura (non-blanching rash on legs/buttocks)",
+                "hematuria (blood in urine)",
+                "proteinuria",
+            ],
+            &child_ctx,
+        );
+        let hspn = results
+            .iter()
+            .find(|r| r.disease_name == "Henoch-Schönlein Purpura Nephritis");
         assert!(hspn.is_some(), "HSP Nephritis should appear");
         assert!(hspn.unwrap().probability > 30.0);
     }
@@ -4095,14 +6480,20 @@ mod tests_v37 {
     fn test_synonym_walking_pneumonia() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["walking pneumonia", "headache"]);
-        assert!(!results.is_empty(), "walking pneumonia should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "walking pneumonia should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_coughing_up_blood() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["coughing up blood", "shortness of breath"]);
-        assert!(!results.is_empty(), "coughing up blood should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "coughing up blood should expand via synonym"
+        );
     }
 
     #[test]
@@ -4116,14 +6507,20 @@ mod tests_v37 {
     fn test_synonym_afraid_to_eat() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["afraid to eat", "weight loss"]);
-        assert!(!results.is_empty(), "afraid to eat should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "afraid to eat should expand via synonym"
+        );
     }
 
     #[test]
     fn test_synonym_swollen_glands() {
         let conn = db::init_memory_database().unwrap();
         let results = score_symptoms(&conn, &["swollen glands", "fever"]);
-        assert!(!results.is_empty(), "swollen glands should expand via synonym");
+        assert!(
+            !results.is_empty(),
+            "swollen glands should expand via synonym"
+        );
     }
 
     #[test]
@@ -4131,21 +6528,34 @@ mod tests_v37 {
         let conn = db::init_memory_database().unwrap();
         let with_rash = score_symptoms(&conn, &["gradual onset dry cough", "headache", "rash"]);
         let without_rash = score_symptoms(&conn, &["gradual onset dry cough", "headache"]);
-        let mp_with = with_rash.iter().find(|r| r.disease_name == "Mycoplasma Pneumonia");
-        let mp_without = without_rash.iter().find(|r| r.disease_name == "Mycoplasma Pneumonia");
+        let mp_with = with_rash
+            .iter()
+            .find(|r| r.disease_name == "Mycoplasma Pneumonia");
+        let mp_without = without_rash
+            .iter()
+            .find(|r| r.disease_name == "Mycoplasma Pneumonia");
         if let (Some(mw), Some(mwo)) = (mp_with, mp_without) {
-            assert!(mwo.probability >= mw.probability,
-                "Mycoplasma should score same or lower with rash (negative evidence)");
+            assert!(
+                mwo.probability >= mw.probability,
+                "Mycoplasma should score same or lower with rash (negative evidence)"
+            );
         }
     }
 
     #[test]
     fn test_negative_evidence_hereditary_angioedema() {
         let conn = db::init_memory_database().unwrap();
-        let with_hives = score_symptoms(&conn, &["recurrent swelling of face, lips, or tongue", "itchy rash"]);
+        let with_hives = score_symptoms(
+            &conn,
+            &["recurrent swelling of face, lips, or tongue", "itchy rash"],
+        );
         let without_hives = score_symptoms(&conn, &["recurrent swelling of face, lips, or tongue"]);
-        let hae_with = with_hives.iter().find(|r| r.disease_name == "Hereditary Angioedema");
-        let hae_without = without_hives.iter().find(|r| r.disease_name == "Hereditary Angioedema");
+        let hae_with = with_hives
+            .iter()
+            .find(|r| r.disease_name == "Hereditary Angioedema");
+        let hae_without = without_hives
+            .iter()
+            .find(|r| r.disease_name == "Hereditary Angioedema");
         if let (Some(hw), Some(hwo)) = (hae_with, hae_without) {
             assert!(hwo.probability >= hw.probability,
                 "HAE should score same or lower with itchy rash (negative evidence — HAE is non-itchy)");

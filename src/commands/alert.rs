@@ -115,12 +115,14 @@ pub fn run(conn: &Connection, symptoms_input: &str, json: bool) {
     let mut alerts: Vec<EmergencyAlert> = Vec::new();
 
     for pattern in ALERT_PATTERNS {
-        let matched: Vec<String> = pattern.indicators.iter()
+        let matched: Vec<String> = pattern
+            .indicators
+            .iter()
             .filter(|ind| {
                 let ind_lower = ind.to_lowercase();
-                normalized.iter().any(|input| {
-                    input.contains(&ind_lower) || ind_lower.contains(input.as_str())
-                })
+                normalized
+                    .iter()
+                    .any(|input| input.contains(&ind_lower) || ind_lower.contains(input.as_str()))
             })
             .map(|s| s.to_string())
             .collect();
@@ -161,7 +163,13 @@ pub fn run(conn: &Connection, symptoms_input: &str, json: bool) {
             println!("{}", "Top matches from symptom checker:".cyan());
             for r in results.iter().take(3) {
                 let sev = crate::engine::severity::SeverityLevel::from_str(&r.severity);
-                println!("  {} {} ({:.0}%) — {}", sev.emoji(), r.disease_name, r.probability, sev.label());
+                println!(
+                    "  {} {} ({:.0}%) — {}",
+                    sev.emoji(),
+                    r.disease_name,
+                    r.probability,
+                    sev.label()
+                );
             }
         }
         return;
@@ -174,7 +182,11 @@ pub fn run(conn: &Connection, symptoms_input: &str, json: bool) {
 
         for alert in &alerts {
             println!("{} {}", "⚠️ ".red(), alert.condition.red().bold());
-            println!("  {}: {}", "Matched indicators".yellow(), alert.matched_indicators.join(", "));
+            println!(
+                "  {}: {}",
+                "Matched indicators".yellow(),
+                alert.matched_indicators.join(", ")
+            );
             println!("  {}: {}", "Action".white().bold(), alert.action);
             println!("  {}: {}", "Time window".yellow(), alert.time_window);
             println!();

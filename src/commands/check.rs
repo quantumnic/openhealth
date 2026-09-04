@@ -21,7 +21,9 @@ pub fn run(conn: &Connection) {
         return;
     }
     let main_complaint = main_complaint.trim().to_lowercase();
-    if main_complaint == "quit" { return; }
+    if main_complaint == "quit" {
+        return;
+    }
     all_symptoms.push(main_complaint);
 
     // Step 2: Ask about common associated symptoms
@@ -44,7 +46,9 @@ pub fn run(conn: &Connection) {
             break;
         }
         let answer = answer.trim().to_lowercase();
-        if answer == "quit" || answer == "done" { break; }
+        if answer == "quit" || answer == "done" {
+            break;
+        }
         if answer.starts_with('y') {
             all_symptoms.push(symptom.to_string());
         }

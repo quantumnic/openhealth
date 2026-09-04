@@ -28,8 +28,7 @@ pub fn run(conn: &Connection, input: &str, json: bool) {
     let results = scorer::score_symptoms_with_context(conn, &symptom_list, &context);
 
     // Save to history
-    let result_json =
-        serde_json::to_string(&results).unwrap_or_else(|_| "[]".to_string());
+    let result_json = serde_json::to_string(&results).unwrap_or_else(|_| "[]".to_string());
     let top = results.first();
     history::save(
         conn,

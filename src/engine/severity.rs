@@ -79,7 +79,10 @@ mod tests {
         assert_eq!(overall_severity(&["low", "low"]), SeverityLevel::Green);
         assert_eq!(overall_severity(&["low", "medium"]), SeverityLevel::Yellow);
         assert_eq!(overall_severity(&["low", "high"]), SeverityLevel::Red);
-        assert_eq!(overall_severity(&["high", "medium", "low"]), SeverityLevel::Red);
+        assert_eq!(
+            overall_severity(&["high", "medium", "low"]),
+            SeverityLevel::Red
+        );
     }
 
     #[test]

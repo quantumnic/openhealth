@@ -12,62 +12,131 @@ pub struct BmiResult {
     pub recommendations: Vec<String>,
 }
 
-fn classify_bmi(bmi: f64) -> (&'static str, &'static str, Vec<&'static str>, Vec<&'static str>) {
+fn classify_bmi(
+    bmi: f64,
+) -> (
+    &'static str,
+    &'static str,
+    Vec<&'static str>,
+    Vec<&'static str>,
+) {
     if bmi < 16.0 {
         (
             "Severe Underweight",
             "🔴",
-            vec!["Severe malnutrition risk", "Immune dysfunction", "Organ failure risk", "Osteoporosis"],
-            vec!["Seek immediate medical evaluation", "Nutritional rehabilitation program", "Monitor cardiac function"],
+            vec![
+                "Severe malnutrition risk",
+                "Immune dysfunction",
+                "Organ failure risk",
+                "Osteoporosis",
+            ],
+            vec![
+                "Seek immediate medical evaluation",
+                "Nutritional rehabilitation program",
+                "Monitor cardiac function",
+            ],
         )
     } else if bmi < 17.0 {
         (
             "Moderate Underweight",
             "🟡",
-            vec!["Malnutrition risk", "Reduced immune function", "Bone density loss", "Anemia"],
-            vec!["Consult healthcare provider", "Increase caloric intake gradually", "Consider nutritional supplements"],
+            vec![
+                "Malnutrition risk",
+                "Reduced immune function",
+                "Bone density loss",
+                "Anemia",
+            ],
+            vec![
+                "Consult healthcare provider",
+                "Increase caloric intake gradually",
+                "Consider nutritional supplements",
+            ],
         )
     } else if bmi < 18.5 {
         (
             "Mild Underweight",
             "🟡",
             vec!["Nutrient deficiency risk", "Reduced muscle mass", "Fatigue"],
-            vec!["Balanced diet with adequate protein", "Strength training", "Regular health check-ups"],
+            vec![
+                "Balanced diet with adequate protein",
+                "Strength training",
+                "Regular health check-ups",
+            ],
         )
     } else if bmi < 25.0 {
         (
             "Normal Weight",
             "🟢",
             vec!["Lowest overall health risk"],
-            vec!["Maintain balanced diet and regular exercise", "Annual health check-ups"],
+            vec![
+                "Maintain balanced diet and regular exercise",
+                "Annual health check-ups",
+            ],
         )
     } else if bmi < 30.0 {
         (
             "Overweight",
             "🟡",
-            vec!["Increased cardiovascular risk", "Type 2 diabetes risk", "Joint stress", "Sleep apnea risk"],
-            vec!["Aim for 150 min/week moderate exercise", "Reduce processed food intake", "Monitor blood pressure and glucose"],
+            vec![
+                "Increased cardiovascular risk",
+                "Type 2 diabetes risk",
+                "Joint stress",
+                "Sleep apnea risk",
+            ],
+            vec![
+                "Aim for 150 min/week moderate exercise",
+                "Reduce processed food intake",
+                "Monitor blood pressure and glucose",
+            ],
         )
     } else if bmi < 35.0 {
         (
             "Obese (Class I)",
             "🔴",
-            vec!["High cardiovascular risk", "Type 2 diabetes", "Hypertension", "Joint disease", "Sleep apnea"],
-            vec!["Consult healthcare provider for weight management plan", "Structured exercise program", "Dietary changes with professional guidance"],
+            vec![
+                "High cardiovascular risk",
+                "Type 2 diabetes",
+                "Hypertension",
+                "Joint disease",
+                "Sleep apnea",
+            ],
+            vec![
+                "Consult healthcare provider for weight management plan",
+                "Structured exercise program",
+                "Dietary changes with professional guidance",
+            ],
         )
     } else if bmi < 40.0 {
         (
             "Obese (Class II)",
             "🔴",
-            vec!["Very high cardiovascular risk", "Metabolic syndrome", "Fatty liver disease", "Cancer risk increase"],
-            vec!["Medical weight management program", "Consider pharmacotherapy", "Regular monitoring of metabolic markers"],
+            vec![
+                "Very high cardiovascular risk",
+                "Metabolic syndrome",
+                "Fatty liver disease",
+                "Cancer risk increase",
+            ],
+            vec![
+                "Medical weight management program",
+                "Consider pharmacotherapy",
+                "Regular monitoring of metabolic markers",
+            ],
         )
     } else {
         (
             "Obese (Class III)",
             "🔴",
-            vec!["Extreme cardiovascular risk", "Severe metabolic complications", "Reduced life expectancy", "Mobility impairment"],
-            vec!["Comprehensive medical evaluation", "Consider bariatric surgery referral", "Multidisciplinary weight management team"],
+            vec![
+                "Extreme cardiovascular risk",
+                "Severe metabolic complications",
+                "Reduced life expectancy",
+                "Mobility impairment",
+            ],
+            vec![
+                "Comprehensive medical evaluation",
+                "Consider bariatric surgery referral",
+                "Multidisciplinary weight management team",
+            ],
         )
     }
 }
@@ -138,18 +207,10 @@ pub fn run(input: &str, json: bool) {
 
     if bmi < 18.5 {
         let deficit = healthy_low - weight_kg;
-        println!(
-            "  {} {:.1} kg below healthy range",
-            "↑".yellow(),
-            deficit
-        );
+        println!("  {} {:.1} kg below healthy range", "↑".yellow(), deficit);
     } else if bmi >= 25.0 {
         let excess = weight_kg - healthy_high;
-        println!(
-            "  {} {:.1} kg above healthy range",
-            "↓".yellow(),
-            excess
-        );
+        println!("  {} {:.1} kg above healthy range", "↓".yellow(), excess);
     }
 
     println!();

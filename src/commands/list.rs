@@ -14,7 +14,8 @@ pub fn run(conn: &Connection, category: Option<&str>, json: bool) {
             cat.replace('\'', "''")
         )
     } else {
-        "SELECT name, severity, contagious, category FROM diseases ORDER BY category, name".to_string()
+        "SELECT name, severity, contagious, category FROM diseases ORDER BY category, name"
+            .to_string()
     };
 
     let mut stmt = conn.prepare(&query).unwrap();

@@ -1,5 +1,5 @@
-use rusqlite::Connection;
 use colored::*;
+use rusqlite::Connection;
 
 pub fn run(conn: &Connection) {
     println!("{}", "🔄 Checking database...".bold());

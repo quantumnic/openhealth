@@ -68,10 +68,7 @@ pub fn print_diagnosis_results(results: &[DiagnosisResult], max_results: usize) 
         );
         println!("   {prob_bar}");
         println!("   {}", result.description.dimmed());
-        println!(
-            "   Matched: {}",
-            result.matched_symptoms.join(", ").green()
-        );
+        println!("   Matched: {}", result.matched_symptoms.join(", ").green());
         if !result.missing_key_symptoms.is_empty() {
             println!(
                 "   Missing key symptoms: {}",
@@ -83,7 +80,11 @@ pub fn print_diagnosis_results(results: &[DiagnosisResult], max_results: usize) 
     }
 
     // Overall severity
-    let severities: Vec<&str> = results.iter().take(3).map(|r| r.severity.as_str()).collect();
+    let severities: Vec<&str> = results
+        .iter()
+        .take(3)
+        .map(|r| r.severity.as_str())
+        .collect();
     let overall = crate::engine::severity::overall_severity(&severities);
     println!("{}", "━━━ Recommendation ━━━".bold());
     println!("{} {}", overall.emoji(), overall.advice());

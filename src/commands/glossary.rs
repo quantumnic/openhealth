@@ -102,15 +102,9 @@ pub fn run(query: Option<&str>, as_json: bool) {
         return;
     }
 
-    println!(
-        "\n{}",
-        "📖 Medical Glossary".bold().cyan()
-    );
+    println!("\n{}", "📖 Medical Glossary".bold().cyan());
     if let Some(q) = query {
-        println!(
-            "   Showing entries matching: {}\n",
-            q.bold()
-        );
+        println!("   Showing entries matching: {}\n", q.bold());
     } else {
         println!(
             "   {} terms — search with: openhealth glossary \"term\"\n",

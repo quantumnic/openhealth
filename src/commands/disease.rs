@@ -51,9 +51,7 @@ pub fn run(conn: &Connection, name: &str, json: bool) {
             if json {
                 let sym_json: Vec<serde_json::Value> = symptoms
                     .iter()
-                    .map(|(n, w, p)| {
-                        serde_json::json!({"name": n, "weight": w, "primary": p})
-                    })
+                    .map(|(n, w, p)| serde_json::json!({"name": n, "weight": w, "primary": p}))
                     .collect();
                 let rf_json: Vec<serde_json::Value> = risk_factors
                     .iter()

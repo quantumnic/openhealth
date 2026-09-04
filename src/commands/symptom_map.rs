@@ -25,10 +25,7 @@ pub fn run(conn: &Connection, filter: Option<&str>, json: bool) {
     let mut map: HashMap<String, Vec<String>> = HashMap::new();
     let rows = stmt
         .query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-            ))
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })
         .unwrap();
 
@@ -65,14 +62,10 @@ pub fn run(conn: &Connection, filter: Option<&str>, json: bool) {
         return;
     }
 
-    println!(
-        "\n{}",
-        "═══ Symptom Specificity Map ═══".bold().cyan()
-    );
+    println!("\n{}", "═══ Symptom Specificity Map ═══".bold().cyan());
     println!(
         "{}",
-        "Shows how many diseases share each symptom (higher = less specific)\n"
-            .dimmed()
+        "Shows how many diseases share each symptom (higher = less specific)\n".dimmed()
     );
 
     for entry in &entries {
@@ -99,7 +92,6 @@ pub fn run(conn: &Connection, filter: Option<&str>, json: bool) {
     );
     println!(
         "{}",
-        "Tip: Highly specific symptoms narrow diagnoses faster.\n"
-            .dimmed()
+        "Tip: Highly specific symptoms narrow diagnoses faster.\n".dimmed()
     );
 }

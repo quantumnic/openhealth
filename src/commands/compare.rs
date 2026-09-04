@@ -14,7 +14,10 @@ struct CompareResult {
 
 pub fn run(conn: &Connection, names: &[&str], json: bool) {
     if names.len() < 2 {
-        println!("{}", "Please provide at least 2 disease names to compare.".yellow());
+        println!(
+            "{}",
+            "Please provide at least 2 disease names to compare.".yellow()
+        );
         return;
     }
 
@@ -29,7 +32,13 @@ pub fn run(conn: &Connection, names: &[&str], json: bool) {
         let disease = conn.query_row(
             "SELECT id, name, severity FROM diseases WHERE name = ?1 COLLATE NOCASE",
             [name],
-            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?)),
+            |row| {
+                Ok((
+                    row.get::<_, i64>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            },
         );
 
         let (disease_id, disease_name, severity) = match disease {
@@ -73,11 +82,7 @@ pub fn run(conn: &Connection, names: &[&str], json: bool) {
     // Compute unique symptoms per disease
     let unique_symptoms: Vec<Vec<String>> = all_disease_data
         .iter()
-        .map(|(_, _, syms, _)| {
-            syms.difference(&shared_symptoms)
-                .cloned()
-                .collect()
-        })
+        .map(|(_, _, syms, _)| syms.difference(&shared_symptoms).cloned().collect())
         .collect();
 
     // Shared risk factors
@@ -91,8 +96,14 @@ pub fn run(conn: &Connection, names: &[&str], json: bool) {
         .reduce(|a, b| a.intersection(&b).cloned().collect())
         .unwrap_or_default();
 
-    let disease_names: Vec<String> = all_disease_data.iter().map(|(n, _, _, _)| n.clone()).collect();
-    let severities: Vec<String> = all_disease_data.iter().map(|(_, s, _, _)| s.clone()).collect();
+    let disease_names: Vec<String> = all_disease_data
+        .iter()
+        .map(|(n, _, _, _)| n.clone())
+        .collect();
+    let severities: Vec<String> = all_disease_data
+        .iter()
+        .map(|(_, s, _, _)| s.clone())
+        .collect();
 
     if json {
         let result = CompareResult {
@@ -158,11 +169,7 @@ pub fn run(conn: &Connection, names: &[&str], json: bool) {
         if unique.is_empty() {
             println!("   🔹 {} — no unique symptoms", name.bold());
         } else {
-            println!(
-                "   🔹 {} — {} unique symptoms",
-                name.bold(),
-                unique.len()
-            );
+            println!("   🔹 {} — {} unique symptoms", name.bold(), unique.len());
             for sym in unique {
                 println!("      • {sym}");
             }

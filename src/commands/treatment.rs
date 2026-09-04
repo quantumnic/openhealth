@@ -12,7 +12,8 @@ pub fn run(conn: &Connection, name: &str, json: bool) {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
-                row.get::<_, Option<String>>(2)?.unwrap_or_else(|| "WHO".to_string()),
+                row.get::<_, Option<String>>(2)?
+                    .unwrap_or_else(|| "WHO".to_string()),
                 row.get::<_, Option<String>>(3)?.unwrap_or_default(),
                 row.get::<_, Option<String>>(4)?.unwrap_or_default(),
             ))

@@ -51,7 +51,9 @@ pub fn run(conn: &Connection, system_filter: Option<&str>, json: bool) {
 
     if let Some(filter) = system_filter {
         let filter_lower = filter.to_lowercase();
-        let matched_system = systems.keys().find(|k| k.to_lowercase().contains(&filter_lower));
+        let matched_system = systems
+            .keys()
+            .find(|k| k.to_lowercase().contains(&filter_lower));
 
         if let Some(&system_name) = matched_system {
             let entries = &systems[system_name];
@@ -78,7 +80,10 @@ pub fn run(conn: &Connection, system_filter: Option<&str>, json: bool) {
         } else if json {
             println!("{{\"error\": \"Body system '{}' not found.\"}}", filter);
         } else {
-            println!("{}", format!("Body system matching '{filter}' not found.").red());
+            println!(
+                "{}",
+                format!("Body system matching '{filter}' not found.").red()
+            );
             println!("\nAvailable systems:");
             for system in systems.keys() {
                 println!("  • {system}");
@@ -119,7 +124,11 @@ pub fn run(conn: &Connection, system_filter: Option<&str>, json: bool) {
         );
     }
     println!();
-    println!("  Total: {} diseases across {} body systems", diseases.len(), systems.len());
+    println!(
+        "  Total: {} diseases across {} body systems",
+        diseases.len(),
+        systems.len()
+    );
     println!("  Drill down: openhealth body-system \"respiratory\"");
     println!();
 }
@@ -157,7 +166,10 @@ mod tests {
     fn test_system_for_category_coverage() {
         // Ensure common categories map properly
         assert_eq!(system_for_category("respiratory"), "Respiratory System");
-        assert_eq!(system_for_category("cardiovascular"), "Cardiovascular System");
+        assert_eq!(
+            system_for_category("cardiovascular"),
+            "Cardiovascular System"
+        );
         assert_eq!(system_for_category("mental_health"), "Mental Health");
         assert_eq!(system_for_category("unknown_cat"), "General / Other");
     }

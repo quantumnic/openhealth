@@ -188,9 +188,15 @@ pub fn run(conn: &Connection, json: bool) {
                 _ => "ℹ️ ",
             };
             let msg = match issue.severity.as_str() {
-                "error" => format!("{icon} {} — {}", issue.entity, issue.message).red().to_string(),
-                "warning" => format!("{icon} {} — {}", issue.entity, issue.message).yellow().to_string(),
-                _ => format!("{icon} {} — {}", issue.entity, issue.message).dimmed().to_string(),
+                "error" => format!("{icon} {} — {}", issue.entity, issue.message)
+                    .red()
+                    .to_string(),
+                "warning" => format!("{icon} {} — {}", issue.entity, issue.message)
+                    .yellow()
+                    .to_string(),
+                _ => format!("{icon} {} — {}", issue.entity, issue.message)
+                    .dimmed()
+                    .to_string(),
             };
             println!("  {msg}");
         }

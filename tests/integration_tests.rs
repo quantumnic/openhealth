@@ -2,7 +2,8 @@ use std::process::Command;
 
 fn cargo_bin() -> Command {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_openhealth"));
-    cmd.arg("--db-path").arg("/tmp/openhealth_test_integration.db");
+    cmd.arg("--db-path")
+        .arg("/tmp/openhealth_test_integration.db");
     cmd
 }
 
@@ -19,7 +20,13 @@ fn test_cli_symptoms_runs() {
 #[test]
 fn test_cli_symptoms_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_integration_json.db", "--json", "symptoms", "fever headache"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_integration_json.db",
+            "--json",
+            "symptoms",
+            "fever headache",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -39,7 +46,13 @@ fn test_cli_disease_malaria() {
 #[test]
 fn test_cli_disease_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_integration_djson.db", "--json", "disease", "malaria"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_integration_djson.db",
+            "--json",
+            "disease",
+            "malaria",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -149,7 +162,13 @@ fn test_cli_search() {
 #[test]
 fn test_cli_search_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_search.db", "--json", "search", "malaria"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_search.db",
+            "--json",
+            "search",
+            "malaria",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -169,7 +188,14 @@ fn test_cli_diff() {
 #[test]
 fn test_cli_diff_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_diff.db", "--json", "diff", "malaria", "dengue"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_diff.db",
+            "--json",
+            "diff",
+            "malaria",
+            "dengue",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -199,7 +225,12 @@ fn test_cli_history_empty() {
 #[test]
 fn test_cli_history_json_empty() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_hist_j.db", "--json", "history"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_hist_j.db",
+            "--json",
+            "history",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -220,7 +251,13 @@ fn test_cli_export() {
 fn test_cli_export_file() {
     let _ = std::fs::remove_file("/tmp/openhealth_test_export_out.json");
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_export2.db", "export", "--output", "/tmp/openhealth_test_export_out.json"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_export2.db",
+            "export",
+            "--output",
+            "/tmp/openhealth_test_export_out.json",
+        ])
         .output()
         .expect("failed to execute");
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -232,7 +269,12 @@ fn test_cli_export_file() {
 #[test]
 fn test_cli_profile_show() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_profile.db", "profile", "--show"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_profile.db",
+            "profile",
+            "--show",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -242,7 +284,15 @@ fn test_cli_profile_show() {
 #[test]
 fn test_cli_profile_set() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_profile_set.db", "profile", "--age", "30", "--sex", "male"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_profile_set.db",
+            "profile",
+            "--age",
+            "30",
+            "--sex",
+            "male",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -252,7 +302,13 @@ fn test_cli_profile_set() {
 #[test]
 fn test_cli_profile_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_profile_j.db", "--json", "profile", "--show"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_profile_j.db",
+            "--json",
+            "profile",
+            "--show",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -272,7 +328,13 @@ fn test_cli_similar() {
 #[test]
 fn test_cli_similar_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_similar.db", "--json", "similar", "malaria"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_similar.db",
+            "--json",
+            "similar",
+            "malaria",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -312,7 +374,12 @@ fn test_cli_body_system_filter() {
 #[test]
 fn test_cli_risk_smoking() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_risk.db", "risk", "smoking, obesity"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_risk.db",
+            "risk",
+            "smoking, obesity",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -322,7 +389,13 @@ fn test_cli_risk_smoking() {
 #[test]
 fn test_cli_risk_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_risk_j.db", "--json", "risk", "smoking"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_risk_j.db",
+            "--json",
+            "risk",
+            "smoking",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -332,7 +405,12 @@ fn test_cli_risk_json() {
 #[test]
 fn test_cli_disease_pulmonary_embolism() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_pe.db", "disease", "Pulmonary Embolism"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_pe.db",
+            "disease",
+            "Pulmonary Embolism",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -342,7 +420,12 @@ fn test_cli_disease_pulmonary_embolism() {
 #[test]
 fn test_cli_body_system_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_bs.db", "--json", "body-system"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_bs.db",
+            "--json",
+            "body-system",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -363,7 +446,12 @@ fn test_cli_validate() {
 #[test]
 fn test_cli_validate_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_validate_j.db", "--json", "validate"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_validate_j.db",
+            "--json",
+            "validate",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
@@ -374,7 +462,12 @@ fn test_cli_validate_json() {
 #[test]
 fn test_cli_disease_necrotizing_fasciitis() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_nf.db", "disease", "Necrotizing Fasciitis"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_nf.db",
+            "disease",
+            "Necrotizing Fasciitis",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -384,7 +477,12 @@ fn test_cli_disease_necrotizing_fasciitis() {
 #[test]
 fn test_cli_triage_basic() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_triage.db", "triage", "chest pain, shortness of breath"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_triage.db",
+            "triage",
+            "chest pain, shortness of breath",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -395,7 +493,13 @@ fn test_cli_triage_basic() {
 #[test]
 fn test_cli_triage_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_triage_j.db", "--json", "triage", "fever headache"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_triage_j.db",
+            "--json",
+            "triage",
+            "fever headache",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -405,7 +509,13 @@ fn test_cli_triage_json() {
 #[test]
 fn test_cli_triage_red_flags() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_triage_rf.db", "--json", "triage", "seizures, confusion, high fever"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_triage_rf.db",
+            "--json",
+            "triage",
+            "seizures, confusion, high fever",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -416,7 +526,12 @@ fn test_cli_triage_red_flags() {
 #[test]
 fn test_cli_disease_lung_cancer() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_lc.db", "disease", "Lung Cancer"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_lc.db",
+            "disease",
+            "Lung Cancer",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -426,7 +541,12 @@ fn test_cli_disease_lung_cancer() {
 #[test]
 fn test_cli_disease_gout() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_gout.db", "disease", "Gout"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_gout.db",
+            "disease",
+            "Gout",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -436,7 +556,12 @@ fn test_cli_disease_gout() {
 #[test]
 fn test_cli_disease_lupus() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_lupus.db", "disease", "Systemic Lupus Erythematosus"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_lupus.db",
+            "disease",
+            "Systemic Lupus Erythematosus",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -446,7 +571,12 @@ fn test_cli_disease_lupus() {
 #[test]
 fn test_cli_disease_heatstroke() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_hs.db", "disease", "Heatstroke"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_hs.db",
+            "disease",
+            "Heatstroke",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -458,7 +588,12 @@ fn test_cli_disease_heatstroke() {
 #[test]
 fn test_cli_comorbidity_diabetes() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_comorbidity.db", "comorbidity", "Diabetes"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_comorbidity.db",
+            "comorbidity",
+            "Diabetes",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -468,7 +603,13 @@ fn test_cli_comorbidity_diabetes() {
 #[test]
 fn test_cli_comorbidity_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_comorbidity_json.db", "--json", "comorbidity", "Heart Attack"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_comorbidity_json.db",
+            "--json",
+            "comorbidity",
+            "Heart Attack",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -478,7 +619,12 @@ fn test_cli_comorbidity_json() {
 #[test]
 fn test_cli_disease_endometriosis() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_endo.db", "disease", "Endometriosis"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_endo.db",
+            "disease",
+            "Endometriosis",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -488,7 +634,12 @@ fn test_cli_disease_endometriosis() {
 #[test]
 fn test_cli_disease_parkinsons() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_park.db", "disease", "Parkinson's Disease"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_park.db",
+            "disease",
+            "Parkinson's Disease",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -498,7 +649,12 @@ fn test_cli_disease_parkinsons() {
 #[test]
 fn test_cli_disease_sepsis() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_sepsis.db", "disease", "Sepsis"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_sepsis.db",
+            "disease",
+            "Sepsis",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -508,7 +664,12 @@ fn test_cli_disease_sepsis() {
 #[test]
 fn test_cli_disease_dvt() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_dvt.db", "disease", "Deep Vein Thrombosis"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_dvt.db",
+            "disease",
+            "Deep Vein Thrombosis",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -520,7 +681,12 @@ fn test_cli_disease_dvt() {
 #[test]
 fn test_cli_interact_ibuprofen() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_interact.db", "interact", "ibuprofen"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_interact.db",
+            "interact",
+            "ibuprofen",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -531,7 +697,13 @@ fn test_cli_interact_ibuprofen() {
 #[test]
 fn test_cli_interact_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_interact_j.db", "--json", "interact", "aspirin"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_interact_j.db",
+            "--json",
+            "interact",
+            "aspirin",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -541,7 +713,12 @@ fn test_cli_interact_json() {
 #[test]
 fn test_cli_interact_unknown_drug() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_interact_u.db", "interact", "xyzzydrug"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_interact_u.db",
+            "interact",
+            "xyzzydrug",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -551,7 +728,12 @@ fn test_cli_interact_unknown_drug() {
 #[test]
 fn test_cli_timeline_malaria() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_timeline.db", "timeline", "malaria"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_timeline.db",
+            "timeline",
+            "malaria",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -561,7 +743,13 @@ fn test_cli_timeline_malaria() {
 #[test]
 fn test_cli_timeline_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_timeline_j.db", "--json", "timeline", "heart attack"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_timeline_j.db",
+            "--json",
+            "timeline",
+            "heart attack",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -571,7 +759,12 @@ fn test_cli_timeline_json() {
 #[test]
 fn test_cli_timeline_unknown() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_timeline_u.db", "timeline", "xyzzy"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_timeline_u.db",
+            "timeline",
+            "xyzzy",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -581,7 +774,12 @@ fn test_cli_timeline_unknown() {
 #[test]
 fn test_cli_disease_myasthenia_gravis() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_mg.db", "disease", "Myasthenia Gravis"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_mg.db",
+            "disease",
+            "Myasthenia Gravis",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -591,7 +789,12 @@ fn test_cli_disease_myasthenia_gravis() {
 #[test]
 fn test_cli_disease_guillain_barre() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_gbs.db", "disease", "Guillain-Barré Syndrome"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_gbs.db",
+            "disease",
+            "Guillain-Barré Syndrome",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -601,7 +804,12 @@ fn test_cli_disease_guillain_barre() {
 #[test]
 fn test_cli_disease_rhabdomyolysis() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_rhabdo.db", "disease", "Rhabdomyolysis"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_rhabdo.db",
+            "disease",
+            "Rhabdomyolysis",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -613,17 +821,30 @@ fn test_cli_disease_rhabdomyolysis() {
 #[test]
 fn test_cli_compare_basic() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_compare.db", "compare", "Malaria,Dengue Fever"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_compare.db",
+            "compare",
+            "Malaria,Dengue Fever",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Comparison") || stdout.contains("Shared") || stdout.contains("Malaria"));
+    assert!(
+        stdout.contains("Comparison") || stdout.contains("Shared") || stdout.contains("Malaria")
+    );
 }
 
 #[test]
 fn test_cli_compare_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_compare_json.db", "--json", "compare", "Malaria,Cholera"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_compare_json.db",
+            "--json",
+            "compare",
+            "Malaria,Cholera",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -643,17 +864,32 @@ fn test_cli_prevalence() {
 #[test]
 fn test_cli_prevalence_category() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_prev_cat.db", "prevalence", "--category", "infectious"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_prev_cat.db",
+            "prevalence",
+            "--category",
+            "infectious",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("INFECTIOUS") || stdout.contains("infectious") || stdout.contains("diseases"));
+    assert!(
+        stdout.contains("INFECTIOUS")
+            || stdout.contains("infectious")
+            || stdout.contains("diseases")
+    );
 }
 
 #[test]
 fn test_cli_prevalence_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_prev_json.db", "--json", "prevalence"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_prev_json.db",
+            "--json",
+            "prevalence",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -663,7 +899,12 @@ fn test_cli_prevalence_json() {
 #[test]
 fn test_cli_disease_narcolepsy() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_narcolepsy.db", "disease", "Narcolepsy"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_narcolepsy.db",
+            "disease",
+            "Narcolepsy",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -673,7 +914,12 @@ fn test_cli_disease_narcolepsy() {
 #[test]
 fn test_cli_disease_marfan() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_marfan.db", "disease", "Marfan Syndrome"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_marfan.db",
+            "disease",
+            "Marfan Syndrome",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -696,18 +942,35 @@ fn test_cli_region_list() {
 #[test]
 fn test_cli_region_chest() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_region_chest.db", "--json", "region", "chest"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_region_chest.db",
+            "--json",
+            "region",
+            "chest",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
     // JSON output includes all diseases, not just top 20
-    assert!(stdout.contains("Heart Attack") || stdout.contains("Pneumonia") || stdout.contains("Asthma") || stdout.contains("chest"));
+    assert!(
+        stdout.contains("Heart Attack")
+            || stdout.contains("Pneumonia")
+            || stdout.contains("Asthma")
+            || stdout.contains("chest")
+    );
 }
 
 #[test]
 fn test_cli_region_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_region_json.db", "--json", "region", "eyes"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_region_json.db",
+            "--json",
+            "region",
+            "eyes",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -717,7 +980,13 @@ fn test_cli_region_json() {
 #[test]
 fn test_cli_almanac() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_almanac.db", "almanac", "--month", "1"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_almanac.db",
+            "almanac",
+            "--month",
+            "1",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -727,7 +996,14 @@ fn test_cli_almanac() {
 #[test]
 fn test_cli_almanac_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_almanac_json.db", "--json", "almanac", "--month", "7"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_almanac_json.db",
+            "--json",
+            "almanac",
+            "--month",
+            "7",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -738,7 +1014,12 @@ fn test_cli_almanac_json() {
 #[test]
 fn test_cli_disease_dental_abscess() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_dental.db", "disease", "Dental Abscess"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_dental.db",
+            "disease",
+            "Dental Abscess",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -749,7 +1030,12 @@ fn test_cli_disease_dental_abscess() {
 #[test]
 fn test_cli_disease_burnout() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_burnout.db", "disease", "Burnout Syndrome"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_burnout.db",
+            "disease",
+            "Burnout Syndrome",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -760,7 +1046,12 @@ fn test_cli_disease_burnout() {
 #[test]
 fn test_cli_symptoms_toothache() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_sym_tooth.db", "symptoms", "toothache facial swelling fever"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_sym_tooth.db",
+            "symptoms",
+            "toothache facial swelling fever",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -770,7 +1061,12 @@ fn test_cli_symptoms_toothache() {
 #[test]
 fn test_cli_symptoms_burnout() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_sym_burn.db", "symptoms", "emotional exhaustion insomnia irritability"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_sym_burn.db",
+            "symptoms",
+            "emotional exhaustion insomnia irritability",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -795,7 +1091,9 @@ fn test_cli_danger_signs_child() {
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("IMCI") || stdout.contains("CHILDREN") || stdout.contains("breastfeed"));
+    assert!(
+        stdout.contains("IMCI") || stdout.contains("CHILDREN") || stdout.contains("breastfeed")
+    );
 }
 
 #[test]
@@ -805,7 +1103,11 @@ fn test_cli_danger_signs_maternal() {
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("PREGNANCY") || stdout.contains("vaginal bleeding") || stdout.contains("Maternal"));
+    assert!(
+        stdout.contains("PREGNANCY")
+            || stdout.contains("vaginal bleeding")
+            || stdout.contains("Maternal")
+    );
 }
 
 #[test]
@@ -920,7 +1222,11 @@ fn test_cli_symptoms_graves() {
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(output.status.success());
-    assert!(stdout.contains("Graves"), "Should find Graves' Disease, got: {}", &stdout[..stdout.len().min(500)]);
+    assert!(
+        stdout.contains("Graves"),
+        "Should find Graves' Disease, got: {}",
+        &stdout[..stdout.len().min(500)]
+    );
 }
 
 #[test]
@@ -938,7 +1244,11 @@ fn test_cli_disease_hypothermia() {
 #[test]
 fn test_cli_vitals_normal() {
     let output = cargo_bin()
-        .args(["--json", "vitals", "hr=72 bp=120/80 temp=37.0 spo2=98 rr=16"])
+        .args([
+            "--json",
+            "vitals",
+            "hr=72 bp=120/80 temp=37.0 spo2=98 rr=16",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1075,7 +1385,11 @@ fn test_cli_symptoms_ear_pain() {
 #[test]
 fn test_cli_symptoms_kidney_stone() {
     let output = cargo_bin()
-        .args(["--json", "symptoms", "severe flank pain,blood in urine,nausea"])
+        .args([
+            "--json",
+            "symptoms",
+            "severe flank pain,blood in urine,nausea",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1097,7 +1411,11 @@ fn test_cli_symptoms_vertigo() {
 #[test]
 fn test_cli_symptoms_panic() {
     let output = cargo_bin()
-        .args(["--json", "symptoms", "palpitations,chest tightness,shortness of breath,trembling"])
+        .args([
+            "--json",
+            "symptoms",
+            "palpitations,chest tightness,shortness of breath,trembling",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1179,7 +1497,12 @@ fn test_cli_screen_json() {
 #[test]
 fn test_cli_disease_fibromyalgia() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_fibro.db", "disease", "Fibromyalgia"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_fibro.db",
+            "disease",
+            "Fibromyalgia",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1190,7 +1513,12 @@ fn test_cli_disease_fibromyalgia() {
 #[test]
 fn test_cli_disease_pcos() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_pcos.db", "disease", "Polycystic Ovary Syndrome"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_pcos.db",
+            "disease",
+            "Polycystic Ovary Syndrome",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1201,7 +1529,12 @@ fn test_cli_disease_pcos() {
 #[test]
 fn test_cli_disease_afib() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_afib.db", "disease", "Atrial Fibrillation"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_afib.db",
+            "disease",
+            "Atrial Fibrillation",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1212,7 +1545,12 @@ fn test_cli_disease_afib() {
 #[test]
 fn test_cli_disease_crohns() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_crohns.db", "disease", "Crohn's Disease"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_crohns.db",
+            "disease",
+            "Crohn's Disease",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1223,7 +1561,13 @@ fn test_cli_disease_crohns() {
 #[test]
 fn test_cli_symptoms_ibs() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_ibs.db", "--json", "symptoms", "abdominal pain,bloating,diarrhea"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_ibs.db",
+            "--json",
+            "symptoms",
+            "abdominal pain,bloating,diarrhea",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1234,7 +1578,12 @@ fn test_cli_symptoms_ibs() {
 #[test]
 fn test_cli_disease_colorectal_cancer() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_crc.db", "disease", "Colorectal Cancer"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_crc.db",
+            "disease",
+            "Colorectal Cancer",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1245,7 +1594,12 @@ fn test_cli_disease_colorectal_cancer() {
 #[test]
 fn test_cli_disease_pancreatic_cancer() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_panc.db", "disease", "Pancreatic Cancer"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_panc.db",
+            "disease",
+            "Pancreatic Cancer",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1380,7 +1734,13 @@ fn test_cli_medication_lookup() {
 #[test]
 fn test_cli_medication_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_med_json.db", "--json", "medication", "aspirin"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_med_json.db",
+            "--json",
+            "medication",
+            "aspirin",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1404,7 +1764,11 @@ fn test_cli_symptoms_copd() {
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Chronic Obstructive Pulmonary Disease") || stdout.contains("COPD") || stdout.contains("Analyzing"));
+    assert!(
+        stdout.contains("Chronic Obstructive Pulmonary Disease")
+            || stdout.contains("COPD")
+            || stdout.contains("Analyzing")
+    );
 }
 
 #[test]
@@ -1462,7 +1826,12 @@ fn test_cli_symptom_map_filter() {
 #[test]
 fn test_cli_symptom_map_json() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_symmap_json.db", "--json", "symptom-map"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_symmap_json.db",
+            "--json",
+            "symptom-map",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1492,7 +1861,12 @@ fn test_cli_disease_afib_v23() {
 #[test]
 fn test_cli_disease_sleep_apnea() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_v23_osa.db", "disease", "obstructive sleep apnea"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_v23_osa.db",
+            "disease",
+            "obstructive sleep apnea",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1520,17 +1894,29 @@ fn test_cli_symptoms_peripheral_neuropathy() {
 #[test]
 fn test_cli_disease_stemi() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_v23_stemi.db", "disease", "myocardial infarction (stemi)"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_v23_stemi.db",
+            "disease",
+            "myocardial infarction (stemi)",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("STEMI") || stdout.contains("coronary") || stdout.contains("Myocardial"));
+    assert!(
+        stdout.contains("STEMI") || stdout.contains("coronary") || stdout.contains("Myocardial")
+    );
 }
 
 #[test]
 fn test_cli_disease_preeclampsia() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_v23_pe.db", "disease", "preeclampsia"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_v23_pe.db",
+            "disease",
+            "preeclampsia",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1597,7 +1983,10 @@ fn test_cli_symptoms_retinal_detachment_v24() {
 #[test]
 fn test_cli_symptoms_heat_exhaustion_v24() {
     let output = cargo_bin()
-        .args(["symptoms", "heavy sweating weakness dizziness muscle cramps"])
+        .args([
+            "symptoms",
+            "heavy sweating weakness dizziness muscle cramps",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
@@ -1606,7 +1995,12 @@ fn test_cli_symptoms_heat_exhaustion_v24() {
 #[test]
 fn test_cli_disease_cholesteatoma() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_v24_chol.db", "disease", "cholesteatoma"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_v24_chol.db",
+            "disease",
+            "cholesteatoma",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1662,7 +2056,15 @@ fn test_cli_lifestyle_basic() {
 #[test]
 fn test_cli_lifestyle_with_factors() {
     let output = cargo_bin()
-        .args(["lifestyle", "--age", "55", "--sex", "male", "--factors", "smoking,diabetes"])
+        .args([
+            "lifestyle",
+            "--age",
+            "55",
+            "--sex",
+            "male",
+            "--factors",
+            "smoking,diabetes",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
@@ -1704,7 +2106,12 @@ fn test_cli_symptoms_gallstones_v25() {
 #[test]
 fn test_cli_disease_impetigo() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--db-path", "/tmp/openhealth_test_v25_imp.db", "disease", "impetigo"])
+        .args([
+            "--db-path",
+            "/tmp/openhealth_test_v25_imp.db",
+            "disease",
+            "impetigo",
+        ])
         .output()
         .expect("failed to execute");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1730,7 +2137,10 @@ fn test_cli_vaccine_list() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("VACCINATION REFERENCE"), "Should show vaccine header");
+    assert!(
+        stdout.contains("VACCINATION REFERENCE"),
+        "Should show vaccine header"
+    );
     assert!(stdout.contains("BCG"), "Should list BCG vaccine");
     assert!(stdout.contains("MMR"), "Should list MMR vaccine");
 }
@@ -1743,7 +2153,10 @@ fn test_cli_vaccine_by_name() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Hepatitis"), "Should find hepatitis vaccines");
+    assert!(
+        stdout.contains("Hepatitis"),
+        "Should find hepatitis vaccines"
+    );
 }
 
 #[test]
@@ -1765,7 +2178,10 @@ fn test_cli_vaccine_json() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("\"abbreviation\""), "JSON output should have abbreviation field");
+    assert!(
+        stdout.contains("\"abbreviation\""),
+        "JSON output should have abbreviation field"
+    );
 }
 
 #[test]
@@ -1776,51 +2192,79 @@ fn test_cli_symptoms_acoustic_neuroma() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Acoustic Neuroma") || stdout.contains("tinnitus"), "Should find results for tinnitus/vertigo");
+    assert!(
+        stdout.contains("Acoustic Neuroma") || stdout.contains("tinnitus"),
+        "Should find results for tinnitus/vertigo"
+    );
 }
 
 #[test]
 fn test_cli_symptoms_pericarditis() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["symptoms", "sharp chest pain worse with breathing, fever, chest pain improves leaning forward"])
+        .args([
+            "symptoms",
+            "sharp chest pain worse with breathing, fever, chest pain improves leaning forward",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Pericarditis"), "Should detect pericarditis");
+    assert!(
+        stdout.contains("Pericarditis"),
+        "Should detect pericarditis"
+    );
 }
 
 #[test]
 fn test_cli_symptoms_testicular_torsion() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--json", "symptoms", "sudden severe testicular pain, testicular swelling, nausea"])
+        .args([
+            "--json",
+            "symptoms",
+            "sudden severe testicular pain, testicular swelling, nausea",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Testicular Torsion"), "Should detect testicular torsion");
+    assert!(
+        stdout.contains("Testicular Torsion"),
+        "Should detect testicular torsion"
+    );
 }
 
 #[test]
 fn test_cli_symptoms_necrotizing_fasciitis() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["symptoms", "crepitus, fever, blistering, tachycardia, hypotension"])
+        .args([
+            "symptoms",
+            "crepitus, fever, blistering, tachycardia, hypotension",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Necrotizing Fasciitis"), "Should detect necrotizing fasciitis");
+    assert!(
+        stdout.contains("Necrotizing Fasciitis"),
+        "Should detect necrotizing fasciitis"
+    );
 }
 
 #[test]
 fn test_cli_symptoms_co_poisoning() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["symptoms", "headache, dizziness, confusion, cherry red skin"])
+        .args([
+            "symptoms",
+            "headache, dizziness, confusion, cherry red skin",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Carbon Monoxide Poisoning"), "Should detect CO poisoning");
+    assert!(
+        stdout.contains("Carbon Monoxide Poisoning"),
+        "Should detect CO poisoning"
+    );
 }
 
 #[test]
@@ -1831,7 +2275,10 @@ fn test_cli_synonym_testicle_pain() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Testicular Torsion") || !stdout.is_empty(), "testicle pain should expand via synonym");
+    assert!(
+        stdout.contains("Testicular Torsion") || !stdout.is_empty(),
+        "testicle pain should expand via synonym"
+    );
 }
 
 // ── v0.27.0 CLI tests ──────────────────────────────────────
@@ -1844,8 +2291,10 @@ fn test_cli_alert_emergency() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("EMERGENCY") || stdout.contains("Heart Attack"),
-        "Alert should detect heart attack pattern");
+    assert!(
+        stdout.contains("EMERGENCY") || stdout.contains("Heart Attack"),
+        "Alert should detect heart attack pattern"
+    );
 }
 
 #[test]
@@ -1856,8 +2305,10 @@ fn test_cli_alert_no_emergency() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("No emergency") || !stdout.contains("EMERGENCY ALERT"),
-        "Single mild symptom should not trigger emergency");
+    assert!(
+        stdout.contains("No emergency") || !stdout.contains("EMERGENCY ALERT"),
+        "Single mild symptom should not trigger emergency"
+    );
 }
 
 #[test]
@@ -1880,13 +2331,19 @@ fn test_cli_symptoms_wernicke() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Wernicke Encephalopathy"), "Should detect Wernicke");
+    assert!(
+        stdout.contains("Wernicke Encephalopathy"),
+        "Should detect Wernicke"
+    );
 }
 
 #[test]
 fn test_cli_symptoms_acromegaly() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["symptoms", "enlarged hands, enlarged feet, coarsened facial features"])
+        .args([
+            "symptoms",
+            "enlarged hands, enlarged feet, coarsened facial features",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
@@ -1897,12 +2354,19 @@ fn test_cli_symptoms_acromegaly() {
 #[test]
 fn test_cli_symptoms_pellagra() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--json", "symptoms", "skin rash in sun-exposed areas, diarrhea, confusion"])
+        .args([
+            "--json",
+            "symptoms",
+            "skin rash in sun-exposed areas, diarrhea, confusion",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Pellagra"), "Should detect Pellagra in JSON results");
+    assert!(
+        stdout.contains("Pellagra"),
+        "Should detect Pellagra in JSON results"
+    );
 }
 
 // ── v0.28.0 integration tests ────────────────────────────────────────
@@ -1910,7 +2374,10 @@ fn test_cli_symptoms_pellagra() {
 #[test]
 fn test_cli_symptoms_chikungunya() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["symptoms", "high fever, severe joint pain, joint swelling, rash"])
+        .args([
+            "symptoms",
+            "high fever, severe joint pain, joint swelling, rash",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
@@ -1921,34 +2388,55 @@ fn test_cli_symptoms_chikungunya() {
 #[test]
 fn test_cli_symptoms_uti() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--json", "symptoms", "painful urination, frequent urination, cloudy urine"])
+        .args([
+            "--json",
+            "symptoms",
+            "painful urination, frequent urination, cloudy urine",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Urinary Tract Infection") || stdout.contains("Interstitial Cystitis"), "Should detect urinary condition");
+    assert!(
+        stdout.contains("Urinary Tract Infection") || stdout.contains("Interstitial Cystitis"),
+        "Should detect urinary condition"
+    );
 }
 
 #[test]
 fn test_cli_symptoms_shingles() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--json", "symptoms", "painful rash, blisters, sensitivity to touch"])
+        .args([
+            "--json",
+            "symptoms",
+            "painful rash, blisters, sensitivity to touch",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Shingles") || stdout.contains("Herpes Zoster"), "Should detect Shingles");
+    assert!(
+        stdout.contains("Shingles") || stdout.contains("Herpes Zoster"),
+        "Should detect Shingles"
+    );
 }
 
 #[test]
 fn test_cli_symptoms_leptospirosis() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["--json", "symptoms", "high fever, muscle pain, jaundice, red eyes"])
+        .args([
+            "--json",
+            "symptoms",
+            "high fever, muscle pain, jaundice, red eyes",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Leptospirosis"), "Should detect Leptospirosis");
+    assert!(
+        stdout.contains("Leptospirosis"),
+        "Should detect Leptospirosis"
+    );
 }
 
 #[test]
@@ -1959,7 +2447,10 @@ fn test_cli_onset_sudden() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Hyperacute"), "Should show hyperacute onset diseases");
+    assert!(
+        stdout.contains("Hyperacute"),
+        "Should show hyperacute onset diseases"
+    );
 }
 
 #[test]
@@ -1970,7 +2461,10 @@ fn test_cli_onset_chronic_json() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Chronic"), "Should contain chronic onset in JSON");
+    assert!(
+        stdout.contains("Chronic"),
+        "Should contain chronic onset in JSON"
+    );
 }
 
 #[test]
@@ -1999,7 +2493,10 @@ fn test_cli_synonym_burning_pee() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(!stdout.contains("No matches"), "burning pee should match diseases");
+    assert!(
+        !stdout.contains("No matches"),
+        "burning pee should match diseases"
+    );
 }
 
 #[test]
@@ -2010,7 +2507,10 @@ fn test_cli_disease_shingles() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("varicella") || stdout.contains("zoster") || stdout.contains("Shingles"), "Should show shingles info");
+    assert!(
+        stdout.contains("varicella") || stdout.contains("zoster") || stdout.contains("Shingles"),
+        "Should show shingles info"
+    );
 }
 
 // v30 integration tests
@@ -2023,7 +2523,10 @@ fn test_cli_polypharm_command() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Interaction") || stdout.contains("bleeding"), "Should find warfarin-aspirin interaction");
+    assert!(
+        stdout.contains("Interaction") || stdout.contains("bleeding"),
+        "Should find warfarin-aspirin interaction"
+    );
 }
 
 #[test]
@@ -2034,7 +2537,10 @@ fn test_cli_polypharm_no_interaction() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("No known interactions") || stdout.contains("interactions"), "Should show result");
+    assert!(
+        stdout.contains("No known interactions") || stdout.contains("interactions"),
+        "Should show result"
+    );
 }
 
 #[test]
@@ -2045,7 +2551,10 @@ fn test_cli_polypharm_json() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("\"severity\""), "JSON output should contain severity field");
+    assert!(
+        stdout.contains("\"severity\""),
+        "JSON output should contain severity field"
+    );
 }
 
 #[test]
@@ -2056,7 +2565,10 @@ fn test_cli_disease_dvt_v30() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("clot") || stdout.contains("Thrombosis"), "Should show DVT info");
+    assert!(
+        stdout.contains("clot") || stdout.contains("Thrombosis"),
+        "Should show DVT info"
+    );
 }
 
 #[test]
@@ -2067,18 +2579,27 @@ fn test_cli_disease_heat_stroke_v30() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("hyperthermia") || stdout.contains("Heat Stroke"), "Should show heat stroke info");
+    assert!(
+        stdout.contains("hyperthermia") || stdout.contains("Heat Stroke"),
+        "Should show heat stroke info"
+    );
 }
 
 #[test]
 fn test_cli_symptoms_organophosphate() {
     let output = Command::new(env!("CARGO_BIN_EXE_openhealth"))
-        .args(["symptoms", "excessive salivation, miosis, muscle fasciculations"])
+        .args([
+            "symptoms",
+            "excessive salivation, miosis, muscle fasciculations",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Organophosphate"), "Should match organophosphate poisoning");
+    assert!(
+        stdout.contains("Organophosphate"),
+        "Should match organophosphate poisoning"
+    );
 }
 
 // ── v0.31.0 integration tests ──────────────────────────────────────────
@@ -2114,7 +2635,10 @@ fn test_cli_glossary_json() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("\"term\""), "Should output JSON with term field");
+    assert!(
+        stdout.contains("\"term\""),
+        "Should output JSON with term field"
+    );
 }
 
 #[test]
@@ -2125,7 +2649,10 @@ fn test_cli_water_safety() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Water Safety"), "Should show water safety header");
+    assert!(
+        stdout.contains("Water Safety"),
+        "Should show water safety header"
+    );
     assert!(stdout.contains("Boiling"), "Should contain Boiling method");
 }
 
@@ -2159,7 +2686,10 @@ fn test_cli_disease_buruli_ulcer() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Mycobacterium") || stdout.contains("Buruli"), "Should show Buruli Ulcer info");
+    assert!(
+        stdout.contains("Mycobacterium") || stdout.contains("Buruli"),
+        "Should show Buruli Ulcer info"
+    );
 }
 
 #[test]
@@ -2170,7 +2700,10 @@ fn test_cli_disease_kwashiorkor() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("malnutrition") || stdout.contains("Kwashiorkor"), "Should show Kwashiorkor info");
+    assert!(
+        stdout.contains("malnutrition") || stdout.contains("Kwashiorkor"),
+        "Should show Kwashiorkor info"
+    );
 }
 
 #[test]
@@ -2181,7 +2714,10 @@ fn test_cli_disease_noma() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("gangrenous") || stdout.contains("Noma"), "Should show Noma info");
+    assert!(
+        stdout.contains("gangrenous") || stdout.contains("Noma"),
+        "Should show Noma info"
+    );
 }
 
 #[test]
@@ -2192,7 +2728,10 @@ fn test_cli_disease_guinea_worm() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Dracunculus") || stdout.contains("Guinea Worm"), "Should show Guinea Worm info");
+    assert!(
+        stdout.contains("Dracunculus") || stdout.contains("Guinea Worm"),
+        "Should show Guinea Worm info"
+    );
 }
 
 #[test]
@@ -2203,7 +2742,10 @@ fn test_cli_disease_ciguatera() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("ciguatoxin") || stdout.contains("Ciguatera"), "Should show Ciguatera info");
+    assert!(
+        stdout.contains("ciguatoxin") || stdout.contains("Ciguatera"),
+        "Should show Ciguatera info"
+    );
 }
 
 #[test]
@@ -2214,7 +2756,10 @@ fn test_cli_disease_ascariasis() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("roundworm") || stdout.contains("Ascaris"), "Should show Ascariasis info");
+    assert!(
+        stdout.contains("roundworm") || stdout.contains("Ascaris"),
+        "Should show Ascariasis info"
+    );
 }
 
 #[test]
@@ -2225,7 +2770,10 @@ fn test_cli_synonym_worms_in_poop() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(!stdout.contains("No matching"), "Should find matches via synonym expansion");
+    assert!(
+        !stdout.contains("No matching"),
+        "Should find matches via synonym expansion"
+    );
 }
 
 // ── v0.32.0 integration tests ──
@@ -2238,7 +2786,13 @@ fn test_cli_complication_diabetes() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("retinopathy") || stdout.contains("Complications") || stdout.contains("Complication") || stdout.contains("nephropathy"), "Should show diabetes complications");
+    assert!(
+        stdout.contains("retinopathy")
+            || stdout.contains("Complications")
+            || stdout.contains("Complication")
+            || stdout.contains("nephropathy"),
+        "Should show diabetes complications"
+    );
 }
 
 #[test]
@@ -2249,7 +2803,10 @@ fn test_cli_complication_json() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("complication") || stdout.contains("cerebral"), "Should show malaria complications in JSON");
+    assert!(
+        stdout.contains("complication") || stdout.contains("cerebral"),
+        "Should show malaria complications in JSON"
+    );
 }
 
 #[test]
@@ -2269,7 +2826,10 @@ fn test_cli_age_risk_child() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Age") && stdout.contains("risk"), "Should show age-specific risks");
+    assert!(
+        stdout.contains("Age") && stdout.contains("risk"),
+        "Should show age-specific risks"
+    );
 }
 
 #[test]
@@ -2280,7 +2840,10 @@ fn test_cli_age_risk_senior_json() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("disease") || stdout.contains("Dementia"), "Should show senior risks in JSON");
+    assert!(
+        stdout.contains("disease") || stdout.contains("Dementia"),
+        "Should show senior risks in JSON"
+    );
 }
 
 #[test]
@@ -2291,7 +2854,10 @@ fn test_cli_disease_hookworm() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("parasit") || stdout.contains("Hookworm"), "Should show hookworm info");
+    assert!(
+        stdout.contains("parasit") || stdout.contains("Hookworm"),
+        "Should show hookworm info"
+    );
 }
 
 #[test]
@@ -2302,7 +2868,10 @@ fn test_cli_disease_trachoma() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("blind") || stdout.contains("Trachoma"), "Should show trachoma info");
+    assert!(
+        stdout.contains("blind") || stdout.contains("Trachoma"),
+        "Should show trachoma info"
+    );
 }
 
 #[test]
@@ -2313,7 +2882,10 @@ fn test_cli_disease_sleeping_sickness() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("tsetse") || stdout.contains("Trypanosoma") || stdout.contains("Sleeping"), "Should show sleeping sickness info");
+    assert!(
+        stdout.contains("tsetse") || stdout.contains("Trypanosoma") || stdout.contains("Sleeping"),
+        "Should show sleeping sickness info"
+    );
 }
 
 #[test]
@@ -2324,7 +2896,10 @@ fn test_cli_synonym_night_sweats() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(!stdout.contains("No matching"), "Should find matches for night sweats via synonym");
+    assert!(
+        !stdout.contains("No matching"),
+        "Should find matches for night sweats via synonym"
+    );
 }
 
 #[test]
@@ -2335,7 +2910,10 @@ fn test_cli_synonym_elephant_leg() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(!stdout.contains("No matching"), "Should find matches for elephant leg via synonym");
+    assert!(
+        !stdout.contains("No matching"),
+        "Should find matches for elephant leg via synonym"
+    );
 }
 
 // ── v0.37.0 integration tests ──
@@ -2348,7 +2926,11 @@ fn test_disease_mycoplasma_pneumonia() {
         .expect("failed to execute");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Mycoplasma") || stdout.contains("walking pneumonia") || stdout.contains("atypical"));
+    assert!(
+        stdout.contains("Mycoplasma")
+            || stdout.contains("walking pneumonia")
+            || stdout.contains("atypical")
+    );
 }
 
 #[test]
@@ -2453,7 +3035,12 @@ fn test_contagion_list_all() {
 #[test]
 fn test_symptoms_walking_pneumonia_synonym() {
     let output = std::process::Command::new("cargo")
-        .args(["run", "--", "symptoms", "walking pneumonia, headache, fatigue"])
+        .args([
+            "run",
+            "--",
+            "symptoms",
+            "walking pneumonia, headache, fatigue",
+        ])
         .output()
         .expect("failed to execute");
     assert!(output.status.success());
