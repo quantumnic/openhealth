@@ -1,9 +1,27 @@
 use std::process::Command;
+use std::sync::OnceLock;
+
+/// Shared test database. Created and seeded once, before any test uses it,
+/// so parallel tests don't race on initializing a fresh database file.
+fn test_db_path() -> &'static str {
+    static DB: OnceLock<String> = OnceLock::new();
+    DB.get_or_init(|| {
+        let path = std::env::temp_dir()
+            .join(format!("openhealth_test_integration_{}.db", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let path = path.to_string_lossy().to_string();
+        let status = Command::new(env!("CARGO_BIN_EXE_openhealth"))
+            .args(["--db-path", &path, "update"])
+            .output()
+            .expect("failed to initialize test database");
+        assert!(status.status.success(), "test database init failed");
+        path
+    })
+}
 
 fn cargo_bin() -> Command {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_openhealth"));
-    cmd.arg("--db-path")
-        .arg("/tmp/openhealth_test_integration.db");
+    cmd.arg("--db-path").arg(test_db_path());
     cmd
 }
 

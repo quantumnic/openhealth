@@ -30,7 +30,7 @@ OpenHealth is a **fully offline** medical diagnostic tool that:
 - 📊 **Ranks possible conditions** with confidence percentages
 - 🚦 **Triages severity**: 🟢 Home care / 🟡 See doctor / 🔴 Emergency
 - 💊 **Provides WHO treatment protocols** with first aid instructions
-- 🛡️ **Covers 475+ diseases** including the major killers in developing countries
+- 🛡️ **Covers 450+ diseases** including the major killers in developing countries
 - 📴 **Works completely offline** — no internet, no API keys, no cloud
 
 ## 🚀 Installation
@@ -128,7 +128,7 @@ Check database version and statistics.
 
 ## 🗃️ Diseases Covered
 
-OpenHealth includes detailed data for **475+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
+OpenHealth includes detailed data for **450+ conditions**, prioritizing the diseases that kill the most people in resource-limited settings:
 
 | Category | Diseases |
 |----------|----------|
